@@ -1,0 +1,4 @@
+cron:
+- description: Push a cleanup event onto pubsub every day
+  url: /publish/cleanup
+  schedule: every 24 hours

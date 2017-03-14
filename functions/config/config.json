@@ -1,0 +1,22 @@
+{
+  "samtstern": {
+    "BotTest": {
+      "labels": {
+        "auth": {
+          "regex": "Product:[\\s]+?[Aa]uth",
+          "email": "samstern@google.com"
+        },
+        "database": {
+          "regex": "Product:[\\s]+?[Dd]atabase",
+          "email": "samstern@google.com"
+        },
+        "needs-triage": {
+          "email": "samstern@google.com"
+        }
+      },
+      "cleanup": {
+        "pr": 1000
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "oss-bot",
+  "description": "Github monitoring robot.",
+  "dependencies": {
+    "diff": "^3.2.0",
+    "firebase-admin": "^4.1.2",
+    "firebase-functions": "^0.5",
+    "github": "^9.2.0",
+    "mailgun-js": "^0.8.2",
+    "marked": "^0.3.6",
+    "mocha": "^3.3.0",
+    "request": "^2.81.0"
+  },
+  "scripts": {
+    "test": "mocha",
+    "debug": "mocha --debug-brk",
+    "fmt": "prettier --single-quote --write \"{test/,}*.js\""
+  },
+  "private": true
+}
