@@ -19,7 +19,7 @@ var assert = require('assert');
 
 var issues = require('../issues.js');
 var cron = require('../cron.js');
-var mocks = require('../mocks.js');
+var mocks = require('./mocks.js');
 
 // Label mapping configuration
 var config = require('../config/config.json');
@@ -38,7 +38,7 @@ var cron_handler = new cron.CronHandler(new mocks.MockGithubClient());
 var good_issue = {
   body: fs
     .readFileSync(
-      path.join(__dirname, '..', 'mock_data', 'issue_template_filled.md')
+      path.join(__dirname, 'mock_data', 'issue_template_filled.md')
     )
     .toString()
 };
@@ -47,7 +47,7 @@ var good_issue = {
 var bad_issue = {
   body: fs
     .readFileSync(
-      path.join(__dirname, '..', 'mock_data', 'issue_template_empty.md')
+      path.join(__dirname, 'mock_data', 'issue_template_empty.md')
     )
     .toString()
 };
@@ -59,9 +59,9 @@ var fr_issue = {
 };
 
 // Some mock events
-var opened_evt = require('../mock_data/issue_opened.json');
-var comment_evt = require('../mock_data/comment_created.json');
-var only_product_evt = require('../mock_data/issue_opened_filled_only_product.json');
+var opened_evt = require('./mock_data/issue_opened.json');
+var comment_evt = require('./mock_data/comment_created.json');
+var only_product_evt = require('./mock_data/issue_opened_filled_only_product.json');
 
 describe('The OSS Robot', () => {
   it('should handle issue opened', () => {
