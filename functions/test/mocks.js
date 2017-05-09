@@ -16,66 +16,61 @@
 var fs = require('fs');
 var path = require('path');
 
-function MockGithubClient() {
-  this.auth = () => {
-    console.log('mock: github.auth()');
-  };
+var github = require('../github.js');
+var email = require('../email.js');
 
-  this.addLabel = (org, name, number, label) => {
-    console.log(`mock: github.addLabel(${org}, ${name}, ${number}, ${label})`);
-    return Promise.resolve();
-  };
+function MockGithubClient() {}
 
-  this.addComment = (org, name, number, body) => {
-    console.log(`mock: github.addComment(${org}, ${name}, ${number}, ${body})`);
-    return Promise.resolve();
-  };
+MockGithubClient.prototype = Object.create(github.GithubClient.prototype);
 
-  this.getIssueTemplate = (org, name) => {
-    console.log(`mock: github.getIssueTemplate(${org}, ${name})`);
+MockGithubClient.prototype.auth = () => {
+  console.log('mock: github.auth()');
+};
 
-    var filePath = path.join(__dirname, 'mock_data', 'issue_template_empty.md');
-    var template = fs.readFileSync(filePath).toString();
-    return Promise.resolve(template);
-  };
+MockGithubClient.prototype.addLabel = (org, name, number, label) => {
+  console.log(`mock: github.addLabel(${org}, ${name}, ${number}, ${label})`);
+  return Promise.resolve();
+};
 
-  this.closeIssue = (org, name, number) => {
-    console.log(`mock: github.closeIssue(${org}, ${name}, ${number})`);
-    return Promise.resolve();
-  };
+MockGithubClient.prototype.addComment = (org, name, number, body) => {
+  console.log(`mock: github.addComment(${org}, ${name}, ${number}, ${body})`);
+  return Promise.resolve();
+};
 
-  this.getOldPullRequests = (org, name, expiry) => {
-    console.log(`mock: github.getOldPullRequests(${org}, ${name}, ${expiry})`);
+MockGithubClient.prototype.getIssueTemplate = (org, name) => {
+  console.log(`mock: github.getIssueTemplate(${org}, ${name})`);
 
-    var filePath = path.join(__dirname, 'mock_data', 'old_pull_requests.json');
-    var data = JSON.parse(fs.readFileSync(filePath).toString());
-    return Promise.resolve(data);
-  };
-}
+  var filePath = path.join(__dirname, 'mock_data', 'issue_template_empty.md');
+  var template = fs.readFileSync(filePath).toString();
+  return Promise.resolve(template);
+};
 
-function MockEmailClient() {
-  this.sendEmail = (recipient, subject, body) => {
-    console.log(`mock: email.sendEmail(${recipient}, ${subject}, ...)`);
-    return Promise.resolve();
-  };
+MockGithubClient.prototype.closeIssue = (org, name, number) => {
+  console.log(`mock: github.closeIssue(${org}, ${name}, ${number})`);
+  return Promise.resolve();
+};
 
-  this.sendStyledEmail = (
-    recipient,
-    subject,
-    header,
-    body_html,
-    link,
-    action
-  ) => {
-    console.log(`mock: email.sendStyledEmail(${recipient}, ${subject}, ...)`);
-    return Promise.resolve();
-  };
+MockGithubClient.prototype.getOldPullRequests = (org, name, expiry) => {
+  console.log(`mock: github.getOldPullRequests(${org}, ${name}, ${expiry})`);
 
-  this.getSmartMailMarkup = (url, title) => {
-    console.log(`mock: email.getSmartMailMarkup(${url}, ${title})`);
-    return '<div>MOCK</div>';
-  };
-}
+  var filePath = path.join(__dirname, 'mock_data', 'old_pull_requests.json');
+  var data = JSON.parse(fs.readFileSync(filePath).toString());
+  return Promise.resolve(data);
+};
+
+function MockEmailClient() {}
+
+MockEmailClient.prototype = Object.create(email.EmailClient.prototype);
+
+MockEmailClient.prototype.sendEmail = (recipient, subject, body) => {
+  console.log(`mock: email.sendEmail(${recipient}, ${subject}, ...)`);
+  return Promise.resolve();
+};
+
+MockEmailClient.prototype.getSmartMailMarkup = (url, title) => {
+  console.log(`mock: email.getSmartMailMarkup(${url}, ${title})`);
+  return '<div>MOCK</div>';
+};
 
 // Exports
 exports.MockGithubClient = MockGithubClient;

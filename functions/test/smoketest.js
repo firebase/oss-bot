@@ -18,6 +18,7 @@ var path = require('path');
 var assert = require('assert');
 
 var issues = require('../issues.js');
+var pullrequests = require('../pullrequests.js');
 var cron = require('../cron.js');
 var mocks = require('./mocks.js');
 
@@ -31,24 +32,27 @@ var issue_handler = new issues.IssueHandler(
   config
 );
 
+// Issue event handler
+var pr_handler = new pullrequests.PullRequestHandler(
+  new mocks.MockGithubClient(),
+  new mocks.MockEmailClient(),
+  config
+);
+
 // Cron handler
 var cron_handler = new cron.CronHandler(new mocks.MockGithubClient());
 
 // Issue with the template properly filled in
 var good_issue = {
   body: fs
-    .readFileSync(
-      path.join(__dirname, 'mock_data', 'issue_template_filled.md')
-    )
+    .readFileSync(path.join(__dirname, 'mock_data', 'issue_template_filled.md'))
     .toString()
 };
 
 // Issue that is just the empty template
 var bad_issue = {
   body: fs
-    .readFileSync(
-      path.join(__dirname, 'mock_data', 'issue_template_empty.md')
-    )
+    .readFileSync(path.join(__dirname, 'mock_data', 'issue_template_empty.md'))
     .toString()
 };
 
@@ -134,5 +138,25 @@ describe('The OSS Robot', () => {
 
   it('should correctly clean up old pull requests', () => {
     return cron_handler.handleCleanup('samtstern', 'BotTest', 0);
+  });
+
+  it('should detect issue link in a PR', () => {
+    pr_none = {
+      body: 'Hey this is bad!'
+    };
+
+    assert.ok(!pr_handler.hasIssueLink('foo', pr_none), 'Has no link.');
+
+    pr_shortlink = {
+      body: 'Hey this is in reference to #4'
+    };
+
+    assert.ok(pr_handler.hasIssueLink('foo', pr_shortlink), 'Has short link.');
+
+    pr_longlink = {
+      body: 'Hey this is in reference to https://github.com/samtstern/BotTest/issues/4'
+    };
+
+    assert.ok(pr_handler.hasIssueLink('foo', pr_longlink), 'Has long link.');
   });
 });

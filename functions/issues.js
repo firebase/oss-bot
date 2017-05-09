@@ -52,7 +52,7 @@ const LABEL_FR = 'feature-request';
  * Construct a new issue handler.
  * @param {GithubClient} gh_client client for interacting with Github.
  * @param {EmaiClient} email_client client for sending emails.
- * @param {object} label_mapping JSON configuration.
+ * @param {object} config JSON configuration.
  */
 function IssueHandler(gh_client, email_client, config) {
   // Client for interacting with github
@@ -267,7 +267,7 @@ IssueHandler.prototype.sendIssueUpdateEmail = function(repo, issue, opts) {
   }
 
   // Get email subject
-  var subject = this.getIssueEmailSubject(issue, org, name, label);
+  var subject = this.getIssueEmailSubject(issue.title, org, name, label);
 
   // Send email update
   return this.email_client.sendStyledEmail(
@@ -367,12 +367,12 @@ IssueHandler.prototype.checkMatchesTemplate = function(org, name, issue) {
  * ex: "[firebase/ios-sdk][auth] I have an auth issue!"
  */
 IssueHandler.prototype.getIssueEmailSubject = function(
-  issue,
+  title,
   org,
   name,
   label
 ) {
-  return `[${org}/${name}][${label}] ${issue.title}`;
+  return `[${org}/${name}][${label}] ${title}`;
 };
 
 // Exports

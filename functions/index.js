@@ -46,7 +46,11 @@ var email_client = new email.EmailClient(
 var issue_handler = new issues.IssueHandler(gh_client, email_client, config);
 
 // Handler for Github pull requests
-var pr_handler = new pullrequests.PullRequestHandler(gh_client);
+var pr_handler = new pullrequests.PullRequestHandler(
+  gh_client,
+  email_client,
+  config
+);
 
 // Handler for Cron jobs
 var cron_handler = new cron.CronHandler(gh_client);
