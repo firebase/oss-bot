@@ -97,7 +97,7 @@ EmailClient.prototype.sendStyledEmail = function(
 /**
  * Invisible email markup to add action in Gmail.
  *
- * TODO(samstern): Get registered with google.
+ * Note: Get registered with google.
  * https://developers.google.com/gmail/markup/registering-with-google
  */
 EmailClient.prototype.getSmartmailMarkup = function(url, title) {

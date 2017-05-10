@@ -75,7 +75,6 @@ IssueHandler.prototype.handleIssueEvent = function(
   repo,
   sender
 ) {
-  // TODO(samstern): when we get ISSUE_LABELED should we re-run the new issue pipeline?
   switch (action) {
     case ISSUE_OPENED:
       return this.onNewIssue(repo, issue);
