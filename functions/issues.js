@@ -265,7 +265,7 @@ IssueHandler.prototype.sendIssueUpdateEmail = function(repo, issue, opts) {
   var number = issue.number;
 
   // See if this issue belongs to any team.
-  var label = this.getRelevantLabel(org, name, issue) || opts.label;
+  var label = opts.label || this.getRelevantLabel(org, name, issue);
   if (!label) {
     console.log('Not a relevant label, no email needed.');
     return Promise.resolve();
