@@ -70,6 +70,7 @@ var only_product_evt = require('./mock_data/issue_opened_filled_only_product.jso
 describe('The OSS Robot', () => {
   it('should handle issue opened', () => {
     return issue_handler.handleIssueEvent(
+      {},
       'opened',
       opened_evt.issue,
       opened_evt.repository,
@@ -79,6 +80,7 @@ describe('The OSS Robot', () => {
 
   it('should handle comment created', () => {
     return issue_handler.handleIssueCommentEvent(
+      {},
       'created',
       comment_evt.issue,
       comment_evt.comment,

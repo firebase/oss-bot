@@ -90,6 +90,7 @@ exports.githubWebhook = functions.https.onRequest((request, response) => {
   switch (evt) {
     case EVENT_ISSUE:
       handlePromise = issue_handler.handleIssueEvent(
+        request.body,
         action,
         issue,
         repo,
@@ -99,6 +100,7 @@ exports.githubWebhook = functions.https.onRequest((request, response) => {
     case EVENT_ISSUE_COMMENT:
       var comment = request.body.comment;
       handlePromise = issue_handler.handleIssueCommentEvent(
+        request.body,
         action,
         issue,
         comment,
@@ -109,6 +111,7 @@ exports.githubWebhook = functions.https.onRequest((request, response) => {
     case EVENT_PULL_REQUEST:
       var pr = request.body.pull_request;
       handlePromise = pr_handler.handlePullRequestEvent(
+        request.body,
         action,
         pr,
         repo,

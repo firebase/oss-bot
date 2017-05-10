@@ -53,6 +53,7 @@ function PullRequestHandler(gh_client, email_client, config) {
  * Handle an issue associated with a Github pull request.
  */
 PullRequestHandler.prototype.handlePullRequestEvent = function(
+  event,
   action,
   pr,
   repo,

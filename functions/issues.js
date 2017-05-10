@@ -69,6 +69,7 @@ function IssueHandler(gh_client, email_client, config) {
  * Handle an event associated with a Github issue.
  */
 IssueHandler.prototype.handleIssueEvent = function(
+  event,
   action,
   issue,
   repo,
@@ -84,9 +85,9 @@ IssueHandler.prototype.handleIssueEvent = function(
       return this.onIssueStatusChanged(repo, issue, 'closed');
     case ISSUE_REOPENED:
       return this.onIssueStatusChanged(repo, issue, 'open');
-    case ISSUE_UNASSIGNED:
-    /* falls through */
     case ISSUE_LABELED:
+      return this.onIssueLabeled(repo, issue, event.label.name);
+    case ISSUE_UNASSIGNED:
     /* falls through */
     case ISSUE_UNLABELED:
     /* falls through */
@@ -105,6 +106,7 @@ IssueHandler.prototype.handleIssueEvent = function(
  * Handle an event associated with a Github issue comment.
  */
 IssueHandler.prototype.handleIssueCommentEvent = function(
+  event,
   action,
   issue,
   comment,
@@ -145,7 +147,6 @@ IssueHandler.prototype.onNewIssue = function(repo, issue) {
   // Add the label
   var addLabelPromise = this.gh_client.addLabel(org, name, number, new_label);
 
-  // TODO(samstern): This does not seem to be working anymore.
   // Add a comment, if necessary
   var addCommentPromise;
   if (new_label == LABEL_NEEDS_TRIAGE) {
@@ -180,19 +181,11 @@ IssueHandler.prototype.onNewIssue = function(repo, issue) {
   var issue_body = issue.body || 'Issue body empty...';
   var body_html = marked(issue_body);
 
-  // Send a new issue email
-  var sendEmailPromise = this.sendIssueUpdateEmail(repo, issue, {
-    header: 'New Issue',
-    body: body_html,
-    label: new_label
-  });
-
   // Wait for all actions to finish
   return Promise.all([
     addLabelPromise,
     addCommentPromise,
-    checkTemplatePromise,
-    sendEmailPromise
+    checkTemplatePromise
   ]);
 };
 
@@ -223,6 +216,25 @@ IssueHandler.prototype.onIssueStatusChanged = function(
   return this.sendIssueUpdateEmail(repo, issue, {
     header: 'Changed: Status',
     body: body
+  });
+};
+
+/**
+ * Send an email update if an issue was labeled with a new label that has email configured.
+ */
+IssueHandler.prototype.onIssueLabeled = function(repo, issue, label) {
+  // Basic info
+  var org = repo.owner.login;
+  var name = repo.name;
+
+  // Render the issue body
+  var body_html = marked(issue.body);
+
+  // Send a new issue email
+  return this.sendIssueUpdateEmail(repo, issue, {
+    header: 'New Issue',
+    body: body_html,
+    label: label
   });
 };
 
