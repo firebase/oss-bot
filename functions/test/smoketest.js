@@ -23,7 +23,7 @@ var cron = require('../cron.js');
 var mocks = require('./mocks.js');
 
 // Label mapping configuration
-var config = require('../config/config.json');
+var config = require('./mock_data/config.json');
 
 // Issue event handler
 var issue_handler = new issues.IssueHandler(
