@@ -100,6 +100,11 @@ PullRequestHandler.prototype.onNewPullRequest = function(repo, pr) {
 
   var promises = [];
 
+  // Check for skip
+  if (this.hasSkipTag(repo, pr)) {
+    return Promise.resolve();
+  }
+
   // Check to see if the pull request has an issue associated
   if (!this.hasIssueLink(repo, pr)) {
     msg =
@@ -123,6 +128,13 @@ PullRequestHandler.prototype.onNewPullRequest = function(repo, pr) {
 PullRequestHandler.prototype.onPullRequestLabeled = function(repo, pr) {
   // TODO(samstern): Send a an email to the right peopl
   return Promise.resolve();
+};
+
+/**
+ * Determine if a PR has the [triage-skip] tag.
+ */
+PullRequestHandler.prototype.hasSkipTag = function(repo, pr) {
+  return pr.title.indexOf('[triage-skip]') >= 0;
 };
 
 /**

@@ -161,4 +161,21 @@ describe('The OSS Robot', () => {
 
     assert.ok(pr_handler.hasIssueLink('foo', pr_longlink), 'Has long link.');
   });
+
+  it('should skip some PRs', () => {
+    pr_skip = {
+      title: "[triage-skip] Don't triage me"
+    };
+
+    assert.ok(pr_handler.hasSkipTag('foo', pr_skip), 'Has skip tag');
+
+    pr_triage = {
+      title: 'Hey whatever'
+    };
+
+    assert.ok(
+      !pr_handler.hasSkipTag('foo', pr_triage),
+      'Does not have skip tag'
+    );
+  });
 });
