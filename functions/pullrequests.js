@@ -106,12 +106,13 @@ PullRequestHandler.prototype.onNewPullRequest = function(repo, pr) {
   }
 
   // Check to see if the pull request has an issue associated
-  if (!this.hasIssueLink(repo, pr)) {
-    msg =
-      "I couldn't find a link to an issue in your pull request. Please make sure this PR addresses an open issue.";
-    var addCommentPromise = this.gh_client.addComment(org, name, number, msg);
-    promises.push(addCommentPromise);
-  }
+  // TODO(samstern): Decide if we should re-enable checking for an issue link
+  // if (!this.hasIssueLink(repo, pr)) {
+  //   msg =
+  //     "I couldn't find a link to an issue in your pull request. Please make sure this PR addresses an open issue.";
+  //   var addCommentPromise = this.gh_client.addComment(org, name, number, msg);
+  //   promises.push(addCommentPromise);
+  // }
 
   // Add a needs triage label
   var addLabelPromise = this.gh_client.addLabel(
