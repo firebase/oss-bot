@@ -167,7 +167,10 @@ IssueHandler.prototype.onNewIssue = function(repo, issue) {
     if (!res.matches) {
       // If it does not match, add the suggested comment and close the issue
       var comment = this.gh_client.addComment(org, name, number, res.message);
-      var close = this.gh_client.closeIssue(org, name, number);
+
+      // TODO(samstern): Re-enable when we have further discussed closing behavior.
+      // var close = this.gh_client.closeIssue(org, name, number);
+      var close = Promise.resolve();
 
       return Promise.all([comment, close]);
     } else if (res.label) {
@@ -352,8 +355,8 @@ IssueHandler.prototype.checkMatchesTemplate = function(org, name, issue) {
     if (!checker.matchesTemplateSections(issueBody)) {
       result.matches = false;
       result.message =
-        'Hmmm this issue does not seem to follow the issue template ' +
-        'so I am going to close it. You can file a new issue and try again';
+        'Hmmm this issue does not seem to follow the issue template. ' +
+        'Make sure you provide all the required information.';
       return result;
     }
 
@@ -361,11 +364,11 @@ IssueHandler.prototype.checkMatchesTemplate = function(org, name, issue) {
     if (missing.length > 0) {
       result.matches = false;
       result.message =
-        'This issues does not have all the required information so I have to close it.  ' +
+        'This issues does not have all the required information.  ' +
         'Looks like you forgot to fill out some sections: (' +
         missing +
         ').  ' +
-        'You can file a new issue and try again.';
+        'Please update the issue with more information.';
       return result;
     }
 
