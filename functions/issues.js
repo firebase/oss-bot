@@ -165,6 +165,8 @@ IssueHandler.prototype.onNewIssue = function(repo, issue) {
     issue
   ).then(res => {
     if (!res.matches) {
+      console.log('Issue does not match the template.', res);
+
       // If it does not match, add the suggested comment and close the issue
       var comment = this.gh_client.addComment(org, name, number, res.message);
 
@@ -174,6 +176,8 @@ IssueHandler.prototype.onNewIssue = function(repo, issue) {
 
       return Promise.all([comment, close]);
     } else if (res.label) {
+      console.log('Issue matches template, check result: ', res);
+
       // If a label was suggested (maybe for a FR) add it
       return this.gh_client.addLabel(org, name, number, res.label);
     }

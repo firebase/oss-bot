@@ -64,6 +64,7 @@ var fr_issue = {
 
 // Some mock events
 var opened_evt = require('./mock_data/issue_opened.json');
+var empty_evt = require('./mock_data/issue_opened_empty.json');
 var comment_evt = require('./mock_data/comment_created.json');
 var only_product_evt = require('./mock_data/issue_opened_filled_only_product.json');
 
@@ -103,6 +104,23 @@ describe('The OSS Robot', () => {
       .then(res => {
         assert.ok(!res.matches, 'Does not match template.');
       });
+  });
+
+  it('should correctly handle a totally empty issue template', () => {
+    var repo = {
+      name: 'BotTest',
+      owner: {
+        login: 'samtstern'
+      }
+    };
+
+    return issue_handler.handleIssueEvent(
+      empty_evt,
+      'opened',
+      empty_evt.issue,
+      repo,
+      'samtstern'
+    );
   });
 
   it('should handle a partially correct issue', () => {
