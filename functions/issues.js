@@ -234,7 +234,7 @@ IssueHandler.prototype.onIssueLabeled = function(repo, issue, label) {
 
   // Send a new issue email
   return this.sendIssueUpdateEmail(repo, issue, {
-    header: 'New Issue',
+    header: `New Issue in label ${label}`,
     body: body_html,
     label: label
   });

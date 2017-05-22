@@ -42,8 +42,17 @@ var pr_handler = new pullrequests.PullRequestHandler(
 // Cron handler
 var cron_handler = new cron.CronHandler(new mocks.MockGithubClient());
 
+// Standard repo
+var test_repo = {
+  name: 'BotTest',
+  owner: {
+    login: 'samtstern'
+  }
+};
+
 // Issue with the template properly filled in
 var good_issue = {
+  title: 'A good issue',
   body: fs
     .readFileSync(path.join(__dirname, 'mock_data', 'issue_template_filled.md'))
     .toString()
@@ -124,18 +133,11 @@ describe('The OSS Robot', () => {
   });
 
   it('should correctly handle a totally empty issue template', () => {
-    var repo = {
-      name: 'BotTest',
-      owner: {
-        login: 'samtstern'
-      }
-    };
-
     return issue_handler.handleIssueEvent(
       empty_evt,
       'opened',
       empty_evt.issue,
-      repo,
+      test_repo,
       'samtstern'
     );
   });
@@ -167,6 +169,14 @@ describe('The OSS Robot', () => {
       !issue_handler.isFeatureRequest(bad_issue),
       'Is not a feature request'
     );
+  });
+
+  it('should send emails when a recognized label is added', () => {
+    return issue_handler.onIssueLabeled(test_repo, good_issue, 'auth');
+  });
+
+  it('should not send emails when a random label is added', () => {
+    return issue_handler.onIssueLabeled(test_repo, good_issue, 'foo');
   });
 
   it('should correctly clean up old pull requests', () => {
