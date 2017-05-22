@@ -145,15 +145,8 @@ describe('The OSS Robot', () => {
   });
 
   it('should correctly identify a feature request', () => {
-    return issue_handler
-      .checkMatchesTemplate('foo', 'bar', fr_issue)
-      .then(res => {
-        assert.ok(res.matches, 'Matches the template.');
-        assert.ok(
-          res.label == 'feature-request',
-          'Has the feature request label.'
-        );
-      });
+    assert.ok(issue_handler.isFeatureRequest(fr_issue), 'Is a feature request');
+    assert.ok(!issue_handler.isFeatureRequest(bad_issue), 'Is not a feature request');
   });
 
   it('should correctly clean up old pull requests', () => {

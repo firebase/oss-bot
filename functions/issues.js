@@ -141,7 +141,12 @@ IssueHandler.prototype.onNewIssue = function(repo, issue) {
   var number = issue.number;
 
   // Choose new label
-  var new_label = this.getRelevantLabel(org, name, issue) || LABEL_NEEDS_TRIAGE;
+  var new_label;
+  if (this.isFeatureRequest(issue)) {
+    new_label = LABEL_FR;
+  } else {
+    new_label = this.getRelevantLabel(org, name, issue) || LABEL_NEEDS_TRIAGE;
+  }
 
   // Add the label
   var addLabelPromise = this.gh_client.addLabel(org, name, number, new_label);
@@ -154,7 +159,7 @@ IssueHandler.prototype.onNewIssue = function(repo, issue) {
       "Hey there! I couldn't figure out what this issue is about, so I've labeled it for a human to triage. Hang tight.";
     addCommentPromise = this.gh_client.addComment(org, name, number, msg);
   } else {
-    console.log('Not commenting');
+    console.log(`Not commenting, label is ${new_label}`);
     addCommentPromise = Promise.resolve();
   }
 
@@ -175,17 +180,8 @@ IssueHandler.prototype.onNewIssue = function(repo, issue) {
       var close = Promise.resolve();
 
       return Promise.all([comment, close]);
-    } else if (res.label) {
-      console.log('Issue matches template, check result: ', res);
-
-      // If a label was suggested (maybe for a FR) add it
-      return this.gh_client.addLabel(org, name, number, res.label);
     }
   });
-
-  // Get email body
-  var issue_body = issue.body || 'Issue body empty...';
-  var body_html = marked(issue_body);
 
   // Wait for all actions to finish
   return Promise.all([
@@ -337,6 +333,13 @@ IssueHandler.prototype.getRelevantLabel = function(org, name, issue) {
 };
 
 /**
+ * Check if an issue is a feature request.
+ */
+IssueHandler.prototype.isFeatureRequest = function(issue) {
+  return issue.title && issue.title.startsWith('FR');
+};
+
+/**
  * Check if issue matches the template.
  */
 IssueHandler.prototype.checkMatchesTemplate = function(org, name, issue) {
@@ -349,12 +352,6 @@ IssueHandler.prototype.checkMatchesTemplate = function(org, name, issue) {
       label: undefined,
       message: undefined
     };
-
-    if (issue.title && issue.title.startsWith('FR')) {
-      // This is a feature request, so we don't care about the template
-      result.label = LABEL_FR;
-      return result;
-    }
 
     if (!checker.matchesTemplateSections(issueBody)) {
       result.matches = false;
