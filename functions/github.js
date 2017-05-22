@@ -82,16 +82,18 @@ GithubClient.prototype.getIssueTemplate = function(org, name) {
  * Gets file content from a github repo.
  */
 GithubClient.prototype.getFileContent = function(org, name, file) {
-  var url = `https://raw.githubusercontent.com/${org}/${name}/master/${file}`;
-  return new Promise((resolve, reject) => {
-    request({ url: url }, (error, response, body) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(body);
-      }
+  this.auth();
+
+  return this.api.repos
+    .getContent({
+      owner: org,
+      repo: name,
+      path: file
+    })
+    .then(function(res) {
+      // Content is encoded as base64, we need to decode it
+      return new Buffer(res.data.content, 'base64').toString();
     });
-  });
 };
 
 /** */

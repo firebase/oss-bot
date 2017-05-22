@@ -9,9 +9,6 @@
         "database": {
           "regex": "Product:[\\s]+?[Dd]atabase",
           "email": "samstern@google.com"
-        },
-        "needs-triage": {
-          "email": "samstern@google.com"
         }
       },
       "cleanup": {

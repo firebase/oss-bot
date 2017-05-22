@@ -56,6 +56,15 @@ var bad_issue = {
     .toString()
 };
 
+// Issue that is partially filled out
+var partial_issue = {
+  body: fs
+    .readFileSync(
+      path.join(__dirname, 'mock_data', 'issue_template_partial.md')
+    )
+    .toString()
+};
+
 // Issue that is really a feature request
 var fr_issue = {
   title: 'FR: I want to change the Firebase',
@@ -106,6 +115,14 @@ describe('The OSS Robot', () => {
       });
   });
 
+  it('should detect a partially mangled issue', () => {
+    return issue_handler
+      .checkMatchesTemplate('foo', 'bar', partial_issue)
+      .then(res => {
+        assert.ok(!res.matches, 'Does not match template');
+      });
+  });
+
   it('should correctly handle a totally empty issue template', () => {
     var repo = {
       name: 'BotTest',
@@ -146,7 +163,10 @@ describe('The OSS Robot', () => {
 
   it('should correctly identify a feature request', () => {
     assert.ok(issue_handler.isFeatureRequest(fr_issue), 'Is a feature request');
-    assert.ok(!issue_handler.isFeatureRequest(bad_issue), 'Is not a feature request');
+    assert.ok(
+      !issue_handler.isFeatureRequest(bad_issue),
+      'Is not a feature request'
+    );
   });
 
   it('should correctly clean up old pull requests', () => {

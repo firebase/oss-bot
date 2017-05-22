@@ -74,13 +74,15 @@ exports.githubWebhook = functions.https.onRequest((request, response) => {
     return;
   } else {
     // Log some basic info
-    console.log('Event: ' + evt);
+    console.log('===========================START============================');
+    console.log(`Event: ${evt}/${action}`);
     if (repo) {
       console.log('Repository: ' + repo.full_name);
     }
     if (sender) {
       console.log('Sender: ' + sender.login);
     }
+    console.log('===========================END=============================');
   }
 
   // Handle the event appropriately

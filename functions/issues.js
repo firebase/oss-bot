@@ -169,9 +169,9 @@ IssueHandler.prototype.onNewIssue = function(repo, issue) {
     name,
     issue
   ).then(res => {
-    if (!res.matches) {
-      console.log('Issue does not match the template.', res);
+    console.log(`Check template result: ${JSON.stringify(res)}`);
 
+    if (!res.matches) {
       // If it does not match, add the suggested comment and close the issue
       var comment = this.gh_client.addComment(org, name, number, res.message);
 
@@ -244,6 +244,12 @@ IssueHandler.prototype.onIssueLabeled = function(repo, issue, label) {
  * Send an email when a new comment is added to an issue.
  */
 IssueHandler.prototype.onCommentCreated = function(repo, issue, comment) {
+  // Trick for testing
+  if (comment.body == 'eval') {
+    console.log('HANDLING SPECIAL COMMENT: eval');
+    return this.onNewIssue(repo, issue);
+  }
+
   var comment_html = marked(comment.body);
   var body = `
     <div>
@@ -273,8 +279,15 @@ IssueHandler.prototype.sendIssueUpdateEmail = function(repo, issue, opts) {
     return Promise.resolve();
   }
 
-  // Get label from mapping
-  var recipient = this.config[org][name].labels[label].email;
+  // Get label email from mapping
+  var recipient;
+  if (this.config[org] && this.config[org][name]) {
+    var config = this.config[org][name];
+    if (config.labels && config.labels[label]) {
+      recipient = config.labels[label].email;
+    }
+  }
+
   if (!recipient) {
     console.log('Nobody to notify, no email needed.');
     return Promise.resolve();
@@ -298,15 +311,25 @@ IssueHandler.prototype.sendIssueUpdateEmail = function(repo, issue, opts) {
  * Pick the first label from an issue that has a related configuration.
  */
 IssueHandler.prototype.getRelevantLabel = function(org, name, issue) {
+  // Make sure we at least have configuration for this repository
+  if (!(this.config[org] && this.config[org][name])) {
+    return undefined;
+  }
+
   // Get the labeling rules for this repo
   var repo_mapping = this.config[org][name];
 
+  // Exit if there is no mapping
+  if (!repo_mapping) {
+    return undefined;
+  }
+
   // Iterate through issue labels, see if one of the existing ones works
-  for (var i = 0; i < issue.labels.length; i++) {
-    var label_name = issue.labels[i].name;
-    var label_props = repo_mapping.labels[label_name];
-    if (label_props) {
-      return label_name;
+  // TODO(samstern): Deal with needs_triage separately
+  for (var key in repo_mapping.labels) {
+    var label_mapping = repo_mapping.labels[key];
+    if (label_mapping && issue.labels.indexOf(key) >= 0) {
+      return key;
     }
   }
 
@@ -343,17 +366,19 @@ IssueHandler.prototype.isFeatureRequest = function(issue) {
  * Check if issue matches the template.
  */
 IssueHandler.prototype.checkMatchesTemplate = function(org, name, issue) {
+  // TODO(samstern): Should I catch inability to get the issue template
+  // and handle it here?
   return this.gh_client.getIssueTemplate(org, name).then(data => {
     var checker = new template.TemplateChecker('###', '[REQUIRED]', data);
     var issueBody = issue.body;
 
     var result = {
       matches: true,
-      label: undefined,
       message: undefined
     };
 
     if (!checker.matchesTemplateSections(issueBody)) {
+      console.log('checkMatchesTemplate: some sections missing');
       result.matches = false;
       result.message =
         'Hmmm this issue does not seem to follow the issue template. ' +
@@ -363,6 +388,7 @@ IssueHandler.prototype.checkMatchesTemplate = function(org, name, issue) {
 
     var missing = checker.getRequiredSectionsMissed(issueBody);
     if (missing.length > 0) {
+      console.log('checkMatchesTemplate: required sections incomplete');
       result.matches = false;
       result.message =
         'This issues does not have all the required information.  ' +
