@@ -74,6 +74,9 @@ var partial_issue = {
     .toString()
 };
 
+// Issue from the JS SDK that was not labeled 'auth' but should have beem
+var failed_issue_event = require('./mock_data/issue_opened_js_sdk.json');
+
 // Issue that is really a feature request
 var fr_issue = {
   title: 'FR: I want to change the Firebase',
@@ -169,6 +172,11 @@ describe('The OSS Robot', () => {
       !issue_handler.isFeatureRequest(bad_issue),
       'Is not a feature request'
     );
+  });
+
+  it('should correctly identify a real auth issue', () => {
+    var issue = failed_issue_event.issue;
+    issue_handler.onNewIssue(test_repo, issue);
   });
 
   it('should send emails when a recognized label is added', () => {

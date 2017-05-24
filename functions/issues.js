@@ -143,12 +143,14 @@ IssueHandler.prototype.onNewIssue = function(repo, issue) {
   // Choose new label
   var new_label;
   if (this.isFeatureRequest(issue)) {
+    console.log('Matched feature request template.');
     new_label = LABEL_FR;
   } else {
     new_label = this.getRelevantLabel(org, name, issue) || LABEL_NEEDS_TRIAGE;
   }
 
   // Add the label
+  console.log(`Adding label: ${new_label}`);
   var addLabelPromise = this.gh_client.addLabel(org, name, number, new_label);
 
   // Add a comment, if necessary
@@ -313,11 +315,13 @@ IssueHandler.prototype.sendIssueUpdateEmail = function(repo, issue, opts) {
 IssueHandler.prototype.getRelevantLabel = function(org, name, issue) {
   // Make sure we at least have configuration for this repository
   if (!(this.config[org] && this.config[org][name])) {
+    console.log(`No config for ${org}/${name} in: `, this.config);
     return undefined;
   }
 
   // Get the labeling rules for this repo
   var repo_mapping = this.config[org][name];
+  console.log('Found config: ', repo_mapping);
 
   // Exit if there is no mapping
   if (!repo_mapping) {
@@ -334,6 +338,7 @@ IssueHandler.prototype.getRelevantLabel = function(org, name, issue) {
   }
 
   // Try to match the issue body to a new label
+  console.log('No existing relevant label, trying regex');
   for (var label in repo_mapping.labels) {
     var labelInfo = repo_mapping.labels[label];
 
@@ -352,6 +357,7 @@ IssueHandler.prototype.getRelevantLabel = function(org, name, issue) {
   }
 
   // Return undefined if none found
+  console.log('No relevant label found');
   return undefined;
 };
 
