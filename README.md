@@ -51,6 +51,9 @@ Edit the `config/config.json` file to have configuration in the following form:
           "email": "<LABEL_NOTIFICATION_EMAIL>"
         }
       },
+      "templates": {
+        "issue": "<ISSUE_TEMPLATE_LOCATION>"
+      },
       "cleanup": {
         "pr": PR_EXPIRY_MS
       }

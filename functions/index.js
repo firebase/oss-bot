@@ -21,9 +21,11 @@ var email = require('./email.js');
 var issues = require('./issues.js');
 var pullrequests = require('./pullrequests.js');
 var cron = require('./cron.js');
+var config = require('./config.js');
 
 // Config
-var config = require('./config/config.json');
+var config_json = require('./config/config.json');
+var bot_config = new config.BotConfig(config_json);
 
 // Github events
 const EVENT_ISSUE = 'issues';
@@ -43,13 +45,17 @@ var email_client = new email.EmailClient(
 );
 
 // Handler for Github issues
-var issue_handler = new issues.IssueHandler(gh_client, email_client, config);
+var issue_handler = new issues.IssueHandler(
+  gh_client,
+  email_client,
+  bot_config
+);
 
 // Handler for Github pull requests
 var pr_handler = new pullrequests.PullRequestHandler(
   gh_client,
   email_client,
-  config
+  bot_config
 );
 
 // Handler for Cron jobs
@@ -143,22 +149,24 @@ exports.timedCleanup = functions.pubsub.topic('cleanup').onPublish(event => {
 
   var promises = [];
 
-  for (var org in config) {
-    for (var name in config[org]) {
-      // Get config for the repo
-      var repo_config = config[org][name];
+  this.bot_config.getAllRepos().forEach(function(repo) {
+    // Get config for the repo
+    var repo_config = this.bot_config.getRepoConfig(repo.org, repo.name);
 
-      // Get expiry from config
-      var expiry = PR_EXPIRY_MS;
-      if (repo_config.cleanup && repo_config.cleanup.pr) {
-        expiry = repo_config.cleanup.pr;
-      }
-
-      console.log(`Cleaning up: ${org}/${name}, expiry: ${expiry}`);
-      var cleanupPromise = cron_handler.handleCleanup(org, name, expiry);
-      promises.push(cleanupPromise);
+    // Get expiry from config
+    var expiry = PR_EXPIRY_MS;
+    if (repo_config.cleanup && repo_config.cleanup.pr) {
+      expiry = repo_config.cleanup.pr;
     }
-  }
+
+    console.log(`Cleaning up: ${repo.org}/${repo.name}, expiry: ${expiry}`);
+    var cleanupPromise = cron_handler.handleCleanup(
+      repo.org,
+      repo.name,
+      expiry
+    );
+    promises.push(cleanupPromise);
+  });
 
   return Promise.all(promises);
 });

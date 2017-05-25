@@ -11,6 +11,9 @@
           "email": "samstern@google.com"
         }
       },
+      "templates": {
+        "issue": ".github/ISSUE_TEMPLATE.md"
+      },
       "cleanup": {
         "pr": 1000
       }

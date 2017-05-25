@@ -52,7 +52,7 @@ const LABEL_FR = 'feature-request';
  * Construct a new issue handler.
  * @param {GithubClient} gh_client client for interacting with Github.
  * @param {EmaiClient} email_client client for sending emails.
- * @param {object} config JSON configuration.
+ * @param {BotConfig} config bot configuration.
  */
 function IssueHandler(gh_client, email_client, config) {
   // Client for interacting with github
@@ -283,11 +283,9 @@ IssueHandler.prototype.sendIssueUpdateEmail = function(repo, issue, opts) {
 
   // Get label email from mapping
   var recipient;
-  if (this.config[org] && this.config[org][name]) {
-    var config = this.config[org][name];
-    if (config.labels && config.labels[label]) {
-      recipient = config.labels[label].email;
-    }
+  var label_config = this.config.getRepoLabelConfig(org, name, label);
+  if (label_config) {
+    recipient = label_config.email;
   }
 
   if (!recipient) {
@@ -314,19 +312,14 @@ IssueHandler.prototype.sendIssueUpdateEmail = function(repo, issue, opts) {
  */
 IssueHandler.prototype.getRelevantLabel = function(org, name, issue) {
   // Make sure we at least have configuration for this repository
-  if (!(this.config[org] && this.config[org][name])) {
+  var repo_mapping = this.config.getRepoConfig(org, name);
+  if (!repo_mapping) {
     console.log(`No config for ${org}/${name} in: `, this.config);
     return undefined;
   }
 
   // Get the labeling rules for this repo
-  var repo_mapping = this.config[org][name];
   console.log('Found config: ', repo_mapping);
-
-  // Exit if there is no mapping
-  if (!repo_mapping) {
-    return undefined;
-  }
 
   // Iterate through issue labels, see if one of the existing ones works
   // TODO(samstern): Deal with needs_triage separately
@@ -374,7 +367,7 @@ IssueHandler.prototype.isFeatureRequest = function(issue) {
 IssueHandler.prototype.checkMatchesTemplate = function(org, name, issue) {
   // TODO(samstern): Should I catch inability to get the issue template
   // and handle it here?
-  return this.gh_client.getIssueTemplate(org, name).then(data => {
+  return this.gh_client.getIssueTemplate(org, name, this.config).then(data => {
     var checker = new template.TemplateChecker('###', '[REQUIRED]', data);
     var issueBody = issue.body;
 

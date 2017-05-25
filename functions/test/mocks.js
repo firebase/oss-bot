@@ -37,7 +37,7 @@ MockGithubClient.prototype.addComment = (org, name, number, body) => {
   return Promise.resolve();
 };
 
-MockGithubClient.prototype.getIssueTemplate = (org, name) => {
+MockGithubClient.prototype.getIssueTemplate = (org, name, config) => {
   console.log(`mock: github.getIssueTemplate(${org}, ${name})`);
 
   var filePath = path.join(__dirname, 'mock_data', 'issue_template_empty.md');

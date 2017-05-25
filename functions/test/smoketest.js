@@ -20,23 +20,25 @@ var assert = require('assert');
 var issues = require('../issues.js');
 var pullrequests = require('../pullrequests.js');
 var cron = require('../cron.js');
+var config = require('../config.js');
 var mocks = require('./mocks.js');
 
 // Label mapping configuration
-var config = require('./mock_data/config.json');
+var config_json = require('./mock_data/config.json');
+var bot_config = new config.BotConfig(config_json);
 
 // Issue event handler
 var issue_handler = new issues.IssueHandler(
   new mocks.MockGithubClient(),
   new mocks.MockEmailClient(),
-  config
+  bot_config
 );
 
 // Issue event handler
 var pr_handler = new pullrequests.PullRequestHandler(
   new mocks.MockGithubClient(),
   new mocks.MockEmailClient(),
-  config
+  bot_config
 );
 
 // Cron handler
