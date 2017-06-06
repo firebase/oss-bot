@@ -140,9 +140,12 @@ IssueHandler.prototype.onNewIssue = function(repo, issue) {
   var name = repo.name;
   var number = issue.number;
 
+  // Check for FR
+  var isFR = this.isFeatureRequest(issue);
+
   // Choose new label
   var new_label;
-  if (this.isFeatureRequest(issue)) {
+  if (isFR) {
     console.log('Matched feature request template.');
     new_label = LABEL_FR;
   } else {
@@ -172,6 +175,12 @@ IssueHandler.prototype.onNewIssue = function(repo, issue) {
     issue
   ).then(res => {
     console.log(`Check template result: ${JSON.stringify(res)}`);
+
+    // Don't act if this issue is a feature request
+    if (isFR) {
+      console.log('Feature request, ignoring template matching');
+      return;
+    }
 
     if (!res.matches) {
       // If it does not match, add the suggested comment and close the issue

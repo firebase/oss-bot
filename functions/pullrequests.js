@@ -143,7 +143,7 @@ PullRequestHandler.prototype.hasSkipTag = function(repo, pr) {
  */
 PullRequestHandler.prototype.hasIssueLink = function(repo, pr) {
   // Match either /issues/NUM or #NUM
-  var issueRegex = new RegExp('(\/issues\/|#)[0-9]+');
+  var issueRegex = new RegExp('(/issues/|#)[0-9]+');
 
   return issueRegex.test(pr.body);
 };

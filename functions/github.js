@@ -75,7 +75,8 @@ GithubClient.prototype.addComment = function(org, name, number, body) {
  * Gets issue template from a github repo.
  */
 GithubClient.prototype.getIssueTemplate = function(org, name, config) {
-  var issue_file = config.getRepoTemplateConfig(org, name, 'issue') || 'ISSUE_TEMPLATE.md';
+  var issue_file =
+    config.getRepoTemplateConfig(org, name, 'issue') || 'ISSUE_TEMPLATE.md';
   return this.getFileContent(org, name, issue_file);
 };
 

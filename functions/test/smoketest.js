@@ -191,8 +191,15 @@ describe('The OSS Robot', () => {
   });
 
   it('should respect template configs', () => {
-    var custom = bot_config.getRepoTemplateConfig('samtstern', 'BotTest', 'issue');
-    assert.ok(custom == '.github/ISSUE_TEMPLATE.md', 'Finds the custom template');
+    var custom = bot_config.getRepoTemplateConfig(
+      'samtstern',
+      'BotTest',
+      'issue'
+    );
+    assert.ok(
+      custom == '.github/ISSUE_TEMPLATE.md',
+      'Finds the custom template'
+    );
 
     var regular = bot_config.getRepoTemplateConfig('foo', 'bar', 'issue');
     assert.ok(regular === undefined, 'Does not find an unspecified template');
@@ -224,7 +231,8 @@ describe('The OSS Robot', () => {
     assert.ok(pr_handler.hasIssueLink('foo', pr_shortlink), 'Has short link.');
 
     pr_longlink = {
-      body: 'Hey this is in reference to https://github.com/samtstern/BotTest/issues/4'
+      body:
+        'Hey this is in reference to https://github.com/samtstern/BotTest/issues/4'
     };
 
     assert.ok(pr_handler.hasIssueLink('foo', pr_longlink), 'Has long link.');
