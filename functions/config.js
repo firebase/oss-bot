@@ -63,5 +63,17 @@ BotConfig.prototype.getRepoLabelConfig = function(org, name, label) {
   return undefined;
 };
 
+/**
+ * Get the templates configuration for a specific repo.
+ */
+BotConfig.prototype.getRepoTemplateConfig = function(org, name, template) {
+  var repoConfig = this.getRepoConfig(org, name);
+  if (repoConfig && repoConfig.templates && repoConfig.templates[template]) {
+    return repoConfig.templates[template];
+  }
+
+  return undefined;
+};
+
 // Exports
 exports.BotConfig = BotConfig;

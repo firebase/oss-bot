@@ -76,8 +76,11 @@ var partial_issue = {
     .toString()
 };
 
-// Issue from the JS SDK that was not labeled 'auth' but should have beem
-var failed_issue_event = require('./mock_data/issue_opened_js_sdk.json');
+// Issue from the JS SDK that was not labeled 'auth' but should have been
+var failed_auth_issue = require('./mock_data/issue_opened_js_sdk.json');
+
+// Issue from the JS SDk that was not labeled 'database' but should have been
+var failed_db_issue = require('./mock_data/issue_database_not_tagged.json');
 
 // Issue that is really a feature request
 var fr_issue = {
@@ -177,8 +180,22 @@ describe('The OSS Robot', () => {
   });
 
   it('should correctly identify a real auth issue', () => {
-    var issue = failed_issue_event.issue;
+    var issue = failed_auth_issue.issue;
     issue_handler.onNewIssue(test_repo, issue);
+  });
+
+  it('should correctly label a real database issue', () => {
+    var issue = failed_db_issue.issue;
+    var label = issue_handler.getRelevantLabel('samtstern', 'BotTest', issue);
+    assert.ok(label == 'database', 'Is a database issue');
+  });
+
+  it('should respect template configs', () => {
+    var custom = bot_config.getRepoTemplateConfig('samtstern', 'BotTest', 'issue');
+    assert.ok(custom == '.github/ISSUE_TEMPLATE.md', 'Finds the custom template');
+
+    var regular = bot_config.getRepoTemplateConfig('foo', 'bar', 'issue');
+    assert.ok(regular === undefined, 'Does not find an unspecified template');
   });
 
   it('should send emails when a recognized label is added', () => {
