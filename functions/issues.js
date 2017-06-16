@@ -341,11 +341,14 @@ IssueHandler.prototype.getRelevantLabel = function(org, name, issue) {
 
   // Try to match the issue body to a new label
   console.log('No existing relevant label, trying regex');
+  console.log('Issue body: ' + issue.body);
+
   for (var label in repo_mapping.labels) {
     var labelInfo = repo_mapping.labels[label];
 
     // Some labels do not have a regex
     if (!labelInfo.regex) {
+      console.log(`Label ${label} does not have a regex.`);
       continue;
     }
 
@@ -355,6 +358,8 @@ IssueHandler.prototype.getRelevantLabel = function(org, name, issue) {
     if (regex.test(issue.body)) {
       console.log('Matched label: ' + label, JSON.stringify(labelInfo));
       return label;
+    } else {
+      console.log(`Did not match regex for ${label}: ${labelInfo.regex}`);
     }
   }
 
