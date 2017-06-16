@@ -76,32 +76,41 @@ var partial_issue = {
     .toString()
 };
 
-// Issue from the JS SDK that was not labeled 'auth' but should have been
-var failed_auth_issue = require('./mock_data/issue_opened_js_sdk.json');
-
-// Issue from the JS SDk that was not labeled 'database' but should have been
-var failed_db_issue = require('./mock_data/issue_database_not_tagged.json');
-
 // Issue that is really a feature request
 var fr_issue = {
   title: 'FR: I want to change the Firebase',
   body: bad_issue.body
 };
 
-// Some mock events
-var opened_evt = require('./mock_data/issue_opened.json');
-var empty_evt = require('./mock_data/issue_opened_empty.json');
-var comment_evt = require('./mock_data/comment_created.json');
-var only_product_evt = require('./mock_data/issue_opened_filled_only_product.json');
+// Issue opened on the BotTest repo
+var issue_opened_bot_test_full = require('./mock_data/issue_opened_bot_test_full.json');
+
+// Issue opened on the BotTest repo, empty body
+var issue_opened_bot_test_empty = require('./mock_data/issue_opened_bot_test_empty.json');
+
+// Issue opened on the BotTest repo, only product filled in
+var issue_opened_bot_test_partial = require('./mock_data/issue_opened_bot_test_partial.json');
+
+// Issue from the JS SDK that was not labeled 'auth' but should have been
+var issue_opened_js_sdk_auth = require('./mock_data/issue_opened_js_sdk_22.json');
+
+// Issue from the JS SDK that was not labeled 'database' but should have been
+var issue_opened_js_sdk_db = require('./mock_data/issue_opened_js_sdk_35.json');
+
+// Issue from the JS SDK that was not labeled 'messaging' but should have been
+var issue_opened_js_sdk_messaging = require('./mock_data/issue_opened_js_sdk_59.json');
+
+// Comment on issue in the BotTest repo
+var comment_creted_bot_test = require('./mock_data/comment_created_bot_test.json');
 
 describe('The OSS Robot', () => {
   it('should handle issue opened', () => {
     return issue_handler.handleIssueEvent(
       {},
       'opened',
-      opened_evt.issue,
-      opened_evt.repository,
-      opened_evt.sender
+      issue_opened_bot_test_full.issue,
+      issue_opened_bot_test_full.repository,
+      issue_opened_bot_test_full.sender
     );
   });
 
@@ -109,10 +118,10 @@ describe('The OSS Robot', () => {
     return issue_handler.handleIssueCommentEvent(
       {},
       'created',
-      comment_evt.issue,
-      comment_evt.comment,
-      comment_evt.repository,
-      comment_evt.sender
+      comment_creted_bot_test.issue,
+      comment_creted_bot_test.comment,
+      comment_creted_bot_test.repository,
+      comment_creted_bot_test.sender
     );
   });
 
@@ -142,16 +151,16 @@ describe('The OSS Robot', () => {
 
   it('should correctly handle a totally empty issue template', () => {
     return issue_handler.handleIssueEvent(
-      empty_evt,
+      issue_opened_bot_test_empty,
       'opened',
-      empty_evt.issue,
+      issue_opened_bot_test_empty.issue,
       test_repo,
       'samtstern'
     );
   });
 
   it('should handle a partially correct issue', () => {
-    var issue = only_product_evt.issue;
+    var issue = issue_opened_bot_test_partial.issue;
 
     // Should match the auth issue
     var label = issue_handler.getRelevantLabel('samtstern', 'BotTest', issue);
@@ -180,14 +189,20 @@ describe('The OSS Robot', () => {
   });
 
   it('should correctly identify a real auth issue', () => {
-    var issue = failed_auth_issue.issue;
+    var issue = issue_opened_js_sdk_auth.issue;
     issue_handler.onNewIssue(test_repo, issue);
   });
 
   it('should correctly label a real database issue', () => {
-    var issue = failed_db_issue.issue;
+    var issue = issue_opened_js_sdk_db.issue;
     var label = issue_handler.getRelevantLabel('samtstern', 'BotTest', issue);
     assert.ok(label == 'database', 'Is a database issue');
+  });
+
+  it('should correctly label a real messaging issue', () => {
+    var issue = issue_opened_js_sdk_messaging.issue;
+    var label = issue_handler.getRelevantLabel('samtstern', 'BotTest', issue);
+    assert.ok(label == 'messaging', 'Is a messaging issue');
   });
 
   it('should respect template configs', () => {
