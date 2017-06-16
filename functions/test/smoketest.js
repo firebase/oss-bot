@@ -104,6 +104,23 @@ var issue_opened_js_sdk_messaging = require('./mock_data/issue_opened_js_sdk_59.
 var comment_creted_bot_test = require('./mock_data/comment_created_bot_test.json');
 
 describe('The OSS Robot', () => {
+  it('should have a valid production config', () => {
+    let valid_keys = ['labels', 'cleanup', 'templates'];
+    let prod_config = require('../config/config.json');
+
+    for (let org in prod_config) {
+      for (let repo in prod_config[org]) {
+        console.log(`Config for ${org}/${repo}`);
+        let repo_config = prod_config[org][repo];
+
+        // Make sure each key in the repo config is valid
+        for (let key in repo_config) {
+          assert.ok(valid_keys.indexOf(key) >= 0, `${key} is a valid key`);
+        }
+      }
+    }
+  });
+
   it('should handle issue opened', () => {
     return issue_handler.handleIssueEvent(
       {},
