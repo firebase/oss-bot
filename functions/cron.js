@@ -1,3 +1,4 @@
+"use strict";
 /**
  * Copyright 2017 Google Inc. All Rights Reserved.
  *
@@ -13,48 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+Object.defineProperty(exports, "__esModule", { value: true });
 // Message for closing stale issues
-const STALE_ISSUE_MSG =
-  "It's been a while since anyone updated this pull request so I am going to close it. " +
-  'Please @mention a repo owner if you think this is a mistake!';
-
+const STALE_ISSUE_MSG = "It's been a while since anyone updated this pull request so I am going to close it. " +
+    "Please @mention a repo owner if you think this is a mistake!";
 /**
  * Create a new handler for cron-style tasks.
  * @param {GithubClient} gh_client client for accessing Github.
  */
-function CronHandler(gh_client) {
-  this.gh_client = gh_client;
-}
-
-/**
- * Handle a cleanup cycle for a particular repo.
- */
-CronHandler.prototype.handleCleanup = function(org, name, expiry) {
-  return this.gh_client.getOldPullRequests(org, name, expiry).then(res => {
-    var promises = [];
-
-    for (var pr of res) {
-      console.log('Expired PR: ', pr);
-
-      // Add a comment saying why we are closing this
-      var addComment = this.gh_client.addComment(
-        org,
-        name,
-        pr.number,
-        STALE_ISSUE_MSG
-      );
-
-      // Close the pull request
-      var closePr = this.gh_client.closeIssue(org, name, pr.number);
-
-      promises.push(addComment);
-      promises.push(closePr);
+class CronHandler {
+    constructor(gh_client) {
+        this.gh_client = gh_client;
     }
-
-    return Promise.all(promises);
-  });
-};
-
-// Exports
+    /**
+     * Handle a cleanup cycle for a particular repo.
+     */
+    handleCleanup(org, name, expiry) {
+        return this.gh_client.getOldPullRequests(org, name, expiry).then(res => {
+            const promises = [];
+            for (const pr of res) {
+                console.log("Expired PR: ", pr);
+                // Add a comment saying why we are closing this
+                const addComment = this.gh_client.addComment(org, name, pr.number, STALE_ISSUE_MSG);
+                // Close the pull request
+                const closePr = this.gh_client.closeIssue(org, name, pr.number);
+                promises.push(addComment);
+                promises.push(closePr);
+            }
+            return Promise.all(promises);
+        });
+    }
+}
 exports.CronHandler = CronHandler;
+//# sourceMappingURL=cron.js.map

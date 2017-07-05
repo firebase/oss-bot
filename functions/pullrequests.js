@@ -1,3 +1,4 @@
+"use strict";
 /**
  * Copyright 2017 Google Inc. All Rights Reserved.
  *
@@ -13,140 +14,117 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+Object.defineProperty(exports, "__esModule", { value: true });
 // Event: pull_request
 // https://developer.github.com/v3/activity/events/types/#pullrequestevent
 // Keys
 //  * number - the pull request number.
-//  * changes - the changes to the comment if the action was 'edited'
+//  * changes - the changes to the comment if the action was "edited"
 //  * pull_request - the pull request itself.
-const PR_ASSIGNED = 'assigned';
-const PR_UNASSIGNED = 'unassigned';
-const PR_REVIEW_REQUESTED = 'review_requested';
-const PR_REVIEW_REQUEST_REMOVED = 'review_request_removed';
-const PR_LABELED = 'labeled';
-const PR_UNLABLED = 'unlabeled';
-const PR_OPENED = 'opened';
-const PR_EDITED = 'edited';
-const PR_CLOSED = 'closed';
-const PR_REOPENED = 'reopened';
-
+var PullRequestAction;
+(function (PullRequestAction) {
+    PullRequestAction["ASSIGNED"] = "assigned";
+    PullRequestAction["UNASSIGNED"] = "unassigned";
+    PullRequestAction["REVIEW_REQUESTED"] = "review_requested";
+    PullRequestAction["REVIEW_REQUEST_REMOVED"] = "review_request_removed";
+    PullRequestAction["LABELED"] = "labeled";
+    PullRequestAction["UNLABLED"] = "unlabeled";
+    PullRequestAction["OPENED"] = "opened";
+    PullRequestAction["EDITED"] = "edited";
+    PullRequestAction["CLOSED"] = "closed";
+    PullRequestAction["REOPENED"] = "reopened";
+})(PullRequestAction || (PullRequestAction = {}));
 // Label for issues that confuse the bot
-const LABEL_NEEDS_TRIAGE = 'needs-triage';
-
+const LABEL_NEEDS_TRIAGE = "needs-triage";
 /**
  * Create a new handler for github pull requests.
  * @param {GithubClient} gh_client client for interacting with Github.
  */
-function PullRequestHandler(gh_client, email_client, config) {
-  // Client for interacting with github
-  this.gh_client = gh_client;
-
-  // Client for sending emails
-  this.email_client = email_client;
-
-  // Configuration
-  this.config = config;
+class PullRequestHandler {
+    constructor(gh_client, email_client, config) {
+        // Client for interacting with github
+        this.gh_client = gh_client;
+        // Client for sending emails
+        this.email_client = email_client;
+        // Configuration
+        this.config = config;
+    }
+    /**
+     * Handle an issue associated with a Github pull request.
+     */
+    handlePullRequestEvent(event, action, pr, repo, sender) {
+        switch (action) {
+            case PullRequestAction.OPENED:
+                return this.onNewPullRequest(repo, pr);
+            case PullRequestAction.LABELED:
+                return this.onPullRequestLabeled(repo, pr);
+            case PullRequestAction.ASSIGNED:
+            /* falls through */
+            case PullRequestAction.UNASSIGNED:
+            /* falls through */
+            case PullRequestAction.REVIEW_REQUESTED:
+            /* falls through */
+            case PullRequestAction.REVIEW_REQUEST_REMOVED:
+            /* falls through */
+            case PullRequestAction.UNLABLED:
+            /* falls through */
+            case PullRequestAction.EDITED:
+            /* falls through */
+            case PullRequestAction.CLOSED:
+            /* falls through */
+            case PullRequestAction.REOPENED:
+            /* falls through */
+            default:
+                console.log("Unsupported pull request action: " + action);
+                console.log("Pull Request: " + pr.title);
+                break;
+        }
+        return Promise.resolve();
+    }
+    /**
+     * Handle a newly opened pull request.
+     */
+    onNewPullRequest(repo, pr) {
+        // Get basic issue information
+        const org = repo.owner.login;
+        const name = repo.name;
+        const number = pr.number;
+        const promises = [];
+        // Check for skip
+        if (this.hasSkipTag(repo, pr)) {
+            return Promise.resolve();
+        }
+        // Check to see if the pull request has an issue associated
+        // TODO(samstern): Decide if we should re-enable checking for an issue link
+        // if (!this.hasIssueLink(repo, pr)) {
+        //   msg =
+        //     "I couldn"t find a link to an issue in your pull request. Please make sure this PR addresses an open issue.";
+        //   const addCommentPromise = this.gh_client.addComment(org, name, number, msg);
+        //   promises.push(addCommentPromise);
+        // }
+        // Add a needs triage label
+        const addLabelPromise = this.gh_client.addLabel(org, name, number, LABEL_NEEDS_TRIAGE);
+        promises.push(addLabelPromise);
+        return Promise.resolve(promises);
+    }
+    onPullRequestLabeled(repo, pr) {
+        // TODO(samstern): Send a an email to the right peopl
+        return Promise.resolve();
+    }
+    /**
+     * Determine if a PR has the [triage-skip] tag.
+     */
+    hasSkipTag(repo, pr) {
+        return pr.title.indexOf("[triage-skip]") >= 0;
+    }
+    /**
+     * Determine if the pull request links to a github issue (fuzzy).
+     */
+    hasIssueLink(repo, pr) {
+        // Match either /issues/NUM or #NUM
+        const issueRegex = new RegExp("(/issues/|#)[0-9]+");
+        return issueRegex.test(pr.body);
+    }
 }
-
-/**
- * Handle an issue associated with a Github pull request.
- */
-PullRequestHandler.prototype.handlePullRequestEvent = function(
-  event,
-  action,
-  pr,
-  repo,
-  sender
-) {
-  switch (action) {
-    case PR_OPENED:
-      return this.onNewPullRequest(repo, pr);
-    case PR_LABELED:
-      return this.onPullRequestLabeled(repo, pr);
-    case PR_ASSIGNED:
-    /* falls through */
-    case PR_UNASSIGNED:
-    /* falls through */
-    case PR_REVIEW_REQUESTED:
-    /* falls through */
-    case PR_REVIEW_REQUEST_REMOVED:
-    /* falls through */
-    case PR_UNLABLED:
-    /* falls through */
-    case PR_EDITED:
-    /* falls through */
-    case PR_CLOSED:
-    /* falls through */
-    case PR_REOPENED:
-    /* falls through */
-    default:
-      console.log('Unsupported pull request action: ' + action);
-      console.log('Pull Request: ' + pr.title);
-      break;
-  }
-
-  return Promise.resolve();
-};
-
-/**
- * Handle a newly opened pull request.
- */
-PullRequestHandler.prototype.onNewPullRequest = function(repo, pr) {
-  // Get basic issue information
-  var org = repo.owner.login;
-  var name = repo.name;
-  var number = pr.number;
-
-  var promises = [];
-
-  // Check for skip
-  if (this.hasSkipTag(repo, pr)) {
-    return Promise.resolve();
-  }
-
-  // Check to see if the pull request has an issue associated
-  // TODO(samstern): Decide if we should re-enable checking for an issue link
-  // if (!this.hasIssueLink(repo, pr)) {
-  //   msg =
-  //     "I couldn't find a link to an issue in your pull request. Please make sure this PR addresses an open issue.";
-  //   var addCommentPromise = this.gh_client.addComment(org, name, number, msg);
-  //   promises.push(addCommentPromise);
-  // }
-
-  // Add a needs triage label
-  var addLabelPromise = this.gh_client.addLabel(
-    org,
-    name,
-    number,
-    LABEL_NEEDS_TRIAGE
-  );
-  promises.push(addLabelPromise);
-
-  return Promise.resolve(promises);
-};
-
-PullRequestHandler.prototype.onPullRequestLabeled = function(repo, pr) {
-  // TODO(samstern): Send a an email to the right peopl
-  return Promise.resolve();
-};
-
-/**
- * Determine if a PR has the [triage-skip] tag.
- */
-PullRequestHandler.prototype.hasSkipTag = function(repo, pr) {
-  return pr.title.indexOf('[triage-skip]') >= 0;
-};
-
-/**
- * Determine if the pull request links to a github issue (fuzzy).
- */
-PullRequestHandler.prototype.hasIssueLink = function(repo, pr) {
-  // Match either /issues/NUM or #NUM
-  var issueRegex = new RegExp('(/issues/|#)[0-9]+');
-
-  return issueRegex.test(pr.body);
-};
-
-// Exports
 exports.PullRequestHandler = PullRequestHandler;
+//# sourceMappingURL=pullrequests.js.map
