@@ -97,7 +97,6 @@ export class EmailClient {
     return this.sendEmail(recipient, subject, body);
   }
 
-
   /**
    * Invisible email markup to add action in Gmail.
    *

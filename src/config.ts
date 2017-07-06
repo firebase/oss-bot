@@ -26,7 +26,7 @@ interface Repo {
 export class BotConfig {
   config: any;
 
-  constructor (config: any) {
+  constructor(config: any) {
     this.config = config;
   }
 

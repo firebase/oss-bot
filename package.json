@@ -17,6 +17,7 @@
     "@types/diff": "^3.2.0",
     "@types/request": "0.0.45",
     "jest": "^20.0.4",
+    "prettier": "^1.5.2",
     "ts-jest": "^19.0.14",
     "tslint": "^5.0.0",
     "typescript": "^2.4.1"
@@ -24,8 +25,8 @@
   "scripts": {
     "test": "mocha",
     "debug": "mocha --debug-brk",
-    "fmt": "prettier --single-quote --write \"{test/,}*.js\"",
-    "build": "npm run build-ts && npm run tslint",
+    "fmt": "prettier --write src/**.ts",
+    "build": "npm run fmt && npm run build-ts && npm run tslint",
     "build-ts": "tsc",
     "watch-ts": "tsc -w",
     "tslint": "tslint -c tslint.json -p tsconfig.json"

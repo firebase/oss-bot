@@ -26,7 +26,11 @@ export class TemplateChecker {
   requiredMarker: string;
   templateText: string;
 
-  constructor(sectionPrefix: string, requiredMarker: string, templateText: string) {
+  constructor(
+    sectionPrefix: string,
+    requiredMarker: string,
+    templateText: string
+  ) {
     // String prefix for a section (normally ###)
     this.sectionPrefix = sectionPrefix;
 
@@ -47,7 +51,7 @@ export class TemplateChecker {
     // Then split
     const lines = data.split("\n");
 
-    const sections: { [s: string]: string[]; } = {};
+    const sections: { [s: string]: string[] } = {};
     let current_section;
 
     for (const line of lines) {

@@ -50,7 +50,11 @@ export class PullRequestHandler {
   email_client: email.EmailClient;
   config: config.BotConfig;
 
-  constructor(gh_client: github.GithubClient, email_client: email.EmailClient, config: config.BotConfig) {
+  constructor(
+    gh_client: github.GithubClient,
+    email_client: email.EmailClient,
+    config: config.BotConfig
+  ) {
     // Client for interacting with github
     this.gh_client = gh_client;
 

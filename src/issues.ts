@@ -29,14 +29,14 @@ import * as types from "./types";
 //   * assignee - the optional user who was assigned or unassigned
 //   * label - the optional label that was added or removed
 enum IssueAction {
- ASSIGNED = "assigned",
- UNASSIGNED = "unassigned",
- LABELED = "labeled",
- UNLABELED = "unlabeled",
- OPENED = "opened",
- EDITED = "edited",
- CLOSED = "closed",
- REOPENED = "reopened"
+  ASSIGNED = "assigned",
+  UNASSIGNED = "unassigned",
+  LABELED = "labeled",
+  UNLABELED = "unlabeled",
+  OPENED = "opened",
+  EDITED = "edited",
+  CLOSED = "closed",
+  REOPENED = "reopened"
 }
 // Event: issue_comment
 // https://developer.github.com/v3/activity/events/types/#issuecommentevent
@@ -83,7 +83,11 @@ export class IssueHandler {
   email_client: email.EmailClient;
   config: config.BotConfig;
 
-  constructor(gh_client: github.GithubClient, email_client: email.EmailClient, config: config.BotConfig) {
+  constructor(
+    gh_client: github.GithubClient,
+    email_client: email.EmailClient,
+    config: config.BotConfig
+  ) {
     // Client for interacting with github
     this.gh_client = gh_client;
 
@@ -183,14 +187,18 @@ export class IssueHandler {
 
     // Add the label
     console.log(`Adding label: ${new_label}`);
-    const addLabelPromise = this.gh_client.addLabel(org, name, number, new_label);
+    const addLabelPromise = this.gh_client.addLabel(
+      org,
+      name,
+      number,
+      new_label
+    );
 
     // Add a comment, if necessary
     let addCommentPromise;
     if (new_label == LABEL_NEEDS_TRIAGE) {
       console.log("Needs triage, adding friendly comment");
-      const msg =
-        `Hey there! I couldn't figure out what this issue is about, so I've labeled it for a human to triage. Hang tight.`;
+      const msg = `Hey there! I couldn't figure out what this issue is about, so I've labeled it for a human to triage. Hang tight.`;
       addCommentPromise = this.gh_client.addComment(org, name, number, msg);
     } else {
       console.log(`Not commenting, label is ${new_label}`);
@@ -213,7 +221,12 @@ export class IssueHandler {
 
       if (!res.matches) {
         // If it does not match, add the suggested comment and close the issue
-        const comment = this.gh_client.addComment(org, name, number, res.message);
+        const comment = this.gh_client.addComment(
+          org,
+          name,
+          number,
+          res.message
+        );
 
         // TODO(samstern): Re-enable when we have further discussed closing behavior.
         // const close = this.gh_client.closeIssue(org, name, number);
@@ -283,7 +296,11 @@ export class IssueHandler {
   /**
    * Send an email when a new comment is added to an issue.
    */
-  onCommentCreated(repo: types.Repository, issue: types.Issue, comment: types.Comment) {
+  onCommentCreated(
+    repo: types.Repository,
+    issue: types.Issue,
+    comment: types.Comment
+  ) {
     // Trick for testing
     if (comment.body == "eval") {
       console.log("HANDLING SPECIAL COMMENT: eval");
@@ -306,7 +323,11 @@ export class IssueHandler {
   /**
    * Send an email when an issue has been updated.
    */
-  sendIssueUpdateEmail(repo: types.Repository, issue: types.Issue, opts: SendIssueUpdateEmailOpts) {
+  sendIssueUpdateEmail(
+    repo: types.Repository,
+    issue: types.Issue,
+    opts: SendIssueUpdateEmailOpts
+  ) {
     // Get basic issue information
     const org = repo.owner.login;
     const name = repo.name;
@@ -405,43 +426,44 @@ export class IssueHandler {
     return issue.title && issue.title.startsWith("FR");
   }
 
-
   /**
    * Check if issue matches the template.
    */
   checkMatchesTemplate(org: string, name: string, issue: types.Issue) {
     // TODO(samstern): Should I catch inability to get the issue template
     // and handle it here?
-    return this.gh_client.getIssueTemplate(org, name, this.config).then(data => {
-      const checker = new template.TemplateChecker("###", "[REQUIRED]", data);
-      const issueBody = issue.body;
+    return this.gh_client
+      .getIssueTemplate(org, name, this.config)
+      .then(data => {
+        const checker = new template.TemplateChecker("###", "[REQUIRED]", data);
+        const issueBody = issue.body;
 
-      const result = new CheckMatchesTemplateResult();
+        const result = new CheckMatchesTemplateResult();
 
-      if (!checker.matchesTemplateSections(issueBody)) {
-        console.log("checkMatchesTemplate: some sections missing");
-        result.matches = false;
-        result.message =
-          "Hmmm this issue does not seem to follow the issue template. " +
-          "Make sure you provide all the required information.";
+        if (!checker.matchesTemplateSections(issueBody)) {
+          console.log("checkMatchesTemplate: some sections missing");
+          result.matches = false;
+          result.message =
+            "Hmmm this issue does not seem to follow the issue template. " +
+            "Make sure you provide all the required information.";
+          return result;
+        }
+
+        const missing = checker.getRequiredSectionsMissed(issueBody);
+        if (missing.length > 0) {
+          console.log("checkMatchesTemplate: required sections incompconste");
+          result.matches = false;
+          result.message =
+            "This issues does not have all the required information.  " +
+            "Looks like you forgot to fill out some sections: (" +
+            missing +
+            ").  " +
+            "Please update the issue with more information.";
+          return result;
+        }
+
         return result;
-      }
-
-      const missing = checker.getRequiredSectionsMissed(issueBody);
-      if (missing.length > 0) {
-        console.log("checkMatchesTemplate: required sections incompconste");
-        result.matches = false;
-        result.message =
-          "This issues does not have all the required information.  " +
-          "Looks like you forgot to fill out some sections: (" +
-          missing +
-          ").  " +
-          "Please update the issue with more information.";
-        return result;
-      }
-
-      return result;
-    });
+      });
   }
 
   /**

@@ -26,7 +26,7 @@ export class GithubClient {
   token: string;
   api: GithubApi;
 
-  constructor (token: string) {
+  constructor(token: string) {
     // Github API token
     this.token = token;
 
@@ -42,7 +42,7 @@ export class GithubClient {
    * Authenticate with Github as the bot. This function should be called before
    * each use of the Github API.
    */
-  auth () {
+  auth() {
     this.api.authenticate({
       type: "oauth",
       token: this.token
@@ -62,7 +62,6 @@ export class GithubClient {
       labels: [label]
     });
   }
-
 
   /**
    * Add a comment to a github issue, returns a promise.

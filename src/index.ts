@@ -34,7 +34,6 @@ enum GithubEvent {
   PULL_REQUEST = "pull_request"
 }
 
-
 // 15 days, in milliseconds
 const PR_EXPIRY_MS = 15 * 24 * 60 * 60 * 1000;
 
@@ -147,29 +146,31 @@ export const githubWebhook = functions.https.onRequest((request, response) => {
 /**
  * Function that responds to pubsub events sent via an AppEngine crojob.
  */
-export const timedCleanup = functions.pubsub.topic("cleanup").onPublish(event => {
-  console.log("The cleanup job is running!");
+export const timedCleanup = functions.pubsub
+  .topic("cleanup")
+  .onPublish(event => {
+    console.log("The cleanup job is running!");
 
-  const promises: Promise<any>[] = [];
+    const promises: Promise<any>[] = [];
 
-  bot_config.getAllRepos().forEach(function(repo) {
-    // Get config for the repo
-    const repo_config = this.bot_config.getRepoConfig(repo.org, repo.name);
+    bot_config.getAllRepos().forEach(function(repo) {
+      // Get config for the repo
+      const repo_config = this.bot_config.getRepoConfig(repo.org, repo.name);
 
-    // Get expiry from config
-    let expiry = PR_EXPIRY_MS;
-    if (repo_config.cleanup && repo_config.cleanup.pr) {
-      expiry = repo_config.cleanup.pr;
-    }
+      // Get expiry from config
+      let expiry = PR_EXPIRY_MS;
+      if (repo_config.cleanup && repo_config.cleanup.pr) {
+        expiry = repo_config.cleanup.pr;
+      }
 
-    console.log(`Cleaning up: ${repo.org}/${repo.name}, expiry: ${expiry}`);
-    const cleanupPromise = cron_handler.handleCleanup(
-      repo.org,
-      repo.name,
-      expiry
-    );
-    promises.push(cleanupPromise);
+      console.log(`Cleaning up: ${repo.org}/${repo.name}, expiry: ${expiry}`);
+      const cleanupPromise = cron_handler.handleCleanup(
+        repo.org,
+        repo.name,
+        expiry
+      );
+      promises.push(cleanupPromise);
+    });
+
+    return Promise.all(promises);
   });
-
-  return Promise.all(promises);
-});
