@@ -47,7 +47,7 @@ enum IssueAction {
 enum CommentAction {
   CREATED = "created",
   EDITED = "edited",
-  DEconstED = "deconsted"
+  DELETED = "deleted"
 }
 
 enum IssueStatus {
@@ -146,7 +146,7 @@ export class IssueHandler {
         return this.onCommentCreated(repo, issue, comment);
       case CommentAction.EDITED:
       /* falls through */
-      case CommentAction.DEconstED:
+      case CommentAction.DELETED:
       /* falls through */
       default:
         console.log("Unsupported comment action: " + action);

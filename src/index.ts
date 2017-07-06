@@ -150,7 +150,7 @@ export const githubWebhook = functions.https.onRequest((request, response) => {
 export const timedCleanup = functions.pubsub.topic("cleanup").onPublish(event => {
   console.log("The cleanup job is running!");
 
-  const promises:Promise<any>[] = [];
+  const promises: Promise<any>[] = [];
 
   bot_config.getAllRepos().forEach(function(repo) {
     // Get config for the repo
