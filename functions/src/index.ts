@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import * as functions from "firebase-functions";
-
+import { resolve } from "path";
 // Local includes
 import * as github from "./github";
 import * as email from "./email";
@@ -24,7 +24,7 @@ import * as cron from "./cron";
 import * as config from "./config";
 
 // Config
-const config_json = require("./config/config.json");
+const config_json = require(resolve("./config/config.json"));
 const bot_config = new config.BotConfig(config_json);
 
 // Github events
@@ -38,13 +38,23 @@ enum GithubEvent {
 const PR_EXPIRY_MS = 15 * 24 * 60 * 60 * 1000;
 
 // Github API client
-const gh_client = new github.GithubClient(functions.config().github.token);
+let gh_client;
+if (functions.config().github) {
+  gh_client = new github.GithubClient(functions.config().github.token);
+} else {
+  console.warn("No Github token specified in functions.config()");
+}
 
 // Mailgun Email client
-const email_client = new email.EmailClient(
-  functions.config().mailgun.key,
-  functions.config().mailgun.domain
-);
+let email_client;
+if (functions.config().mailgun) {
+  email_client = new email.EmailClient(
+    functions.config().mailgun.key,
+    functions.config().mailgun.domain
+  );
+} else {
+  console.warn("No Mailgun key/domain specified in functions.config()");
+}
 
 // Handler for Github issues
 const issue_handler = new issues.IssueHandler(

@@ -5,7 +5,7 @@
         "noImplicitAny": true,
         "moduleResolution": "node",
         "sourceMap": true,
-        "outDir": "functions",
+        "outDir": "dist",
         "baseUrl": ".",
         "paths": {
             "*": [

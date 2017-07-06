@@ -1,3 +1,4 @@
+#!/usr/bin/env sh
 # Make sure to run firebase use --add before running this
 # and select a project to give the alias 'test'
 
@@ -26,6 +27,7 @@ cp $TEST_CONFIG $REAL_CONFIG
 
 # Deploy
 echo "Deploying firebase..."
+cd functions
 firebase --project "test" deploy --only functions
 echo "Done."
 
