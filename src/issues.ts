@@ -382,13 +382,15 @@ export class IssueHandler {
 
     // Iterate through issue labels, see if one of the existing ones works
     // TODO(samstern): Deal with needs_triage separately
-    // TODO(abehaskins): Get clarification here
-    // for (const key in repo_mapping.labels) {
-    //   const label_mapping = repo_mapping.labels[key];
-    //   if (label_mapping && issue.labels.indexOf(key) >= 0) {
-    //     return key;
-    //   }
-    // }
+    const issueLabelNames = issue.labels.map(label => {
+      return label.name;
+    });
+    for (const key in repo_mapping.labels) {
+      const label_mapping = repo_mapping.labels[key];
+      if (label_mapping && issueLabelNames.indexOf(key) >= 0) {
+        return key;
+      }
+    }
 
     // Try to match the issue body to a new label
     console.log("No existing relevant label, trying regex");
