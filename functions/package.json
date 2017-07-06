@@ -1,20 +1,33 @@
 {
   "name": "oss-bot",
   "description": "Github monitoring robot.",
-  "dependencies": {
-    "diff": "^3.2.0",
-    "firebase-admin": "^4.1.2",
-    "firebase-functions": "^0.5",
-    "github": "^9.2.0",
-    "mailgun-js": "^0.8.2",
-    "marked": "^0.3.6",
+  "devDependencies": {
+    "@types/chai": "^4.0.1",
+    "@types/diff": "^3.2.0",
+    "@types/request": "0.0.45",
+    "prettier": "^1.5.2",
+    "tslint": "^5.0.0",
+    "typescript": "^2.4.1",
+    "@types/marked": "0.0.28",
     "mocha": "^3.3.0",
     "request": "^2.81.0"
   },
   "scripts": {
     "test": "mocha",
     "debug": "mocha --debug-brk",
-    "fmt": "prettier --single-quote --write \"{test/,}*.js\""
+    "fmt": "prettier --write src/**.ts",
+    "build": "npm run fmt && npm run build-ts && npm run tslint",
+    "build-ts": "tsc",
+    "watch-ts": "tsc -w",
+    "tslint": "tslint -c tslint.json -p tsconfig.json"
   },
-  "private": true
+  "private": true,
+  "dependencies": {
+    "firebase-admin": "^4.2.1",
+    "firebase-functions": "^0.5.8",
+    "github": "^9.2.0",
+    "mailgun-js": "^0.8.2",
+    "marked": "^0.3.6",
+    "diff": "^3.2.0"
+  }
 }

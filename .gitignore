@@ -1,3 +1,5 @@
-node_modules
-functions/config/config.json
+/**/npm-debug.log
+/**/node_modules
+functions/dist
+functions/config/*
 .firebaserc

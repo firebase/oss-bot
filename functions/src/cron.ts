@@ -14,31 +14,40 @@
  * limitations under the License.
  */
 
+import * as github from "./github";
+
 // Message for closing stale issues
 const STALE_ISSUE_MSG =
   "It's been a while since anyone updated this pull request so I am going to close it. " +
-  'Please @mention a repo owner if you think this is a mistake!';
+  "Please @mention a repo owner if you think this is a mistake!";
 
 /**
  * Create a new handler for cron-style tasks.
  * @param {GithubClient} gh_client client for accessing Github.
  */
-function CronHandler(gh_client) {
-  this.gh_client = gh_client;
-}
+export class CronHandler {
+  gh_client: github.GithubClient;
 
-/**
- * Handle a cleanup cycle for a particular repo.
- */
-CronHandler.prototype.handleCleanup = function(org, name, expiry) {
-  return this.gh_client.getOldPullRequests(org, name, expiry).then(res => {
-    var promises = [];
+  constructor(gh_client: github.GithubClient) {
+    this.gh_client = gh_client;
+  }
 
-    for (var pr of res) {
-      console.log('Expired PR: ', pr);
+  /**
+   * Handle a cleanup cycle for a particular repo.
+   */
+  async handleCleanup(org: string, name: string, expiry: number) {
+    const oldPullRequests = await this.gh_client.getOldPullRequests(
+      org,
+      name,
+      expiry
+    );
+    const promises = [];
+
+    for (const pr of oldPullRequests) {
+      console.log("Expired PR: ", pr);
 
       // Add a comment saying why we are closing this
-      var addComment = this.gh_client.addComment(
+      const addComment = this.gh_client.addComment(
         org,
         name,
         pr.number,
@@ -46,15 +55,12 @@ CronHandler.prototype.handleCleanup = function(org, name, expiry) {
       );
 
       // Close the pull request
-      var closePr = this.gh_client.closeIssue(org, name, pr.number);
+      const closePr = this.gh_client.closeIssue(org, name, pr.number);
 
       promises.push(addComment);
       promises.push(closePr);
     }
 
     return Promise.all(promises);
-  });
-};
-
-// Exports
-exports.CronHandler = CronHandler;
+  }
+}
