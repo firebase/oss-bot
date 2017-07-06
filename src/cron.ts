@@ -35,29 +35,32 @@ export class CronHandler {
   /**
    * Handle a cleanup cycle for a particular repo.
    */
-  handleCleanup(org: string, name: string, expiry: number) {
-    return this.gh_client.getOldPullRequests(org, name, expiry).then(res => {
-      const promises = [];
+  async handleCleanup(org: string, name: string, expiry: number) {
+    const oldPullRequests = await this.gh_client.getOldPullRequests(
+      org,
+      name,
+      expiry
+    );
+    const promises = [];
 
-      for (const pr of res) {
-        console.log("Expired PR: ", pr);
+    for (const pr of oldPullRequests) {
+      console.log("Expired PR: ", pr);
 
-        // Add a comment saying why we are closing this
-        const addComment = this.gh_client.addComment(
-          org,
-          name,
-          pr.number,
-          STALE_ISSUE_MSG
-        );
+      // Add a comment saying why we are closing this
+      const addComment = this.gh_client.addComment(
+        org,
+        name,
+        pr.number,
+        STALE_ISSUE_MSG
+      );
 
-        // Close the pull request
-        const closePr = this.gh_client.closeIssue(org, name, pr.number);
+      // Close the pull request
+      const closePr = this.gh_client.closeIssue(org, name, pr.number);
 
-        promises.push(addComment);
-        promises.push(closePr);
-      }
+      promises.push(addComment);
+      promises.push(closePr);
+    }
 
-      return Promise.all(promises);
-    });
+    return Promise.all(promises);
   }
 }

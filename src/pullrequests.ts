@@ -68,7 +68,7 @@ export class PullRequestHandler {
   /**
    * Handle an issue associated with a Github pull request.
    */
-  handlePullRequestEvent(
+  async handlePullRequestEvent(
     event: types.WebhookEvent,
     action: PullRequestAction,
     pr: types.PullRequest,
@@ -102,13 +102,13 @@ export class PullRequestHandler {
         break;
     }
 
-    return Promise.resolve();
+    return;
   }
 
   /**
    * Handle a newly opened pull request.
    */
-  onNewPullRequest(repo: types.Repository, pr: types.PullRequest) {
+  async onNewPullRequest(repo: types.Repository, pr: types.PullRequest) {
     // Get basic issue information
     const org = repo.owner.login;
     const name = repo.name;
@@ -118,7 +118,7 @@ export class PullRequestHandler {
 
     // Check for skip
     if (this.hasSkipTag(repo, pr)) {
-      return Promise.resolve();
+      return;
     }
 
     // Check to see if the pull request has an issue associated
@@ -142,9 +142,9 @@ export class PullRequestHandler {
     return Promise.resolve(promises);
   }
 
-  onPullRequestLabeled(repo: types.Repository, pr: types.PullRequest) {
+  async onPullRequestLabeled(repo: types.Repository, pr: types.PullRequest) {
     // TODO(samstern): Send a an email to the right peopl
-    return Promise.resolve();
+    return;
   }
 
   /**

@@ -101,7 +101,7 @@ export class IssueHandler {
   /**
    * Handle an event associated with a Github issue.
    */
-  handleIssueEvent(
+  async handleIssueEvent(
     event: types.WebhookEvent,
     action: IssueAction,
     issue: types.Issue,
@@ -131,13 +131,13 @@ export class IssueHandler {
         break;
     }
 
-    return Promise.resolve();
+    return;
   }
 
   /**
    * Handle an event associated with a Github issue comment.
    */
-  handleIssueCommentEvent(
+  async handleIssueCommentEvent(
     event: types.WebhookEvent,
     action: CommentAction,
     issue: types.Issue,
@@ -159,7 +159,7 @@ export class IssueHandler {
         break;
     }
 
-    return Promise.resolve();
+    return;
   }
 
   /**
@@ -323,7 +323,7 @@ export class IssueHandler {
   /**
    * Send an email when an issue has been updated.
    */
-  sendIssueUpdateEmail(
+  async sendIssueUpdateEmail(
     repo: types.Repository,
     issue: types.Issue,
     opts: SendIssueUpdateEmailOpts
@@ -337,7 +337,7 @@ export class IssueHandler {
     const label = opts.label || this.getRelevantLabel(org, name, issue);
     if (!label) {
       console.log("Not a relevant label, no email needed.");
-      return Promise.resolve();
+      return;
     }
 
     // Get label email from mapping
@@ -349,7 +349,7 @@ export class IssueHandler {
 
     if (!recipient) {
       console.log("Nobody to notify, no email needed.");
-      return Promise.resolve();
+      return;
     }
 
     // Get email subject
