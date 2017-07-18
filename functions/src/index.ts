@@ -175,11 +175,7 @@ export const botCleanup = functions.pubsub
       }
 
       console.log(`Cleaning up: ${repo.org}/${repo.name}, expiry: ${expiry}`);
-      const cleanupPromise = cron_handler.handleCleanup(
-        repo.org,
-        repo.name,
-        expiry
-      );
-      return promises.push(cleanupPromise);
+
+      return cron_handler.handleCleanup(repo.org, repo.name, expiry);
     });
   });
