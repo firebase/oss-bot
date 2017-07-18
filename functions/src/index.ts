@@ -23,7 +23,10 @@ import * as pullrequests from "./pullrequests";
 import * as cron from "./cron";
 import * as config from "./config";
 
+<<<<<<< HEAD
 export { SaveOrganizationSnapshot } from "./snapshot";
+=======
+>>>>>>> 5809f56d5a00a66a4f2975e1e736730e93e0b040
 // Config
 const config_json = require(resolve("./config/config.json"));
 const bot_config = new config.BotConfig(config_json);
@@ -157,14 +160,24 @@ export const githubWebhook = functions.https.onRequest((request, response) => {
 /**
  * Function that responds to pubsub events sent via an AppEngine crojob.
  */
+<<<<<<< HEAD
 export const botCleanup = functions.pubsub
   .topic("cleanup")
   .onPublish(async event => {
+=======
+export const timedCleanup = functions.pubsub
+  .topic("cleanup")
+  .onPublish(event => {
+>>>>>>> 5809f56d5a00a66a4f2975e1e736730e93e0b040
     console.log("The cleanup job is running!");
 
     const promises: Promise<any>[] = [];
 
+<<<<<<< HEAD
     return bot_config.getAllRepos().map(function(repo) {
+=======
+    bot_config.getAllRepos().forEach(function(repo) {
+>>>>>>> 5809f56d5a00a66a4f2975e1e736730e93e0b040
       // Get config for the repo
       const repo_config = this.bot_config.getRepoConfig(repo.org, repo.name);
 
@@ -180,6 +193,13 @@ export const botCleanup = functions.pubsub
         repo.name,
         expiry
       );
+<<<<<<< HEAD
       return promises.push(cleanupPromise);
     });
+=======
+      promises.push(cleanupPromise);
+    });
+
+    return Promise.all(promises);
+>>>>>>> 5809f56d5a00a66a4f2975e1e736730e93e0b040
   });
