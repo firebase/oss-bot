@@ -13,10 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-<<<<<<< HEAD
-
-=======
->>>>>>> 5809f56d5a00a66a4f2975e1e736730e93e0b040
 const mailgun = require("mailgun-js");
 
 /**
