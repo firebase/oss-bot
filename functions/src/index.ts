@@ -23,6 +23,7 @@ import * as pullrequests from "./pullrequests";
 import * as cron from "./cron";
 import * as config from "./config";
 
+export { SaveOrganizationSnapshot } from "./snapshot";
 // Config
 const config_json = require(resolve("./config/config.json"));
 const bot_config = new config.BotConfig(config_json);
@@ -156,14 +157,14 @@ export const githubWebhook = functions.https.onRequest((request, response) => {
 /**
  * Function that responds to pubsub events sent via an AppEngine crojob.
  */
-export const timedCleanup = functions.pubsub
+export const botCleanup = functions.pubsub
   .topic("cleanup")
-  .onPublish(event => {
+  .onPublish(async event => {
     console.log("The cleanup job is running!");
 
     const promises: Promise<any>[] = [];
 
-    bot_config.getAllRepos().forEach(function(repo) {
+    return bot_config.getAllRepos().map(function(repo) {
       // Get config for the repo
       const repo_config = this.bot_config.getRepoConfig(repo.org, repo.name);
 
@@ -179,8 +180,6 @@ export const timedCleanup = functions.pubsub
         repo.name,
         expiry
       );
-      promises.push(cleanupPromise);
+      return promises.push(cleanupPromise);
     });
-
-    return Promise.all(promises);
   });
