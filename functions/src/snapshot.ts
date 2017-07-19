@@ -1,31 +1,39 @@
 import * as functions from "firebase-functions";
+import * as firebase_admin from "firebase-admin";
 import * as github from "./github";
 import { format } from "date-fns";
 
 const gh_client = new github.GithubClient(functions.config().github.token);
+gh_client.auth();
+
+const admin = firebase_admin.initializeApp(functions.config().firebase);
 
 export async function GetOrganizationSnapshot(org: string) {
   let res = await gh_client.api.orgs.get({
     org
   });
 
-  const orgData = res.data;
+  const orgData = scrubObject(res.data, ["owner", "organization", "url"]);
+  const fullReposData: { [s: string]: any } = {};
 
-  res = await gh_client.api.repos.getForOrg({
-    org
-  });
+  for (let p = 1; p <= 2; p++) {
+    res = await gh_client.api.repos.getForOrg({
+      org,
+      per_page: 1000,
+      page: p
+    });
 
-  const reposData = scrubArray(res.data, ["owner", "organization", "url"]);
-  const fullReposData = [];
+    const reposData = scrubArray(res.data, ["owner", "organization", "url"]);
 
-  for (const key in reposData) {
-    await delay(3);
-    const repoData = reposData[key];
-    const fullRepoData = await GetRepoSnapshot(org, repoData.name, repoData);
-    fullReposData.push(fullRepoData);
+    for (const key in reposData) {
+      await delay(1);
+      const repoData = reposData[key];
+      const fullRepoData = await GetRepoSnapshot(org, repoData.name, repoData);
+      fullReposData[fullRepoData.name.toLowerCase()] = fullRepoData;
+    }
   }
 
-  orgData.repos = reposData;
+  orgData.repos = fullReposData;
   return orgData;
 }
 
@@ -48,12 +56,15 @@ async function GetRepoSnapshot(owner: string, repo: string, repoData?: any) {
 
   let issuesData = res.data;
   issuesData = scrubArray(issuesData, ["organization", "url"]);
+  const keyed_issues: { [s: string]: any } = {};
 
-  issuesData.forEach((entry: any) => {
-    entry.user = scrubObject(entry.user, ["url"]);
+  issuesData.forEach((issue: any) => {
+    issue.user = scrubObject(issue.user, ["url"]);
+    issue.pull_request = !!issue.pull_request;
+    keyed_issues["id_" + issue.number] = issue;
   });
 
-  repoData.issues = issuesData;
+  repoData.issues = keyed_issues;
 
   return repoData;
 }

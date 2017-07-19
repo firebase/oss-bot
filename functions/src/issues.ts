@@ -309,10 +309,10 @@ export class IssueHandler {
 
     const comment_html = marked(comment.body);
     const body = `
-      <div>
-        <p>@${comment.user.login}:</p>
-        ${comment_html}
-      </div>`;
+  <div>
+  <p>@${comment.user.login}:</p>
+  ${comment_html}
+  </div>`;
 
     return this.sendIssueUpdateEmail(repo, issue, {
       header: "New Comment",
