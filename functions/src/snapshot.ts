@@ -1,12 +1,10 @@
 import * as functions from "firebase-functions";
-import * as firebase_admin from "firebase-admin";
+import { database } from "./database";
 import * as github from "./github";
 import { format } from "date-fns";
 
 const gh_client = new github.GithubClient(functions.config().github.token);
 gh_client.auth();
-
-const admin = firebase_admin.initializeApp(functions.config().firebase);
 
 export async function GetOrganizationSnapshot(org: string) {
   let res = await gh_client.api.orgs.get({
@@ -26,7 +24,7 @@ export async function GetOrganizationSnapshot(org: string) {
     const reposData = scrubArray(res.data, ["owner", "organization", "url"]);
 
     for (const key in reposData) {
-      await delay(1);
+      await delay(0.5);
       const repoData = reposData[key];
       const fullRepoData = await GetRepoSnapshot(org, repoData.name, repoData);
       fullReposData[fullRepoData.name.toLowerCase()] = fullRepoData;
@@ -49,20 +47,41 @@ async function GetRepoSnapshot(owner: string, repo: string, repoData?: any) {
     repoData = scrubObject(repoData, ["owner", "organization", "url"]);
   }
 
-  res = await gh_client.api.issues.getForRepo({
-    owner,
-    repo
-  });
+  repoData.closed_issues_count = 0;
+  repoData.closed_pull_requests_count = 0;
 
-  let issuesData = res.data;
-  issuesData = scrubArray(issuesData, ["organization", "url"]);
+  let pagesRemaining = true;
+  let page = 0;
+
   const keyed_issues: { [s: string]: any } = {};
+  while (pagesRemaining) {
+    page += 1;
+    res = await gh_client.api.issues.getForRepo({
+      owner,
+      repo,
+      state: "all",
+      per_page: 100,
+      page
+    });
 
-  issuesData.forEach((issue: any) => {
-    issue.user = scrubObject(issue.user, ["url"]);
-    issue.pull_request = !!issue.pull_request;
-    keyed_issues["id_" + issue.number] = issue;
-  });
+    let issuesData = res.data;
+    issuesData = scrubArray(issuesData, ["organization", "url"]);
+
+    issuesData.forEach((issue: any) => {
+      issue.user = scrubObject(issue.user, ["url"]);
+      issue.pull_request = !!issue.pull_request;
+
+      if (issue.state !== "open") {
+        if (!issue.pull_request) repoData.closed_issues_count += 1;
+        else repoData.closed_pull_requests_count += 1;
+      } else {
+        keyed_issues["id_" + issue.number] = issue;
+      }
+    });
+    await delay(0.5);
+
+    pagesRemaining = issuesData.length == 100;
+  }
 
   repoData.issues = keyed_issues;
 
@@ -101,8 +120,7 @@ export const SaveOrganizationSnapshot = functions.pubsub
   .topic("cleanup")
   .onPublish(async event => {
     const snapshot = await GetOrganizationSnapshot("firebase");
-    return admin
-      .database()
+    return database
       .ref("snapshots/github")
       .child(format(new Date(), "YY-MM-DD"))
       .set(snapshot);

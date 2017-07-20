@@ -1,0 +1,126 @@
+<mjml>
+  <mj-body>
+    <mj-container>
+      <mj-section>
+
+        <mj-column>
+          <mj-image width="100" src="https://firebasestorage.googleapis.com/v0/b/ossbot-f0cad.appspot.com/o/firebase%2Bgithub.png?alt=media&token=3843b41f-e904-4a7b-9d37-87ca0bc5c35e"></mj-image>
+          <mj-text font-size="20" color="#626262" align="center">
+            Firebase + Github Weekly!
+          </mj-text>
+          <mj-divider border-color="#CCC"></mj-divider>
+        </mj-column>
+
+      </mj-section>
+
+      <mj-section>
+        <mj-column>
+          <mj-text font-size="14px" color="#FF6F00" font-family="helvetica">
+            Hello friends! It's me, <b>Osscar the OSS bot</b>, and here is what is happening in our Github organization this week!
+          </mj-text>
+        </mj-column>
+      </mj-section>
+      <mj-section>
+
+        <mj-column>
+          <mj-text font-size="20" color="#626262" align="center">
+            Overall
+          </mj-text>
+          <mj-text font-size="14px">
+            As of today we have...
+            <ul>
+              <li><b>{{totalOpenIssues}}</b> open issues of these issues, <b>{{totalOpenIssuesWithNoComments}}</b> have no comments or replies.</li>
+              <li>
+                <b>{{totalOpenPullRequests}}</b> open pull requests
+              </li>
+              <li><b>{{totalPublicRepos}}</b> public repos</li>
+              <li>An average of <b>{{averageIssuesPerRepo}}</b> open issues per repo</li>
+            </ul>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section>
+        <mj-column>
+          <mj-text font-size="16" color="#626262" align="center">
+            Repos Most "In Need of Love"
+          </mj-text>
+          <mj-table font-size="14px">
+            <tr style="border-bottom:1px solid #ecedee;text-align:left;padding:15px 0;">
+              <th style="padding: 0 15px 0 0;text-align:left;">#</th>
+              <th style="padding: 0 15px; text-align:left;">Name</th>
+              <th style="padding: 0 0 0 15px;text-align:right;">SAM Score</th>
+            </tr>
+            {{#topSAMs}}
+            <tr>
+              <td style="padding: 0 15px 0 0;text-align:left;">{{index}}</td>
+              <td style="padding: 0 15px;text-align:left;">
+                <a href="https://github.com/firebase/{{name}}">{{name}}</a>
+              </td>
+              <td style="padding: 0 0 0 15px;text-align:right;">{{sam}}</td>
+            </tr>
+            {{/topSAMs}}
+          </mj-table>
+          <mj-text color="#999" font-style="italic">
+            We calculate this category using the Suggested Action Metric (SAM). This is a formula which takes into account open issue #, issue age, and other factors to draw attention to repos which need extra love. Higher SAM is worse, lower is better. A SAM of less than 1 considered ideal.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section>
+        <mj-column>
+          <mj-text font-size="16" color="#626262" align="center">
+            Top Repos by # of Stars
+          </mj-text>
+          <mj-table font-size="14px">
+            <tr style="border-bottom:1px solid #ecedee;text-align:left;padding:15px 0;">
+              <th style="padding: 0 15px 0 0;text-align:left;">#</th>
+              <th style="padding: 0 15px; text-align:left;">Name</th>
+              <th style="padding: 0 0 0 15px; text-align:right;">Stars</th>
+            </tr>
+            {{#topStars}}
+            <tr>
+              <td style="padding: 0 15px 0 0; text-align:left;">{{index}}</td>
+              <td style="padding: 0 15px; text-align:left;">
+                <a href="https://github.com/firebase/{{name}}">{{name}}</a>
+              </td>
+              <td style="padding: 0 0 0 15px;text-align:right;">{{stars}}</td>
+            </tr>
+            {{/topStars}}
+          </mj-table>
+        </mj-column>
+      </mj-section>
+
+      <mj-section>
+        <mj-column>
+          <mj-text font-size="16" color="#626262" align="center">
+            Top Repos by # of Issues / PRs
+          </mj-text>
+          <mj-table font-size="14px">
+            <tr style="border-bottom:1px solid #ecedee;text-align:left;padding:15px 0;">
+              <th style="padding: 0 15px 0 0;text-align:left;">#</th>
+              <th style="padding: 0 15px; text-align:left;">Name</th>
+              <th style="padding: 0 0 0 15px;text-align:right;">Issues / PRs</th>
+            </tr>
+            {{#topIssues}}
+            <tr>
+              <td style="padding: 0 15px 0 0; text-align:left;">{{index}}</td>
+              <td style="padding: 0 15px; text-align:left;">
+                <a href="https://github.com/firebase/{{.name}}">{{name}}</a>
+              </td>
+              <td style="padding: 0 0 0 15px; text-align:right;">{{issues}}</td>
+            </tr>
+            {{/topIssues}}
+          </mj-table>
+        </mj-column>
+      </mj-section>
+      <mj-section>
+        <mj-column>
+          <mj-text color="#999" font-style="italic">
+             This is an automated email from <a href="http://who/abehaskins">abehaskins@</a>. Please send any feedback directly to him.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-container>
+  </mj-body>
+</mjml>

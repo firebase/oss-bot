@@ -23,7 +23,9 @@ import * as pullrequests from "./pullrequests";
 import * as cron from "./cron";
 import * as config from "./config";
 
-export { SaveOrganizationSnapshot } from "./snapshot";
+export { GetOrganizationSnapshot, SaveOrganizationSnapshot } from "./snapshot";
+export { GetWeeklyReport, SaveWeeklyReport, GetWeeklyEmail } from "./report";
+
 // Config
 const config_json = require(resolve("./config/config.json"));
 const bot_config = new config.BotConfig(config_json);
