@@ -6,7 +6,7 @@ if [ -z "$1" ]; then
 fi
 
 if [ -z "$2" ]; then
-  echo "Please specify a project alias to deploy to: ./deploy_config.sh /path/to/config.json (test | prod)"
+  echo "Please specify a project alias to deploy to: ./deploy_config.sh /path/to/config.json (test|prod)"
   exit 1
 fi
 
