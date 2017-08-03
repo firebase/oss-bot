@@ -10,7 +10,13 @@ if [ -z "$2" ]; then
   exit 1
 fi
 
-CONFIG=$(node -e "console.log(JSON.stringify(require('fs').readFileSync('$1').toString()));")
+CONFIG=$(node $(dirname "$0")/generate-config.js $(pwd -P)/$1)
+
+if [ -z "$CONFIG" ]; then
+  echo "Invalid config file specified! Make sure this file exists"
+  exit 1
+fi
+
 COMMAND="firebase"
 
 if [ -x "$(command -v npx)" ]; then
