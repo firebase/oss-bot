@@ -29,12 +29,17 @@
           <mj-text font-size="14px">
             As of today we have...
             <ul>
-              <li><b>{{totalOpenIssues}}</b> open issues of these issues, <b>{{totalOpenIssuesWithNoComments}}</b> have no comments or replies.</li>
               <li>
-                <b>{{totalOpenPullRequests}}</b> open pull requests
+                <b>{{totalStars}}</b> ({{totalStarsDiff}}) total stars
               </li>
-              <li><b>{{totalPublicRepos}}</b> public repos</li>
-              <li>An average of <b>{{averageIssuesPerRepo}}</b> open issues per repo</li>
+              <li><b>{{totalOpenIssues}}</b> ({{totalOpenIssuesDiff}}) total open issues</li>
+              
+              <li><b>{{totalOpenIssuesWithNoComments}}</b> ({{totalOpenIssuesWithNoCommentsDiff}}) have no comments or replies.</li>
+              <li>
+                <b>{{totalOpenPullRequests}}</b> ({{totalOpenPullRequestsDiff}}) open pull requests
+              </li>
+              <li><b>{{totalPublicRepos}}</b> ({{totalPublicReposDiff}}) public repos</li>
+              <li>An average of <b>{{averageIssuesPerRepo}}</b> ({{averageIssuesPerRepoDiff}}) open issues per repo</li>
             </ul>
           </mj-text>
         </mj-column>

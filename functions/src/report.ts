@@ -28,6 +28,8 @@ export async function GetWeeklyReport(org: string) {
     recentEntry
   );
 
+  const totalStars = GetTotalStars(recentEntry);
+
   const totalPublicRepos = recentEntry.public_repos;
   const averageIssuesPerRepo = Math.floor(totalOpenIssues / totalPublicRepos);
 
@@ -39,6 +41,7 @@ export async function GetWeeklyReport(org: string) {
     totalOpenIssuesWithNoComments,
     totalOpenPullRequests,
     totalPublicRepos,
+    totalStars,
     averageIssuesPerRepo
   };
 }
@@ -49,6 +52,14 @@ function GetTotalOpenIssues(snapshot: any) {
   return GetIssuesWithFilter(snapshot.repos, (issue: any) => {
     return !issue.pull_request;
   });
+}
+
+function GetTotalStars(snapshot: any) {
+  if (!snapshot) return 0;
+
+  return Object.keys(snapshot.repos).reduce((sum, key) => {
+    return sum + snapshot.repos[key].stargazers_count;
+  }, 0);
 }
 
 function GetIssuesWithFilter(repos: { [s: string]: any }, filter: Function) {
@@ -165,6 +176,21 @@ export async function GetWeeklyEmail(org: string) {
     .limitToLast(1)
     .once("child_added");
   const report = reportSnapshot.val();
+
+  const previousReportSnapshot = await database
+    .ref("reports/github")
+    .limitToLast(2)
+    .once("child_added");
+  const previousReport = previousReportSnapshot.val();
+
+  Object.keys(report).forEach(key => {
+    if (typeof report[key] !== "number") return;
+    const keyDiff = `${key}Diff`;
+
+    report[keyDiff] = report[key] - previousReport[key];
+
+    if (report[keyDiff] >= 0) report[keyDiff] = `+${report[keyDiff]}`;
+  });
 
   report.topSAMs = report.topSAMs.slice(0, 10);
   report.topStars = report.topStars.slice(0, 5);
