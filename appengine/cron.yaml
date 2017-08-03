@@ -2,3 +2,6 @@ cron:
 - description: Push a cleanup event onto pubsub every day
   url: /publish/cleanup
   schedule: every 24 hours
+- description: Send weekly email report
+  url: /publish/save_weekly_report
+  schedule: every thursday 14:00
