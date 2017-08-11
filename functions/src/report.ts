@@ -10,14 +10,10 @@ const reportsRef = database.ref("reports/github");
 
 export async function GetWeeklyReport(org: string) {
   // Grab daily snapshots
-  const weeklyEntriesSnapshot = await snapshotsRef.limitToLast(7).once("value");
+  const weeklyEntriesSnapshot = await snapshotsRef.limitToLast(1).once("value");
   const weeklyEntries = weeklyEntriesSnapshot.val();
 
-  // Grab previous week's report
-  const previousReportSnapshot = await reportsRef.limitToLast(1).once("value");
-  const previousReport = previousReportSnapshot.val();
-
-  const recentEntry = weeklyEntries[Object.keys(weeklyEntries)[6]];
+  const recentEntry = weeklyEntries[Object.keys(weeklyEntries)[0]];
   const topSAMs = GetTopSam(recentEntry.repos);
   const topStars = GetTopStars(recentEntry.repos);
   const topIssues = GetTopIssues(recentEntry.repos);
@@ -162,7 +158,6 @@ export const SaveWeeklyReport = functions.pubsub
   .onPublish(async event => {
     const now = new Date();
 
-    if (now.getDay() != 4) return;
     const report = await GetWeeklyReport("firebase");
     return database
       .ref("reports/github")
