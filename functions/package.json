@@ -6,7 +6,7 @@
     "@types/diff": "^3.2.0",
     "@types/marked": "0.0.28",
     "@types/request": "0.0.45",
-    "firebase-tools": "^3.9.1",
+    "firebase-tools": "^3.9.2",
     "mjml": "^3.3.3",
     "mocha": "^3.3.0",
     "prettier": "^1.5.2",
@@ -27,11 +27,14 @@
     "task:get-organization-snapshot": "npm run-script task:run-promise './dist/snapshot' 'GetOrganizationSnapshot' 'firebase'",
     "task:get-weekly-report": "npm run-script task:run-promise './dist/report' 'GetWeeklyReport' 'firebase'",
     "task:get-weekly-email": "npm run-script task:run-promise './dist/report' 'GetWeeklyEmail' 'firebase'",
-    "task:run-promise": "node -e \"require(process.argv[1])[process.argv[2]](process.argv[3]).then(console.log).catch(console.warn)\""
+    "task:run-promise": "node -e \"require(process.argv[1])[process.argv[2]](process.argv[3]).then(console.log).catch(console.warn)\"",
+    "task:get-runtime-config": "npm run-script task:run-promise './dist/runtimeconfig' 'GetRuntimeConfig'"
   },
   "private": true,
   "dependencies": {
+    "@types/chalk": "^0.4.31",
     "@types/mustache": "^0.8.29",
+    "chalk": "^2.1.0",
     "date-fns": "^1.28.5",
     "diff": "^3.2.0",
     "firebase-admin": "^4.2.1",
