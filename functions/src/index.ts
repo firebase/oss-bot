@@ -27,7 +27,7 @@ export { GetOrganizationSnapshot, SaveOrganizationSnapshot } from "./snapshot";
 export { GetWeeklyReport, SaveWeeklyReport, GetWeeklyEmail } from "./report";
 
 // Config
-const config_json = require(resolve("./config/config.json"));
+const config_json = JSON.parse(functions.config().runtime.config);
 const bot_config = new config.BotConfig(config_json);
 
 // Github events
