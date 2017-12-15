@@ -87,6 +87,15 @@ firebase functions:config:set mailgun.key="<YOUR_MAILGUN_KEY>"
 firebase functions:config:set mailgun.domain="<YOUR_MAILGUN_DOMAIN>"
 ```
 
+### Email
+
+In order to use the `SendWeeklyEmail` endpoint you need to configure the
+recipient to some public group.
+
+```
+firebase functions:config:set email.recipient="<GROUP_TO_GET_EMAILS>"
+```
+
 #### Configure Github Webhook
 
 In Github add a webhook with the following configuration:

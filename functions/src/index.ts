@@ -24,7 +24,12 @@ import * as cron from "./cron";
 import * as config from "./config";
 
 export { GetOrganizationSnapshot, SaveOrganizationSnapshot } from "./snapshot";
-export { GetWeeklyReport, SaveWeeklyReport, GetWeeklyEmail } from "./report";
+export {
+  GetWeeklyReport,
+  SaveWeeklyReport,
+  GetWeeklyEmail,
+  SendWeeklyEmail
+} from "./report";
 
 // Config
 const config_json = JSON.parse(functions.config().runtime.config);

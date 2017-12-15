@@ -4,9 +4,17 @@ import { format } from "date-fns";
 import * as mustache from "mustache";
 import { readFileSync } from "fs";
 import * as path from "path";
+import * as email from "./email";
 
 const snapshotsRef = database.ref("snapshots/github");
 const reportsRef = database.ref("reports/github");
+
+const email_client = new email.EmailClient(
+  functions.config().mailgun.key,
+  functions.config().mailgun.domain
+);
+
+const EMAIL_GROUP = functions.config().email.recipient;
 
 export async function GetWeeklyReport(org: string) {
   // Grab daily snapshots
@@ -205,17 +213,36 @@ function GetTopIssues(repos: { [s: string]: any }, count?: number) {
   return topIssues;
 }
 
+/**
+ * PubSub function that saves the weekly report to RTDB.
+ */
 export const SaveWeeklyReport = functions.pubsub
   .topic("save_weekly_report")
   .onPublish(async event => {
     const now = new Date();
 
+    // Save report to the DB
     const report = await GetWeeklyReport("firebase");
     return database
       .ref("reports/github")
       .child(format(now, "YY-MM-DD"))
       .set(report);
   });
+
+/**
+ * HTTP function that sends the Github email based on the latest weekly report.
+ */
+export const SendWeeklyEmail = functions.https.onRequest(async (req, res) => {
+  const emailText = await GetWeeklyEmail("firebase");
+  const now = new Date();
+
+  const dateString = `${now.getMonth()}/${now.getDate()}/${now.getFullYear()}`;
+  const subject = `Firebase Github Summary for ${dateString}`;
+
+  await email_client.sendEmail(EMAIL_GROUP, subject, emailText);
+
+  res.status(200).send("Email sent!");
+});
 
 export async function GetWeeklyEmail(org: string) {
   const reportSnapshot = await database
