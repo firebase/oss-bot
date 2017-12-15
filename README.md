@@ -100,6 +100,22 @@ In Github add a webhook with the following configuration:
     * Pull request
     * Issue comment
 
+## Tools
+
+Aside from the use as a bot, the `functions/` directory also contains a few operational tasks related to our Github presence.
+
+You can get a weekly snapshot of the organization by running:
+
+```
+npm run task:get-weekly-report
+```
+
+You can generate the HTML for a pretty report email by running:
+
+```
+npm run task:get-weekly-email
+```
+
 ## Development
 
 ### Test
