@@ -30,6 +30,7 @@ export async function GetWeeklyReport(org: string) {
   );
 
   const totalStars = GetTotalStars(recentEntry);
+  const totalSAM = GetTotalSamScore(recentEntry);
 
   const totalPublicRepos = recentEntry.public_repos;
   const averageIssuesPerRepo = Math.floor(totalOpenIssues / totalPublicRepos);
@@ -44,6 +45,7 @@ export async function GetWeeklyReport(org: string) {
     totalOpenPullRequests,
     totalPublicRepos,
     totalStars,
+    totalSAM,
     averageIssuesPerRepo
   };
 }
@@ -62,6 +64,25 @@ function GetTotalStars(snapshot: any) {
   return Object.keys(snapshot.repos).reduce((sum, key) => {
     return sum + snapshot.repos[key].stargazers_count;
   }, 0);
+}
+
+function GetTotalSamScore(snapshot: any) {
+  const sumOfRepos = Object.keys(snapshot.repos)
+    .map((repoName: string) => {
+      const repo = snapshot.repos[repoName];
+      return {
+        open_issues_count: repo.open_issues_count,
+        closed_issues_count: repo.closed_issues_count
+      };
+    })
+    .reduce((a: any, b: any) => {
+      return {
+        open_issues_count: a.open_issues_count + b.open_issues_count,
+        closed_issues_count: a.closed_issues_count + b.closed_issues_count
+      };
+    });
+
+  return GetRepoSAM(sumOfRepos);
 }
 
 function GetIssuesWithFilter(repos: { [s: string]: any }, filter: Function) {
