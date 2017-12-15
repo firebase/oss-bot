@@ -25,11 +25,13 @@ async function asyncSpawn(proc: ChildProcess): Promise<string> {
 }
 
 export async function GetRuntimeConfig() {
-  let projectID = "default";
+  let projectID = "";
   let runtimeConfigFile = ".runtimeconfig.json";
 
   if (process.argv.length >= 4) {
     projectID = process.argv[3];
+  } else {
+    throw "Must pass firebase project";
   }
 
   if (process.argv.length >= 5) {
