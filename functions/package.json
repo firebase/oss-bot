@@ -9,6 +9,7 @@
     "firebase-tools": "^3.9.2",
     "mjml": "^3.3.3",
     "mocha": "^3.3.0",
+    "npx": "^9.7.1",
     "prettier": "^1.5.2",
     "request": "^2.81.0",
     "ts-server": "0.0.15",

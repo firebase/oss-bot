@@ -1,5 +1,6 @@
+import { writeFileSync } from "fs";
 import { spawn, ChildProcess } from "child_process";
-import * as chalk from "chalk";
+import { default as chalk } from "chalk";
 
 async function asyncSpawn(proc: ChildProcess): Promise<string> {
   let full_data = "";
@@ -24,7 +25,17 @@ async function asyncSpawn(proc: ChildProcess): Promise<string> {
 }
 
 export async function GetRuntimeConfig() {
-  const projectID = process.argv[3];
+  let projectID = "default";
+  let runtimeConfigFile = ".runtimeconfig.json";
+
+  if (process.argv.length >= 4) {
+    projectID = process.argv[3];
+  }
+
+  if (process.argv.length >= 5) {
+    runtimeConfigFile = process.argv[4];
+  }
+
   const ft = spawn("npx", [
     "firebase",
     "functions:config:get",
@@ -42,11 +53,11 @@ export async function GetRuntimeConfig() {
   )}
   ${chalk.blue("To use this script...")}
 
-  npm run task:get-runtime-config > .runtimeconfig.json
-  export CLOUD_RUNTIME_CONFIG=$PWD/.runtimeconfig.json
+  export CLOUD_RUNTIME_CONFIG=$PWD/${runtimeConfigFile}
   ${chalk.green(
     "--------------------------------------------------------------------"
   )}
   `);
-  return JSON.stringify(config);
+
+  writeFileSync(runtimeConfigFile, JSON.stringify(config, undefined, 2));
 }

@@ -13,8 +13,9 @@ export async function GetWeeklyReport(org: string) {
   const weeklyEntriesSnapshot = await snapshotsRef.limitToLast(1).once("value");
   const weeklyEntries = weeklyEntriesSnapshot.val();
 
-  const recentEntry = weeklyEntries[Object.keys(weeklyEntries)[0]];
-  const topSAMs = GetTopSam(recentEntry.repos);
+  const recentEntry = weeklyEntries[Object.keys(weeklyEntries)[6]];
+  const topSAMs = GetHighestSam(recentEntry.repos);
+  const bottomSAMs = GetLowestSam(recentEntry.repos);
   const topStars = GetTopStars(recentEntry.repos);
   const topIssues = GetTopIssues(recentEntry.repos);
 
@@ -31,6 +32,7 @@ export async function GetWeeklyReport(org: string) {
 
   return {
     topSAMs,
+    bottomSAMs,
     topStars,
     topIssues,
     totalOpenIssues,
@@ -108,19 +110,41 @@ function GetRepoSAM(repo: any) {
   );
 }
 
-function GetTopSam(repos: { [s: string]: any }, count?: number) {
+function GetSamSorted(
+  repos: { [s: string]: any },
+  sortFn: (x: any, y: any) => number,
+  count?: number
+) {
   let topSAM = Object.keys(repos)
     .map((repoName: string) => {
       const repo = repos[repoName];
       const sam = GetRepoSAM(repo);
       return { name: repoName, sam };
     })
-    .sort((a, b) => {
-      return b.sam - a.sam;
-    });
+    .sort(sortFn);
 
   if (count) topSAM = topSAM.slice(0, count);
   return topSAM;
+}
+
+function GetLowestSam(repos: { [s: string]: any }, count?: number) {
+  return GetSamSorted(
+    repos,
+    (a, b) => {
+      return a.sam - b.sam;
+    },
+    count
+  );
+}
+
+function GetHighestSam(repos: { [s: string]: any }, count?: number) {
+  return GetSamSorted(
+    repos,
+    (a, b) => {
+      return b.sam - a.sam;
+    },
+    count
+  );
 }
 
 function GetTopStars(repos: { [s: string]: any }, count?: number) {
@@ -188,10 +212,16 @@ export async function GetWeeklyEmail(org: string) {
   });
 
   report.topSAMs = report.topSAMs.slice(0, 10);
+  report.bottomSAMs = report.bottomSAMs.slice(0, 10);
   report.topStars = report.topStars.slice(0, 5);
   report.topIssues = report.topIssues.slice(0, 5);
 
   report.topSAMs.forEach((entry: any, index: number) => {
+    entry.index = index + 1;
+    entry.sam = entry.sam.toPrecision(3);
+  });
+
+  report.bottomSAMs.forEach((entry: any, index: number) => {
     entry.index = index + 1;
     entry.sam = entry.sam.toPrecision(3);
   });

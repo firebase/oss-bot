@@ -33,7 +33,7 @@
                 <b>{{totalStars}}</b> ({{totalStarsDiff}}) total stars
               </li>
               <li><b>{{totalOpenIssues}}</b> ({{totalOpenIssuesDiff}}) total open issues</li>
-              
+
               <li><b>{{totalOpenIssuesWithNoComments}}</b> ({{totalOpenIssuesWithNoCommentsDiff}}) have no comments or replies.</li>
               <li>
                 <b>{{totalOpenPullRequests}}</b> ({{totalOpenPullRequestsDiff}}) open pull requests
@@ -65,6 +65,33 @@
               <td style="padding: 0 0 0 15px;text-align:right;">{{sam}}</td>
             </tr>
             {{/topSAMs}}
+          </mj-table>
+          <mj-text color="#999" font-style="italic">
+            We calculate this category using the Suggested Action Metric (SAM). This is a formula which takes into account open issue #, issue age, and other factors to draw attention to repos which need extra love. Higher SAM is worse, lower is better. A SAM of less than 1 considered ideal.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section>
+        <mj-column>
+          <mj-text font-size="16" color="#626262" align="center">
+            Happiest Repos
+          </mj-text>
+          <mj-table font-size="14px">
+            <tr style="border-bottom:1px solid #ecedee;text-align:left;padding:15px 0;">
+              <th style="padding: 0 15px 0 0;text-align:left;">#</th>
+              <th style="padding: 0 15px; text-align:left;">Name</th>
+              <th style="padding: 0 0 0 15px;text-align:right;">SAM Score</th>
+            </tr>
+            {{#bottomSAMs}}
+            <tr>
+              <td style="padding: 0 15px 0 0;text-align:left;">{{index}}</td>
+              <td style="padding: 0 15px;text-align:left;">
+                <a href="https://github.com/firebase/{{name}}">{{name}}</a>
+              </td>
+              <td style="padding: 0 0 0 15px;text-align:right;">{{sam}}</td>
+            </tr>
+            {{/bottomSAMs}}
           </mj-table>
           <mj-text color="#999" font-style="italic">
             We calculate this category using the Suggested Action Metric (SAM). This is a formula which takes into account open issue #, issue age, and other factors to draw attention to repos which need extra love. Higher SAM is worse, lower is better. A SAM of less than 1 considered ideal.
