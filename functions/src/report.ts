@@ -236,7 +236,7 @@ export const SendWeeklyEmail = functions.https.onRequest(async (req, res) => {
   const emailText = await GetWeeklyEmail("firebase");
   const now = new Date();
 
-  const dateString = `${now.getMonth()}/${now.getDate()}/${now.getFullYear()}`;
+  const dateString = format(now, "DD/MM/YY");
   const subject = `Firebase Github Summary for ${dateString}`;
 
   await email_client.sendEmail(EMAIL_GROUP, subject, emailText);
