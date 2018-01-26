@@ -13,14 +13,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const fs = require('fs');
-const path = require('path');
-const assert = require('assert');
+import 'mocha';
+import { expect } from 'chai';
 
-const issues = require('../dist/issues.js');
-const pullrequests = require('../dist/pullrequests.js');
-const cron = require('../dist/cron.js');
-const config = require('../dist/config.js');
+import * as fs from 'fs';
+import * as path from 'path';
+import * as assert from 'assert';
+
+import * as issues from '../src/issues';
+import * as pullrequests from '../src/pullrequests';
+import * as cron from '../src/cron';
+import * as config from '../src/config';
+import * as types from '../src/types';
+
+class SimpleIssue extends types.Issue {
+  constructor(opts: any) {
+    super();
+
+    this.title = opts.title;
+    this.body = opts.body;
+  }
+}
+
+class SimplePullRequest extends types.PullRequest {
+  constructor(opts: any) {
+    super();
+
+    this.title = opts.title;
+    this.body = opts.body;
+  }
+}
+
+class SimpleUser extends types.User {
+  constructor(opts: any) {
+    super();
+
+    this.login = opts.login;
+  }
+}
+
+class SimpleRepo extends types.Repository {
+  constructor(opts: any) {
+    super();
+
+    this.name =opts.name;
+    this.owner = new SimpleUser(opts.owner);
+  }
+}
+
+// TODO: Type or kill
 const mocks = require('./mocks.js');
 
 // Label mapping configuration
@@ -30,7 +71,6 @@ const bot_config = new config.BotConfig(config_json);
 // Issue event handler
 const issue_handler = new issues.IssueHandler(
   new mocks.MockGithubClient(),
-  new mocks.MockEmailClient(),
   bot_config
 );
 
@@ -45,42 +85,42 @@ const pr_handler = new pullrequests.PullRequestHandler(
 const cron_handler = new cron.CronHandler(new mocks.MockGithubClient());
 
 // Standard repo
-const test_repo = {
+const test_repo = new SimpleRepo({
   name: 'BotTest',
   owner: {
     login: 'samtstern'
   }
-};
+});
 
 // Issue with the template properly filled in
-const good_issue = {
+const good_issue = new SimpleIssue({
   title: 'A good issue',
   body: fs
     .readFileSync(path.join(__dirname, 'mock_data', 'issue_template_filled.md'))
     .toString()
-};
+});
 
 // Issue that is just the empty template
-const bad_issue = {
+const bad_issue = new SimpleIssue({
   body: fs
     .readFileSync(path.join(__dirname, 'mock_data', 'issue_template_empty.md'))
     .toString()
-};
+});
 
 // Issue that is partially filled out
-const partial_issue = {
+const partial_issue = new SimpleIssue({
   body: fs
     .readFileSync(
       path.join(__dirname, 'mock_data', 'issue_template_partial.md')
     )
     .toString()
-};
+});
 
 // Issue that is really a feature request
-const fr_issue = {
+const fr_issue = new SimpleIssue({
   title: 'FR: I want to change the Firebase',
   body: bad_issue.body
-};
+});
 
 // Issue opened on the BotTest repo
 const issue_opened_bot_test_full = require('./mock_data/issue_opened_bot_test_full.json');
@@ -103,6 +143,11 @@ const issue_opened_js_sdk_messaging = require('./mock_data/issue_opened_js_sdk_5
 // Comment on issue in the BotTest repo
 const comment_creted_bot_test = require('./mock_data/comment_created_bot_test.json');
 
+// Fake WebhookEvent
+const we = {
+  action: 'foo',
+};
+
 describe('The OSS Robot', () => {
   it('should have a valid production config', () => {
     let valid_keys = ['labels', 'cleanup', 'templates'];
@@ -121,12 +166,10 @@ describe('The OSS Robot', () => {
     }
   });
 
-  // TODO: Typescript
-  // TODO: Convert all tests to the action assert style (where appropriate)
   it('should handle issue opened', async () => {
     const actions = await issue_handler.handleIssueEvent(
-      {},
-      'opened',
+      undefined,
+      issues.IssueAction.OPENED,
       issue_opened_bot_test_full.issue,
       issue_opened_bot_test_full.repository,
       issue_opened_bot_test_full.sender
@@ -143,8 +186,8 @@ describe('The OSS Robot', () => {
 
   it('should handle comment created', () => {
     return issue_handler.handleIssueCommentEvent(
-      {},
-      'created',
+      undefined,
+      issues.CommentAction.CREATED,
       comment_creted_bot_test.issue,
       comment_creted_bot_test.comment,
       comment_creted_bot_test.repository,
@@ -155,7 +198,7 @@ describe('The OSS Robot', () => {
   it('should check a good issue against the template', () => {
     return issue_handler
       .checkMatchesTemplate('foo', 'bar', good_issue)
-      .then(res => {
+      .then((res: any) => {
         assert.ok(res.matches, 'Matches template.');
       });
   });
@@ -163,7 +206,7 @@ describe('The OSS Robot', () => {
   it('should check a bad issue against the template', () => {
     return issue_handler
       .checkMatchesTemplate('foo', 'bar', bad_issue)
-      .then(res => {
+      .then((res: any) => {
         assert.ok(!res.matches, 'Does not match template.');
       });
   });
@@ -171,7 +214,7 @@ describe('The OSS Robot', () => {
   it('should detect a partially mangled issue', () => {
     return issue_handler
       .checkMatchesTemplate('foo', 'bar', partial_issue)
-      .then(res => {
+      .then((res: any) => {
         assert.ok(!res.matches, 'Does not match template');
       });
   });
@@ -179,10 +222,10 @@ describe('The OSS Robot', () => {
   it('should correctly handle a totally empty issue template', () => {
     return issue_handler.handleIssueEvent(
       issue_opened_bot_test_empty,
-      'opened',
+      issues.IssueAction.OPENED,
       issue_opened_bot_test_empty.issue,
       test_repo,
-      'samtstern'
+      undefined,
     );
   });
 
@@ -260,39 +303,39 @@ describe('The OSS Robot', () => {
   });
 
   it('should detect issue link in a PR', () => {
-    pr_none = {
+    const pr_none = new SimplePullRequest({
       body: 'Hey this is bad!'
-    };
+    });
 
-    assert.ok(!pr_handler.hasIssueLink('foo', pr_none), 'Has no link.');
+    assert.ok(!pr_handler.hasIssueLink(test_repo, pr_none), 'Has no link.');
 
-    pr_shortlink = {
+    const pr_shortlink = new SimplePullRequest({
       body: 'Hey this is in reference to #4'
-    };
+    });
 
-    assert.ok(pr_handler.hasIssueLink('foo', pr_shortlink), 'Has short link.');
+    assert.ok(pr_handler.hasIssueLink(test_repo, pr_shortlink), 'Has short link.');
 
-    pr_longlink = {
+    const pr_longlink = new SimplePullRequest({
       body:
         'Hey this is in reference to https://github.com/samtstern/BotTest/issues/4'
-    };
+    });
 
-    assert.ok(pr_handler.hasIssueLink('foo', pr_longlink), 'Has long link.');
+    assert.ok(pr_handler.hasIssueLink(test_repo, pr_longlink), 'Has long link.');
   });
 
   it('should skip some PRs', () => {
-    pr_skip = {
+    const pr_skip = new SimplePullRequest({
       title: "[triage-skip] Don't triage me"
-    };
+    });
 
-    assert.ok(pr_handler.hasSkipTag('foo', pr_skip), 'Has skip tag');
+    assert.ok(pr_handler.hasSkipTag(test_repo, pr_skip), 'Has skip tag');
 
-    pr_triage = {
+    const pr_triage = new SimplePullRequest({
       title: 'Hey whatever'
-    };
+    });
 
     assert.ok(
-      !pr_handler.hasSkipTag('foo', pr_triage),
+      !pr_handler.hasSkipTag(test_repo, pr_triage),
       'Does not have skip tag'
     );
   });

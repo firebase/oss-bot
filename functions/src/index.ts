@@ -66,11 +66,7 @@ if (functions.config().mailgun) {
 }
 
 // Handler for Github issues
-const issue_handler = new issues.IssueHandler(
-  gh_client,
-  email_client,
-  bot_config
-);
+const issue_handler = new issues.IssueHandler(gh_client, bot_config);
 
 // Handler for Github pull requests
 const pr_handler = new pullrequests.PullRequestHandler(

@@ -28,7 +28,7 @@ import * as types from "./types";
 //   * changes - the changes to the issue if the action was edited
 //   * assignee - the optional user who was assigned or unassigned
 //   * label - the optional label that was added or removed
-enum IssueAction {
+export enum IssueAction {
   ASSIGNED = "assigned",
   UNASSIGNED = "unassigned",
   LABELED = "labeled",
@@ -44,13 +44,13 @@ enum IssueAction {
 //   * changes - changes to the comment if it was edited
 //   * issue - the issue the comment belongs to
 //   * comment - the comment itself
-enum CommentAction {
+export enum CommentAction {
   CREATED = "created",
   EDITED = "edited",
   DELETED = "deleted"
 }
 
-enum IssueStatus {
+export enum IssueStatus {
   CLOSED = "closed",
   OPEN = "open"
 }
@@ -81,11 +81,7 @@ export class IssueHandler {
   gh_client: github.GithubClient;
   config: config.BotConfig;
 
-  constructor(
-    gh_client: github.GithubClient,
-    email_client: email.EmailClient,
-    config: config.BotConfig
-  ) {
+  constructor(gh_client: github.GithubClient, config: config.BotConfig) {
     // Client for interacting with github
     this.gh_client = gh_client;
 
