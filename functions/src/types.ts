@@ -1,3 +1,78 @@
+export enum ActionType {
+  GITHUB_COMMENT = "GITHUB_COMMENT",
+  GITHUB_LABEL = "GITHUB_LABEL",
+  EMAIL_SEND = "EMAIL_SEND"
+}
+
+export class Action {
+  type: ActionType;
+
+  constructor(type: ActionType) {
+    this.type = type;
+  }
+}
+
+export class GithubIssueAction extends Action {
+  org: string;
+  name: string;
+  number: number;
+
+  constructor(type: ActionType, org: string, name: string, number: number) {
+    super(type);
+
+    this.org = org;
+    this.name = name;
+    this.number = number;
+  }
+}
+
+export class GithubCommentAction extends GithubIssueAction {
+  message: string;
+
+  constructor(org: string, name: string, number: number, message: string) {
+    super(ActionType.GITHUB_COMMENT, org, name, number);
+
+    this.message = message;
+  }
+}
+
+export class GithubLabelAction extends GithubIssueAction {
+  label: string;
+
+  constructor(org: string, name: string, number: number, label: string) {
+    super(ActionType.GITHUB_LABEL, org, name, number);
+
+    this.label = label;
+  }
+}
+
+export class SendEmailAction extends Action {
+  recipient: string;
+  subject: string;
+  header: string;
+  body: string;
+  link: string;
+  action: string;
+
+  constructor(
+    recipient: string,
+    subject: string,
+    header: string,
+    body: string,
+    link: string,
+    action: string
+  ) {
+    super(ActionType.EMAIL_SEND);
+
+    this.recipient = recipient;
+    this.subject = subject;
+    this.header = header;
+    this.body = body;
+    this.link = link;
+    this.action = action;
+  }
+}
+
 export interface User {
   login: string;
   id: number;

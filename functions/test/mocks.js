@@ -16,8 +16,8 @@
 var fs = require('fs');
 var path = require('path');
 
-var github = require('../github.js');
-var email = require('../email.js');
+var github = require('../dist/github.js');
+var email = require('../dist/email.js');
 
 function MockGithubClient() {}
 

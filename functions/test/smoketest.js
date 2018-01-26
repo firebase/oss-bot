@@ -13,39 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var fs = require('fs');
-var path = require('path');
-var assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const assert = require('assert');
 
-var issues = require('../issues.js');
-var pullrequests = require('../pullrequests.js');
-var cron = require('../cron.js');
-var config = require('../config.js');
-var mocks = require('./mocks.js');
+const issues = require('../dist/issues.js');
+const pullrequests = require('../dist/pullrequests.js');
+const cron = require('../dist/cron.js');
+const config = require('../dist/config.js');
+const mocks = require('./mocks.js');
 
 // Label mapping configuration
-var config_json = require('./mock_data/config.json');
-var bot_config = new config.BotConfig(config_json);
+const config_json = require('./mock_data/config.json');
+const bot_config = new config.BotConfig(config_json);
 
 // Issue event handler
-var issue_handler = new issues.IssueHandler(
+const issue_handler = new issues.IssueHandler(
   new mocks.MockGithubClient(),
   new mocks.MockEmailClient(),
   bot_config
 );
 
 // Issue event handler
-var pr_handler = new pullrequests.PullRequestHandler(
+const pr_handler = new pullrequests.PullRequestHandler(
   new mocks.MockGithubClient(),
   new mocks.MockEmailClient(),
   bot_config
 );
 
 // Cron handler
-var cron_handler = new cron.CronHandler(new mocks.MockGithubClient());
+const cron_handler = new cron.CronHandler(new mocks.MockGithubClient());
 
 // Standard repo
-var test_repo = {
+const test_repo = {
   name: 'BotTest',
   owner: {
     login: 'samtstern'
@@ -53,7 +53,7 @@ var test_repo = {
 };
 
 // Issue with the template properly filled in
-var good_issue = {
+const good_issue = {
   title: 'A good issue',
   body: fs
     .readFileSync(path.join(__dirname, 'mock_data', 'issue_template_filled.md'))
@@ -61,14 +61,14 @@ var good_issue = {
 };
 
 // Issue that is just the empty template
-var bad_issue = {
+const bad_issue = {
   body: fs
     .readFileSync(path.join(__dirname, 'mock_data', 'issue_template_empty.md'))
     .toString()
 };
 
 // Issue that is partially filled out
-var partial_issue = {
+const partial_issue = {
   body: fs
     .readFileSync(
       path.join(__dirname, 'mock_data', 'issue_template_partial.md')
@@ -77,31 +77,31 @@ var partial_issue = {
 };
 
 // Issue that is really a feature request
-var fr_issue = {
+const fr_issue = {
   title: 'FR: I want to change the Firebase',
   body: bad_issue.body
 };
 
 // Issue opened on the BotTest repo
-var issue_opened_bot_test_full = require('./mock_data/issue_opened_bot_test_full.json');
+const issue_opened_bot_test_full = require('./mock_data/issue_opened_bot_test_full.json');
 
 // Issue opened on the BotTest repo, empty body
-var issue_opened_bot_test_empty = require('./mock_data/issue_opened_bot_test_empty.json');
+const issue_opened_bot_test_empty = require('./mock_data/issue_opened_bot_test_empty.json');
 
 // Issue opened on the BotTest repo, only product filled in
-var issue_opened_bot_test_partial = require('./mock_data/issue_opened_bot_test_partial.json');
+const issue_opened_bot_test_partial = require('./mock_data/issue_opened_bot_test_partial.json');
 
 // Issue from the JS SDK that was not labeled 'auth' but should have been
-var issue_opened_js_sdk_auth = require('./mock_data/issue_opened_js_sdk_22.json');
+const issue_opened_js_sdk_auth = require('./mock_data/issue_opened_js_sdk_22.json');
 
 // Issue from the JS SDK that was not labeled 'database' but should have been
-var issue_opened_js_sdk_db = require('./mock_data/issue_opened_js_sdk_35.json');
+const issue_opened_js_sdk_db = require('./mock_data/issue_opened_js_sdk_35.json');
 
 // Issue from the JS SDK that was not labeled 'messaging' but should have been
-var issue_opened_js_sdk_messaging = require('./mock_data/issue_opened_js_sdk_59.json');
+const issue_opened_js_sdk_messaging = require('./mock_data/issue_opened_js_sdk_59.json');
 
 // Comment on issue in the BotTest repo
-var comment_creted_bot_test = require('./mock_data/comment_created_bot_test.json');
+const comment_creted_bot_test = require('./mock_data/comment_created_bot_test.json');
 
 describe('The OSS Robot', () => {
   it('should have a valid production config', () => {
@@ -121,14 +121,24 @@ describe('The OSS Robot', () => {
     }
   });
 
-  it('should handle issue opened', () => {
-    return issue_handler.handleIssueEvent(
+  // TODO: Typescript
+  // TODO: Convert all tests to the action assert style (where appropriate)
+  it('should handle issue opened', async () => {
+    const actions = await issue_handler.handleIssueEvent(
       {},
       'opened',
       issue_opened_bot_test_full.issue,
       issue_opened_bot_test_full.repository,
       issue_opened_bot_test_full.sender
     );
+
+    assert.equal(actions.length, 2, 'Should be two actions');
+
+    const label_action = actions[0];
+    const comment_action = actions[1];
+
+    assert.equal(label_action.type, "GITHUB_LABEL");
+    assert.equal(comment_action.type, "GITHUB_COMMENT");
   });
 
   it('should handle comment created', () => {

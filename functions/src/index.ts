@@ -22,6 +22,7 @@ import * as issues from "./issues";
 import * as pullrequests from "./pullrequests";
 import * as cron from "./cron";
 import * as config from "./config";
+import * as types from "./types";
 
 export { GetOrganizationSnapshot, SaveOrganizationSnapshot } from "./snapshot";
 export {
@@ -84,82 +85,134 @@ const cron_handler = new cron.CronHandler(gh_client);
 /**
  * Function that responds to Github events (HTTP webhook).
  */
-export const githubWebhook = functions.https.onRequest((request, response) => {
-  // Get event and action;
-  const event = request.get("X-Github-Event");
-  const action = request.body.action;
+export const githubWebhook = functions.https.onRequest(
+  async (request, response) => {
+    // Get event and action;
+    const event = request.get("X-Github-Event");
+    const action = request.body.action;
 
-  // Get repo and sender
-  const repo = request.body.repository;
-  const sender = request.body.sender;
+    // Get repo and sender
+    const repo = request.body.repository;
+    const sender = request.body.sender;
 
-  // Confirm that there is some event
-  if (!event) {
-    console.log("No github event");
-    response.send("Fail: no event.");
-    return;
-  } else {
-    // Log some basic info
-    console.log("===========================START============================");
-    console.log(`Event: ${event}/${action}`);
-    if (repo) {
-      console.log("Repository: " + repo.full_name);
-    }
-    if (sender) {
-      console.log("Sender: " + sender.login);
-    }
-    console.log("===========================END=============================");
-  }
-
-  // Handle the event appropriately
-  let handlePromise: Promise<any>;
-  const issue = request.body.issue;
-
-  switch (event) {
-    case GithubEvent.ISSUE:
-      handlePromise = issue_handler.handleIssueEvent(
-        request.body,
-        action,
-        issue,
-        repo,
-        sender
-      );
-      break;
-    case GithubEvent.ISSUE_COMMENT:
-      const comment = request.body.comment;
-      handlePromise = issue_handler.handleIssueCommentEvent(
-        request.body,
-        action,
-        issue,
-        comment,
-        repo,
-        sender
-      );
-      break;
-    case GithubEvent.PULL_REQUEST:
-      const pr = request.body.pull_request;
-      handlePromise = pr_handler.handlePullRequestEvent(
-        request.body,
-        action,
-        pr,
-        repo,
-        sender
-      );
-      break;
-    default:
-      response.send(`Unknown event: ${event}`);
+    // Confirm that there is some event
+    if (!event) {
+      console.log("No github event");
+      response.send("Fail: no event.");
       return;
-  }
+    } else {
+      // Log some basic info
+      console.log(
+        "===========================START============================"
+      );
+      console.log(`Event: ${event}/${action}`);
+      if (repo) {
+        console.log("Repository: " + repo.full_name);
+      }
+      if (sender) {
+        console.log("Sender: " + sender.login);
+      }
+      console.log(
+        "===========================END============================="
+      );
+    }
 
-  // Wait for the promise to resolve the HTTP request
-  handlePromise
-    .then(res => {
-      response.send("OK!");
-    })
-    .catch(e => {
-      response.send("Error!");
-    });
-});
+    // Handle the event appropriately
+    const issue = request.body.issue;
+
+    let actions: types.Action[] = [];
+    const promises: Promise<any>[] = [];
+
+    switch (event) {
+      case GithubEvent.ISSUE:
+        actions = await issue_handler.handleIssueEvent(
+          request.body,
+          action,
+          issue,
+          repo,
+          sender
+        );
+        break;
+      case GithubEvent.ISSUE_COMMENT:
+        const comment = request.body.comment;
+        actions = await issue_handler.handleIssueCommentEvent(
+          request.body,
+          action,
+          issue,
+          comment,
+          repo,
+          sender
+        );
+        break;
+      case GithubEvent.PULL_REQUEST:
+        const pr = request.body.pull_request;
+        const prPromise = pr_handler.handlePullRequestEvent(
+          request.body,
+          action,
+          pr,
+          repo,
+          sender
+        );
+
+        promises.push(prPromise);
+        break;
+      default:
+        response.send(`Unknown event: ${event}`);
+        return;
+    }
+
+    // TODO(samstern): Maybe add an "execute" method to each action
+    // to clean this up?
+    for (const action of actions) {
+      if (action.type == types.ActionType.GITHUB_COMMENT) {
+        const commentAction = action as types.GithubCommentAction;
+        promises.push(
+          this.gh_client.addComment(
+            commentAction.org,
+            commentAction.name,
+            commentAction.number,
+            commentAction.message
+          )
+        );
+      }
+
+      if (action.type == types.ActionType.GITHUB_LABEL) {
+        const labelAction = action as types.GithubLabelAction;
+        promises.push(
+          this.gh_client.addComment(
+            labelAction.org,
+            labelAction.name,
+            labelAction.number,
+            labelAction.label
+          )
+        );
+      }
+
+      if (action.type == types.ActionType.EMAIL_SEND) {
+        const emailAction = action as types.SendEmailAction;
+        promises.push(
+          this.email_client.sendStyledEmail(
+            emailAction.recipient,
+            emailAction.subject,
+            emailAction.header,
+            emailAction.body,
+            emailAction.link,
+            emailAction.action
+          )
+        );
+      }
+    }
+
+    // Wait for the promise to resolve the HTTP request
+    Promise.all(promises)
+      .then(res => {
+        response.send("OK!");
+      })
+      .catch(e => {
+        response.send("Error!");
+      });
+  }
+);
 
 /**
  * Function that responds to pubsub events sent via an AppEngine crojob.
