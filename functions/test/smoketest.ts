@@ -74,11 +74,7 @@ const issue_handler = new issues.IssueHandler(
 );
 
 // Issue event handler
-const pr_handler = new pullrequests.PullRequestHandler(
-  new mocks.MockGithubClient("abc123"),
-  new mocks.MockEmailClient("abc123", "fake@fake.com"),
-  bot_config
-);
+const pr_handler = new pullrequests.PullRequestHandler(bot_config);
 
 // Cron handler
 const cron_handler = new cron.CronHandler(new mocks.MockGithubClient("abc123"));

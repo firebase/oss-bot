@@ -69,11 +69,7 @@ if (functions.config().mailgun) {
 const issue_handler = new issues.IssueHandler(gh_client, bot_config);
 
 // Handler for Github pull requests
-const pr_handler = new pullrequests.PullRequestHandler(
-  gh_client,
-  email_client,
-  bot_config
-);
+const pr_handler = new pullrequests.PullRequestHandler(bot_config);
 
 // Handler for Cron jobs
 const cron_handler = new cron.CronHandler(gh_client);
@@ -117,7 +113,6 @@ export const githubWebhook = functions.https.onRequest(
     const issue = request.body.issue;
 
     let actions: types.Action[] = [];
-    const promises: Promise<any>[] = [];
 
     switch (event) {
       case GithubEvent.ISSUE:
@@ -142,15 +137,13 @@ export const githubWebhook = functions.https.onRequest(
         break;
       case GithubEvent.PULL_REQUEST:
         const pr = request.body.pull_request;
-        const prPromise = pr_handler.handlePullRequestEvent(
+        actions = await pr_handler.handlePullRequestEvent(
           request.body,
           action,
           pr,
           repo,
           sender
         );
-
-        promises.push(prPromise);
         break;
       default:
         response.send(`Unknown event: ${event}`);
@@ -159,6 +152,7 @@ export const githubWebhook = functions.https.onRequest(
 
     // TODO(samstern): Maybe add an "execute" method to each action
     // to clean this up?
+    const promises: Promise<any>[] = [];
     for (const action of actions) {
       if (action.type == types.ActionType.GITHUB_COMMENT) {
         const commentAction = action as types.GithubCommentAction;
