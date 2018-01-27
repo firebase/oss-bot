@@ -21,6 +21,10 @@ import * as config from "./config";
 import * as email from "./email";
 import * as types from "./types";
 
+export const MSG_FOLLOW_TEMPLATE =
+  "Hmmm this issue does not seem to follow the issue template. " +
+  "Make sure you provide all the required information.";
+
 // Event: issues
 // https://developer.github.com/v3/activity/events/types/#issuesevent
 // Keys:
@@ -448,9 +452,7 @@ export class IssueHandler {
     if (!checker.matchesTemplateSections(issueBody)) {
       console.log("checkMatchesTemplate: some sections missing");
       result.matches = false;
-      result.message =
-        "Hmmm this issue does not seem to follow the issue template. " +
-        "Make sure you provide all the required information.";
+      result.message = MSG_FOLLOW_TEMPLATE;
       return result;
     }
 

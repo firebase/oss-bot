@@ -24,7 +24,7 @@
   "scripts": {
     "test": "mocha",
     "debug": "mocha --debug-brk",
-    "fmt": "prettier --write src/**.ts",
+    "fmt": "prettier --write src/**.ts test/**.ts",
     "build": "npm run fmt && npm run build-ts && npm run tslint",
     "build-ts": "tsc",
     "build-mjml": "mjml templates/weekly.mjml --output dist/weekly.mustache",
