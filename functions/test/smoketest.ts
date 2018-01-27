@@ -26,6 +26,8 @@ import * as cron from "../src/cron";
 import * as config from "../src/config";
 import * as types from "../src/types";
 
+import * as mocks from "./mocks";
+
 class SimpleIssue extends types.Issue {
   constructor(opts: any) {
     super();
@@ -61,28 +63,25 @@ class SimpleRepo extends types.Repository {
   }
 }
 
-// TODO: Type or kill
-const mocks = require("./mocks.js");
-
 // Label mapping configuration
 const config_json = require("./mock_data/config.json");
 const bot_config = new config.BotConfig(config_json);
 
 // Issue event handler
 const issue_handler = new issues.IssueHandler(
-  new mocks.MockGithubClient(),
+  new mocks.MockGithubClient("abc1234"),
   bot_config
 );
 
 // Issue event handler
 const pr_handler = new pullrequests.PullRequestHandler(
-  new mocks.MockGithubClient(),
-  new mocks.MockEmailClient(),
+  new mocks.MockGithubClient("abc123"),
+  new mocks.MockEmailClient("abc123", "fake@fake.com"),
   bot_config
 );
 
 // Cron handler
-const cron_handler = new cron.CronHandler(new mocks.MockGithubClient());
+const cron_handler = new cron.CronHandler(new mocks.MockGithubClient("abc123"));
 
 // Standard repo
 const test_repo = new SimpleRepo({
