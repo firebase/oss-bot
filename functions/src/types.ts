@@ -1,4 +1,79 @@
-export interface User {
+export enum ActionType {
+  GITHUB_COMMENT = "GITHUB_COMMENT",
+  GITHUB_LABEL = "GITHUB_LABEL",
+  EMAIL_SEND = "EMAIL_SEND"
+}
+
+export class Action {
+  type: ActionType;
+
+  constructor(type: ActionType) {
+    this.type = type;
+  }
+}
+
+export class GithubIssueAction extends Action {
+  org: string;
+  name: string;
+  number: number;
+
+  constructor(type: ActionType, org: string, name: string, number: number) {
+    super(type);
+
+    this.org = org;
+    this.name = name;
+    this.number = number;
+  }
+}
+
+export class GithubCommentAction extends GithubIssueAction {
+  message: string;
+
+  constructor(org: string, name: string, number: number, message: string) {
+    super(ActionType.GITHUB_COMMENT, org, name, number);
+
+    this.message = message;
+  }
+}
+
+export class GithubLabelAction extends GithubIssueAction {
+  label: string;
+
+  constructor(org: string, name: string, number: number, label: string) {
+    super(ActionType.GITHUB_LABEL, org, name, number);
+
+    this.label = label;
+  }
+}
+
+export class SendEmailAction extends Action {
+  recipient: string;
+  subject: string;
+  header: string;
+  body: string;
+  link: string;
+  action: string;
+
+  constructor(
+    recipient: string,
+    subject: string,
+    header: string,
+    body: string,
+    link: string,
+    action: string
+  ) {
+    super(ActionType.EMAIL_SEND);
+
+    this.recipient = recipient;
+    this.subject = subject;
+    this.header = header;
+    this.body = body;
+    this.link = link;
+    this.action = action;
+  }
+}
+
+export class User {
   login: string;
   id: number;
   avatar_url: string;
@@ -18,7 +93,7 @@ export interface User {
   site_admin: boolean;
 }
 
-export interface Label {
+export class Label {
   id: number;
   url: string;
   name: string;
@@ -26,7 +101,7 @@ export interface Label {
   default: boolean;
 }
 
-export interface Milestone {
+export class Milestone {
   url: string;
   html_url: string;
   labels_url: string;
@@ -44,13 +119,13 @@ export interface Milestone {
   due_on: Date;
 }
 
-export interface Permissions {
+export class Permissions {
   admin: boolean;
   push: boolean;
   pull: boolean;
 }
 
-export interface Repository {
+export class Repository {
   id: number;
   owner: User;
   name: string;
@@ -125,7 +200,7 @@ export interface Repository {
   network_count: number;
 }
 
-export interface Issue {
+export class Issue {
   id: number;
   url: string;
   repository_url: string;
@@ -150,7 +225,7 @@ export interface Issue {
   repository: Repository;
 }
 
-export interface Comment {
+export class Comment {
   id: number;
   url: string;
   html_url: string;
@@ -160,7 +235,7 @@ export interface Comment {
   updated_at: Date;
 }
 
-export interface Sender {
+export class Sender {
   login: string;
   id: number;
   avatar_url: string;
@@ -180,7 +255,7 @@ export interface Sender {
   site_admin: boolean;
 }
 
-export interface WebhookEvent {
+export class WebhookEvent {
   action: string;
   issue: Issue;
   repository: Repository;
@@ -188,13 +263,7 @@ export interface WebhookEvent {
   sender: Sender;
 }
 
-export interface Permissions {
-  admin: boolean;
-  push: boolean;
-  pull: boolean;
-}
-
-export interface Commit {
+export class Commit {
   label: string;
   ref: string;
   sha: string;
@@ -202,11 +271,11 @@ export interface Commit {
   repo: Repository;
 }
 
-export interface Link {
+export class Link {
   href: string;
 }
 
-export interface Links {
+export class Links {
   self: Link;
   html: Link;
   issue: Issue;
@@ -217,7 +286,7 @@ export interface Links {
   statuses: Link;
 }
 
-export interface PullRequest {
+export class PullRequest {
   id: number;
   url: string;
   html_url: string;

@@ -43,24 +43,11 @@ const LABEL_NEEDS_TRIAGE = "needs-triage";
 
 /**
  * Create a new handler for github pull requests.
- * @param {GithubClient} gh_client client for interacting with Github.
  */
 export class PullRequestHandler {
-  gh_client: github.GithubClient;
-  email_client: email.EmailClient;
   config: config.BotConfig;
 
-  constructor(
-    gh_client: github.GithubClient,
-    email_client: email.EmailClient,
-    config: config.BotConfig
-  ) {
-    // Client for interacting with github
-    this.gh_client = gh_client;
-
-    // Client for sending emails
-    this.email_client = email_client;
-
+  constructor(config: config.BotConfig) {
     // Configuration
     this.config = config;
   }
@@ -74,7 +61,7 @@ export class PullRequestHandler {
     pr: types.PullRequest,
     repo: types.Repository,
     sender: types.Sender
-  ) {
+  ): Promise<types.Action[]> {
     switch (action) {
       case PullRequestAction.OPENED:
         return this.onNewPullRequest(repo, pr);
@@ -108,17 +95,18 @@ export class PullRequestHandler {
   /**
    * Handle a newly opened pull request.
    */
-  async onNewPullRequest(repo: types.Repository, pr: types.PullRequest) {
+  async onNewPullRequest(
+    repo: types.Repository,
+    pr: types.PullRequest
+  ): Promise<types.Action[]> {
     // Get basic issue information
     const org = repo.owner.login;
     const name = repo.name;
     const number = pr.number;
 
-    const promises = [];
-
     // Check for skip
     if (this.hasSkipTag(repo, pr)) {
-      return;
+      return [];
     }
 
     // Check to see if the pull request has an issue associated
@@ -131,20 +119,22 @@ export class PullRequestHandler {
     // }
 
     // Add a needs triage label
-    const addLabelPromise = this.gh_client.addLabel(
+    const labelAction = new types.GithubLabelAction(
       org,
       name,
       number,
       LABEL_NEEDS_TRIAGE
     );
-    promises.push(addLabelPromise);
 
-    return Promise.resolve(promises);
+    return [labelAction];
   }
 
-  async onPullRequestLabeled(repo: types.Repository, pr: types.PullRequest) {
+  async onPullRequestLabeled(
+    repo: types.Repository,
+    pr: types.PullRequest
+  ): Promise<types.Action[]> {
     // TODO(samstern): Send a an email to the right peopl
-    return;
+    return [];
   }
 
   /**

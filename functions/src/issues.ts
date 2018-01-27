@@ -21,6 +21,10 @@ import * as config from "./config";
 import * as email from "./email";
 import * as types from "./types";
 
+export const MSG_FOLLOW_TEMPLATE =
+  "Hmmm this issue does not seem to follow the issue template. " +
+  "Make sure you provide all the required information.";
+
 // Event: issues
 // https://developer.github.com/v3/activity/events/types/#issuesevent
 // Keys:
@@ -28,7 +32,7 @@ import * as types from "./types";
 //   * changes - the changes to the issue if the action was edited
 //   * assignee - the optional user who was assigned or unassigned
 //   * label - the optional label that was added or removed
-enum IssueAction {
+export enum IssueAction {
   ASSIGNED = "assigned",
   UNASSIGNED = "unassigned",
   LABELED = "labeled",
@@ -44,13 +48,13 @@ enum IssueAction {
 //   * changes - changes to the comment if it was edited
 //   * issue - the issue the comment belongs to
 //   * comment - the comment itself
-enum CommentAction {
+export enum CommentAction {
   CREATED = "created",
   EDITED = "edited",
   DELETED = "deleted"
 }
 
-enum IssueStatus {
+export enum IssueStatus {
   CLOSED = "closed",
   OPEN = "open"
 }
@@ -75,24 +79,15 @@ const LABEL_FR = "feature-request";
 /**
  * Construct a new issue handler.
  * @param {GithubClient} gh_client client for interacting with Github.
- * @param {EmaiClient} email_client client for sending emails.
  * @param {BotConfig} config bot configuration.
  */
 export class IssueHandler {
   gh_client: github.GithubClient;
-  email_client: email.EmailClient;
   config: config.BotConfig;
 
-  constructor(
-    gh_client: github.GithubClient,
-    email_client: email.EmailClient,
-    config: config.BotConfig
-  ) {
+  constructor(gh_client: github.GithubClient, config: config.BotConfig) {
     // Client for interacting with github
     this.gh_client = gh_client;
-
-    // Client for sending emails
-    this.email_client = email_client;
 
     // Configuration
     this.config = config;
@@ -107,7 +102,7 @@ export class IssueHandler {
     issue: types.Issue,
     repo: types.Repository,
     sender: types.Sender
-  ) {
+  ): Promise<types.Action[]> {
     switch (action) {
       case IssueAction.OPENED:
         return this.onNewIssue(repo, issue);
@@ -167,7 +162,12 @@ export class IssueHandler {
    *   1. Label the issue (if possible).
    *   2. Notify the appropriate team (if possible).
    */
-  onNewIssue(repo: types.Repository, issue: types.Issue) {
+  async onNewIssue(
+    repo: types.Repository,
+    issue: types.Issue
+  ): Promise<types.Action[]> {
+    const actions: types.Action[] = [];
+
     // Get basic issue information
     const org = repo.owner.login;
     const name = repo.name;
@@ -187,74 +187,68 @@ export class IssueHandler {
 
     // Add the label
     console.log(`Adding label: ${new_label}`);
-    const addLabelPromise = this.gh_client.addLabel(
+    const labelAction = new types.GithubLabelAction(
       org,
       name,
       number,
       new_label
     );
+    actions.push(labelAction);
 
     // Add a comment, if necessary
-    let addCommentPromise;
     if (new_label == LABEL_NEEDS_TRIAGE) {
       console.log("Needs triage, adding friendly comment");
       const msg = `Hey there! I couldn't figure out what this issue is about, so I've labeled it for a human to triage. Hang tight.`;
-      addCommentPromise = this.gh_client.addComment(org, name, number, msg);
+      const commentAction = new types.GithubCommentAction(
+        org,
+        name,
+        number,
+        msg
+      );
+      actions.push(commentAction);
     } else {
       console.log(`Not commenting, label is ${new_label}`);
-      addCommentPromise = Promise.resolve();
     }
 
     // Check if it matches the template
-    const checkTemplatePromise = this.checkMatchesTemplate(
-      org,
-      name,
-      issue
-    ).then(res => {
-      console.log(`Check template result: ${JSON.stringify(res)}`);
+    const checkTemplateRes = await this.checkMatchesTemplate(org, name, issue);
+    console.log(`Check template result: ${JSON.stringify(checkTemplateRes)}`);
 
-      // Don"t act if this issue is a feature request
-      if (isFR) {
-        console.log("Feature request, ignoring template matching");
-        return;
-      }
+    // Don"t act if this issue is a feature request
+    if (isFR) {
+      console.log("Feature request, ignoring template matching");
+    } else if (!checkTemplateRes.matches) {
+      // If it does not match, add the suggested comment and close the issue
+      const template_action = new types.GithubCommentAction(
+        org,
+        name,
+        number,
+        checkTemplateRes.message
+      );
 
-      if (!res.matches) {
-        // If it does not match, add the suggested comment and close the issue
-        const comment = this.gh_client.addComment(
-          org,
-          name,
-          number,
-          res.message
-        );
+      actions.push(template_action);
 
-        // TODO(samstern): Re-enable when we have further discussed closing behavior.
-        // const close = this.gh_client.closeIssue(org, name, number);
-        const close = Promise.resolve();
+      // TODO(samstern): Re-enable when we have further discussed closing behavior.
+      // const close = this.gh_client.closeIssue(org, name, number)
+    }
 
-        return Promise.all([comment, close]);
-      }
-    });
-
-    // Wait for all actions to finish
-    return Promise.all([
-      addLabelPromise,
-      addCommentPromise,
-      checkTemplatePromise
-    ]);
+    // Return a list of actions to do
+    return actions;
   }
 
   /**
    * Send an email update when an issue has a new assignee.
    */
-  onIssueAssigned(repo: types.Repository, issue: types.Issue) {
+  onIssueAssigned(repo: types.Repository, issue: types.Issue): types.Action[] {
     const assignee = issue.assignee.login;
     const body = "Assigned to " + assignee;
 
-    return this.sendIssueUpdateEmail(repo, issue, {
+    const action = this.getIssueUpdateEmailAction(repo, issue, {
       header: "Changed: Assignee",
       body: body
     });
+
+    return [action];
   }
 
   /**
@@ -265,19 +259,25 @@ export class IssueHandler {
     repo: types.Repository,
     issue: types.Issue,
     new_status: IssueStatus
-  ) {
+  ): types.Action[] {
     const body = "New status: " + new_status;
 
-    return this.sendIssueUpdateEmail(repo, issue, {
+    const action = this.getIssueUpdateEmailAction(repo, issue, {
       header: "Changed: Status",
       body: body
     });
+
+    return [action];
   }
 
   /**
    * Send an email update if an issue was labeled with a new label that has email configured.
    */
-  onIssueLabeled(repo: types.Repository, issue: types.Issue, label: string) {
+  onIssueLabeled(
+    repo: types.Repository,
+    issue: types.Issue,
+    label: string
+  ): types.Action[] {
     // Basic info
     const org = repo.owner.login;
     const name = repo.name;
@@ -286,25 +286,27 @@ export class IssueHandler {
     const body_html = marked(issue.body);
 
     // Send a new issue email
-    return this.sendIssueUpdateEmail(repo, issue, {
+    const action = this.getIssueUpdateEmailAction(repo, issue, {
       header: `New Issue in label ${label}`,
       body: body_html,
       label: label
     });
+
+    return [action];
   }
 
   /**
    * Send an email when a new comment is added to an issue.
    */
-  onCommentCreated(
+  async onCommentCreated(
     repo: types.Repository,
     issue: types.Issue,
     comment: types.Comment
-  ) {
+  ): Promise<types.Action[]> {
     // Trick for testing
     if (comment.body == "eval") {
       console.log("HANDLING SPECIAL COMMENT: eval");
-      return this.onNewIssue(repo, issue);
+      return await this.onNewIssue(repo, issue);
     }
 
     const comment_html = marked(comment.body);
@@ -314,20 +316,22 @@ export class IssueHandler {
   ${comment_html}
   </div>`;
 
-    return this.sendIssueUpdateEmail(repo, issue, {
+    const action = this.getIssueUpdateEmailAction(repo, issue, {
       header: "New Comment",
       body: body
     });
+
+    return [action];
   }
 
   /**
    * Send an email when an issue has been updated.
    */
-  async sendIssueUpdateEmail(
+  getIssueUpdateEmailAction(
     repo: types.Repository,
     issue: types.Issue,
     opts: SendIssueUpdateEmailOpts
-  ) {
+  ): types.SendEmailAction {
     // Get basic issue information
     const org = repo.owner.login;
     const name = repo.name;
@@ -356,7 +360,8 @@ export class IssueHandler {
     const subject = this.getIssueEmailSubject(issue.title, org, name, label);
 
     // Send email update
-    return this.email_client.sendStyledEmail(
+    // TODO: ACTION
+    return new types.SendEmailAction(
       recipient,
       subject,
       opts.header,
@@ -369,7 +374,7 @@ export class IssueHandler {
   /**
    * Pick the first label from an issue that has a related configuration.
    */
-  getRelevantLabel(org: string, name: string, issue: types.Issue) {
+  getRelevantLabel(org: string, name: string, issue: types.Issue): string {
     // Make sure we at least have configuration for this repository
     const repo_mapping = this.config.getRepoConfig(org, name);
     if (!repo_mapping) {
@@ -424,48 +429,47 @@ export class IssueHandler {
   /**
    * Check if an issue is a feature request.
    */
-  isFeatureRequest(issue: types.Issue) {
+  isFeatureRequest(issue: types.Issue): boolean {
     return issue.title && issue.title.startsWith("FR");
   }
 
   /**
    * Check if issue matches the template.
    */
-  checkMatchesTemplate(org: string, name: string, issue: types.Issue) {
+  async checkMatchesTemplate(
+    org: string,
+    name: string,
+    issue: types.Issue
+  ): Promise<CheckMatchesTemplateResult> {
     // TODO(samstern): Should I catch inability to get the issue template
     // and handle it here?
-    return this.gh_client
-      .getIssueTemplate(org, name, this.config)
-      .then(data => {
-        const checker = new template.TemplateChecker("###", "[REQUIRED]", data);
-        const issueBody = issue.body;
+    const data = await this.gh_client.getIssueTemplate(org, name, this.config);
+    const checker = new template.TemplateChecker("###", "[REQUIRED]", data);
+    const issueBody = issue.body;
 
-        const result = new CheckMatchesTemplateResult();
+    const result = new CheckMatchesTemplateResult();
 
-        if (!checker.matchesTemplateSections(issueBody)) {
-          console.log("checkMatchesTemplate: some sections missing");
-          result.matches = false;
-          result.message =
-            "Hmmm this issue does not seem to follow the issue template. " +
-            "Make sure you provide all the required information.";
-          return result;
-        }
+    if (!checker.matchesTemplateSections(issueBody)) {
+      console.log("checkMatchesTemplate: some sections missing");
+      result.matches = false;
+      result.message = MSG_FOLLOW_TEMPLATE;
+      return result;
+    }
 
-        const missing = checker.getRequiredSectionsMissed(issueBody);
-        if (missing.length > 0) {
-          console.log("checkMatchesTemplate: required sections incompconste");
-          result.matches = false;
-          result.message =
-            "This issues does not have all the required information.  " +
-            "Looks like you forgot to fill out some sections: (" +
-            missing +
-            ").  " +
-            "Please update the issue with more information.";
-          return result;
-        }
+    const missing = checker.getRequiredSectionsMissed(issueBody);
+    if (missing.length > 0) {
+      console.log("checkMatchesTemplate: required sections incompconste");
+      result.matches = false;
+      result.message =
+        "This issues does not have all the required information.  " +
+        "Looks like you forgot to fill out some sections: (" +
+        missing +
+        ").  " +
+        "Please update the issue with more information.";
+      return result;
+    }
 
-        return result;
-      });
+    return result;
   }
 
   /**
@@ -477,7 +481,7 @@ export class IssueHandler {
     org: string,
     name: string,
     label: string
-  ) {
+  ): string {
     return `[${org}/${name}][${label}] ${title}`;
   }
 }
