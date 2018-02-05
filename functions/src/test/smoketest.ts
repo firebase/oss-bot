@@ -20,11 +20,11 @@ import * as fs from "fs";
 import * as path from "path";
 import * as assert from "assert";
 
-import * as issues from "../src/issues";
-import * as pullrequests from "../src/pullrequests";
-import * as cron from "../src/cron";
-import * as config from "../src/config";
-import * as types from "../src/types";
+import * as issues from "../issues";
+import * as pullrequests from "../pullrequests";
+import * as cron from "../cron";
+import * as config from "../config";
+import * as types from "../types";
 
 import * as mocks from "./mocks";
 
@@ -185,7 +185,7 @@ describe("The OSS Robot", () => {
     }
 
     const valid_keys = ["labels", "cleanup", "templates"];
-    const prod_config = require("../config/config.json");
+    const prod_config = require("../../config/config.json");
 
     for (const org in prod_config) {
       for (const repo in prod_config[org]) {
