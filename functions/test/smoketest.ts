@@ -136,32 +136,71 @@ const issue_opened_js_sdk_db = require("./mock_data/issue_opened_js_sdk_35.json"
 const issue_opened_js_sdk_messaging = require("./mock_data/issue_opened_js_sdk_59.json");
 
 // Comment on issue in the BotTest repo
-const comment_creted_bot_test = require("./mock_data/comment_created_bot_test.json");
+const comment_created_bot_test = require("./mock_data/comment_created_bot_test.json");
 
 // Fake WebhookEvent
 const we = {
   action: "foo"
 };
 
+function assertMatchingAction(actions: types.Action[], props: any): void {
+  assert.ok(
+    hasMatchingAction(actions, props),
+    `Actions: ${JSON.stringify(actions)}\nExpected: ${JSON.stringify(props)}`
+  );
+}
+
+function hasMatchingAction(actions: types.Action[], props: any): boolean {
+  for (const action of actions) {
+    if (actionMatches(action, props)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function actionMatches(action: types.Action, props: any): boolean {
+  const actionEntries = Object.entries(action);
+  for (const ind in actionEntries) {
+    const entry = actionEntries[ind];
+    const key = entry[0];
+    const val = entry[1];
+
+    console.log(`${key} --> ${val}`);
+
+    if (props[key] && props[key] != val) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 describe("The OSS Robot", () => {
   it("should have a valid production config", () => {
-    let valid_keys = ["labels", "cleanup", "templates"];
-    let prod_config = require("../config/config.json");
+    if (process.env["CI"] == "true") {
+      console.log("On Travis, skipping config test.");
+      return;
+    }
 
-    for (let org in prod_config) {
-      for (let repo in prod_config[org]) {
+    const valid_keys = ["labels", "cleanup", "templates"];
+    const prod_config = require("../config/config.json");
+
+    for (const org in prod_config) {
+      for (const repo in prod_config[org]) {
         console.log(`Config for ${org}/${repo}`);
-        let repo_config = prod_config[org][repo];
+        const repo_config = prod_config[org][repo];
 
         // Make sure each key in the repo config is valid
-        for (let key in repo_config) {
+        for (const key in repo_config) {
           assert.ok(valid_keys.indexOf(key) >= 0, `${key} is a valid key`);
         }
       }
     }
   });
 
-  it("should handle issue opened", async () => {
+  it("should handle issue opened, take action", async () => {
     const actions = await issue_handler.handleIssueEvent(
       undefined,
       issues.IssueAction.OPENED,
@@ -170,27 +209,30 @@ describe("The OSS Robot", () => {
       issue_opened_bot_test_full.sender
     );
 
-    // TODO: this test should not rely on the aciton order
     assert.equal(actions.length, 2, "Should be two actions");
 
-    const label_action = actions[0] as types.GithubLabelAction;
-    assert.equal(label_action.type, types.ActionType.GITHUB_LABEL);
-    assert.equal(label_action.label, "database");
+    assertMatchingAction(actions, {
+      types: types.ActionType.GITHUB_COMMENT,
+      message: issues.MSG_FOLLOW_TEMPLATE
+    });
 
-    const comment_action = actions[1] as types.GithubCommentAction;
-    assert.equal(comment_action.type, types.ActionType.GITHUB_COMMENT);
-    assert.equal(comment_action.message, issues.MSG_FOLLOW_TEMPLATE);
+    assertMatchingAction(actions, {
+      type: types.ActionType.GITHUB_LABEL,
+      label: "database"
+    });
   });
 
-  it("should handle comment created", () => {
-    return issue_handler.handleIssueCommentEvent(
+  it("should handle comment created, take no action", async () => {
+    const actions = await issue_handler.handleIssueCommentEvent(
       undefined,
       issues.CommentAction.CREATED,
-      comment_creted_bot_test.issue,
-      comment_creted_bot_test.comment,
-      comment_creted_bot_test.repository,
-      comment_creted_bot_test.sender
+      comment_created_bot_test.issue,
+      comment_created_bot_test.comment,
+      comment_created_bot_test.repository,
+      comment_created_bot_test.sender
     );
+
+    assert.equal(actions.length, 0, "Should be no actions.");
   });
 
   it("should check a good issue against the template", () => {
@@ -217,21 +259,38 @@ describe("The OSS Robot", () => {
       });
   });
 
-  it("should correctly handle a totally empty issue template", () => {
-    return issue_handler.handleIssueEvent(
+  it("should correctly handle a totally empty issue template", async () => {
+    const actions = await issue_handler.handleIssueEvent(
       issue_opened_bot_test_empty,
       issues.IssueAction.OPENED,
       issue_opened_bot_test_empty.issue,
       test_repo,
       undefined
     );
+
+    assert.equal(actions.length, 3, "Should be three actions");
+
+    assertMatchingAction(actions, {
+      type: types.ActionType.GITHUB_COMMENT,
+      message: issues.MSG_MISSING_INFO
+    });
+
+    assertMatchingAction(actions, {
+      type: types.ActionType.GITHUB_COMMENT,
+      message: issues.MSG_NEEDS_TRIAGE
+    });
+
+    assertMatchingAction(actions, {
+      type: types.ActionType.GITHUB_LABEL,
+      label: "needs-triage"
+    });
   });
 
   it("should handle a partially correct issue", () => {
-    var issue = issue_opened_bot_test_partial.issue;
+    const issue = issue_opened_bot_test_partial.issue;
 
     // Should match the auth issue
-    var label = issue_handler.getRelevantLabel("samtstern", "BotTest", issue);
+    const label = issue_handler.getRelevantLabel("samtstern", "BotTest", issue);
     assert.equal(label, "auth", "Label is auth.");
 
     // Should fail the tempalte check for not filling out all sections
@@ -257,24 +316,24 @@ describe("The OSS Robot", () => {
   });
 
   it("should correctly identify a real auth issue", () => {
-    var issue = issue_opened_js_sdk_auth.issue;
+    const issue = issue_opened_js_sdk_auth.issue;
     issue_handler.onNewIssue(test_repo, issue);
   });
 
   it("should correctly label a real database issue", () => {
-    var issue = issue_opened_js_sdk_db.issue;
-    var label = issue_handler.getRelevantLabel("samtstern", "BotTest", issue);
+    const issue = issue_opened_js_sdk_db.issue;
+    const label = issue_handler.getRelevantLabel("samtstern", "BotTest", issue);
     assert.ok(label == "database", "Is a database issue");
   });
 
   it("should correctly label a real messaging issue", () => {
-    var issue = issue_opened_js_sdk_messaging.issue;
-    var label = issue_handler.getRelevantLabel("samtstern", "BotTest", issue);
+    const issue = issue_opened_js_sdk_messaging.issue;
+    const label = issue_handler.getRelevantLabel("samtstern", "BotTest", issue);
     assert.ok(label == "messaging", "Is a messaging issue");
   });
 
   it("should respect template configs", () => {
-    var custom = bot_config.getRepoTemplateConfig(
+    const custom = bot_config.getRepoTemplateConfig(
       "samtstern",
       "BotTest",
       "issue"
@@ -284,7 +343,7 @@ describe("The OSS Robot", () => {
       "Finds the custom template"
     );
 
-    var regular = bot_config.getRepoTemplateConfig("foo", "bar", "issue");
+    const regular = bot_config.getRepoTemplateConfig("foo", "bar", "issue");
     assert.ok(regular === undefined, "Does not find an unspecified template");
   });
 

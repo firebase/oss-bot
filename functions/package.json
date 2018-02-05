@@ -39,6 +39,7 @@
   },
   "private": true,
   "dependencies": {
+    "@octokit/rest": "^14.0.8",
     "@types/chalk": "^0.4.31",
     "@types/mustache": "^0.8.29",
     "chalk": "^2.1.0",
@@ -46,7 +47,6 @@
     "diff": "^3.2.0",
     "firebase-admin": "^4.2.1",
     "firebase-functions": "^0.5.8",
-    "github": "^9.2.0",
     "mailgun-js": "^0.8.2",
     "marked": "^0.3.6",
     "mustache": "^2.3.0"

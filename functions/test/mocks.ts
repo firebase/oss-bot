@@ -38,8 +38,12 @@ export class MockGithubClient extends github.GithubClient {
   getIssueTemplate(org: string, name: string, config: config.BotConfig) {
     console.log(`mock: github.getIssueTemplate(${org}, ${name})`);
 
-    var filePath = path.join(__dirname, "mock_data", "issue_template_empty.md");
-    var template = fs.readFileSync(filePath).toString();
+    const filePath = path.join(
+      __dirname,
+      "mock_data",
+      "issue_template_empty.md"
+    );
+    const template = fs.readFileSync(filePath).toString();
     return Promise.resolve(template);
   }
 
@@ -51,8 +55,12 @@ export class MockGithubClient extends github.GithubClient {
   getOldPullRequests(org: string, name: string, expiry: number) {
     console.log(`mock: github.getOldPullRequests(${org}, ${name}, ${expiry})`);
 
-    var filePath = path.join(__dirname, "mock_data", "old_pull_requests.json");
-    var data = JSON.parse(fs.readFileSync(filePath).toString());
+    const filePath = path.join(
+      __dirname,
+      "mock_data",
+      "old_pull_requests.json"
+    );
+    const data = JSON.parse(fs.readFileSync(filePath).toString());
     return Promise.resolve(data);
   }
 }

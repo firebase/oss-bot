@@ -1,0 +1,12 @@
+language: node_js
+node_js:
+  - "7"
+install:
+  - npm install -g mocha
+  - npm install -g ts-node
+  - npm install -g tsc
+  - npm install -g tslint
+  - npm install -g prettier
+  - cd functions && npm install ; cd -
+script:
+  - cd functions && npm run build && npm run test-ts
