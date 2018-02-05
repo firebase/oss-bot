@@ -300,7 +300,11 @@ export class IssueHandler {
       label: label
     });
 
-    return [action];
+    if (action) {
+      return [action];
+    } else {
+      return [];
+    }
   }
 
   /**

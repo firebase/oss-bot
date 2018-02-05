@@ -315,9 +315,14 @@ describe("The OSS Robot", () => {
     );
   });
 
-  it("should correctly identify a real auth issue", () => {
+  it("should correctly identify a real auth issue", async () => {
     const issue = issue_opened_js_sdk_auth.issue;
-    issue_handler.onNewIssue(test_repo, issue);
+    const actions = await issue_handler.onNewIssue(test_repo, issue);
+
+    assertMatchingAction(actions, {
+      type: types.ActionType.GITHUB_LABEL,
+      label: "auth"
+    });
   });
 
   it("should correctly label a real database issue", () => {
@@ -347,15 +352,30 @@ describe("The OSS Robot", () => {
     assert.ok(regular === undefined, "Does not find an unspecified template");
   });
 
-  it("should send emails when a recognized label is added", () => {
-    return issue_handler.onIssueLabeled(test_repo, good_issue, "auth");
+  it("should send emails when a recognized label is added", async () => {
+    const actions = await issue_handler.onIssueLabeled(
+      test_repo,
+      good_issue,
+      "auth"
+    );
+
+    assertMatchingAction(actions, {
+      type: types.ActionType.EMAIL_SEND
+    });
   });
 
-  it("should not send emails when a random label is added", () => {
-    return issue_handler.onIssueLabeled(test_repo, good_issue, "foo");
+  it("should not send emails when a random label is added", async () => {
+    const actions = await issue_handler.onIssueLabeled(
+      test_repo,
+      good_issue,
+      "foo"
+    );
+
+    assert.equal(actions.length, 0, "Should take no action.");
   });
 
   it("should correctly clean up old pull requests", () => {
+    // TODO: Make this verify action stream
     return cron_handler.handleCleanup("samtstern", "BotTest", 0);
   });
 
