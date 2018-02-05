@@ -1,0 +1,29 @@
+{
+  "samtstern": {
+    "BotTest": {
+      "labels": {
+        "auth": {
+          "regex": "Product:[\\s]+?[Aa]uth",
+          "email": "samstern+auth@google.com"
+        },
+        "database": {
+          "regex": "Product:[\\s]+?[Dd]atabase",
+          "email": "samstern+database@google.com"
+        },
+        "messaging": {
+          "regex": "Product:[\\s]+?[Mm]essaging"
+        },
+        "storage": {
+          "regex": "Product:[\\s]+?[Ss]torage",
+          "email": "samstern+storage@google.com"
+        }
+      },
+      "templates": {
+        "issue": ".github/ISSUE_TEMPLATE.md"
+      },
+      "cleanup": {
+        "pr": 1000
+      }
+    }
+  }
+}
