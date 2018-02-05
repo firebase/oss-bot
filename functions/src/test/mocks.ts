@@ -16,9 +16,9 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import * as config from "../src/config";
-import * as github from "../src/github";
-import * as email from "../src/email";
+import * as config from "../config";
+import * as github from "../github";
+import * as email from "../email";
 
 export class MockGithubClient extends github.GithubClient {
   auth() {
