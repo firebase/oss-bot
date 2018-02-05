@@ -41,7 +41,7 @@ export class CronHandler {
       name,
       expiry
     );
-    const promises = [];
+    const promises: Promise<any>[] = [];
 
     for (const pr of oldPullRequests) {
       console.log("Expired PR: ", pr);

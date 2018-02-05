@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import * as request from "request";
-import * as GithubApi from "github";
+import * as GithubApi from "@octokit/rest";
 
 import * as config from "./config";
 
@@ -32,8 +32,6 @@ export class GithubClient {
 
     // Underlying Github API client
     this.api = new GithubApi({
-      debug: true,
-      Promise: Promise,
       timeout: 5000
     });
   }
