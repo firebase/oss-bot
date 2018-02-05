@@ -1,0 +1,10 @@
+language: node_js
+node_js:
+  - "7"
+install:
+  - npm install -g mocha
+  - npm install -g ts-node
+  - cd functions && npm install
+script:
+  - npm run build
+  - npm run test-ts
