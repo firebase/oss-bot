@@ -129,11 +129,15 @@ npm run task:get-weekly-email
 
 ### Test
 
-To run basic tests, use `npm test` which runs the mocha tests in `smoketest.js`.
+To run basic tests, use `npm run test-ts` which runs the mocha tests in `smoketest.ts`.
 These tests are mostly a sanity check, used to verify basic behavior without
 needing an end-to-end deploy.
 
 ### Formatting
 
 Code is formatted using `prettier` so no bikeshedding allowed. Run
-`npm run format` before committing.
+`npm run build` before committing.
+
+## Build Status
+
+[![Build Status](https://travis-ci.org/firebase/oss-bot.svg?branch=master)](https://travis-ci.org/firebase/oss-bot)
