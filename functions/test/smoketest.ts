@@ -179,6 +179,11 @@ function actionMatches(action: types.Action, props: any): boolean {
 
 describe("The OSS Robot", () => {
   it("should have a valid production config", () => {
+    if (process.env["CI"] == "true") {
+      console.log("On Travis, skipping config test.");
+      return;
+    }
+
     const valid_keys = ["labels", "cleanup", "templates"];
     const prod_config = require("../config/config.json");
 
