@@ -25,6 +25,15 @@ export const MSG_FOLLOW_TEMPLATE =
   "Hmmm this issue does not seem to follow the issue template. " +
   "Make sure you provide all the required information.";
 
+export const MSG_MISSING_INFO =
+  "This issues does not have all the required information.  " +
+  "Looks like you forgot to fill out some sections.  " +
+  "Please update the issue with more information.";
+
+export const MSG_NEEDS_TRIAGE =
+  "Hey there! I couldn't figure out what this issue is about, " +
+  "so I've labeled it for a human to triage. Hang tight.";
+
 // Event: issues
 // https://developer.github.com/v3/activity/events/types/#issuesevent
 // Keys:
@@ -139,7 +148,7 @@ export class IssueHandler {
     comment: types.Comment,
     repo: types.Repository,
     sender: types.Sender
-  ) {
+  ): Promise<types.Action[]> {
     switch (action) {
       case CommentAction.CREATED:
         return this.onCommentCreated(repo, issue, comment);
@@ -198,12 +207,11 @@ export class IssueHandler {
     // Add a comment, if necessary
     if (new_label == LABEL_NEEDS_TRIAGE) {
       console.log("Needs triage, adding friendly comment");
-      const msg = `Hey there! I couldn't figure out what this issue is about, so I've labeled it for a human to triage. Hang tight.`;
       const commentAction = new types.GithubCommentAction(
         org,
         name,
         number,
-        msg
+        MSG_NEEDS_TRIAGE
       );
       actions.push(commentAction);
     } else {
@@ -321,7 +329,11 @@ export class IssueHandler {
       body: body
     });
 
-    return [action];
+    if (action) {
+      return [action];
+    } else {
+      return [];
+    }
   }
 
   /**
@@ -341,7 +353,7 @@ export class IssueHandler {
     const label = opts.label || this.getRelevantLabel(org, name, issue);
     if (!label) {
       console.log("Not a relevant label, no email needed.");
-      return;
+      return undefined;
     }
 
     // Get label email from mapping
@@ -353,14 +365,13 @@ export class IssueHandler {
 
     if (!recipient) {
       console.log("Nobody to notify, no email needed.");
-      return;
+      return undefined;
     }
 
     // Get email subject
     const subject = this.getIssueEmailSubject(issue.title, org, name, label);
 
     // Send email update
-    // TODO: ACTION
     return new types.SendEmailAction(
       recipient,
       subject,
@@ -460,12 +471,7 @@ export class IssueHandler {
     if (missing.length > 0) {
       console.log("checkMatchesTemplate: required sections incompconste");
       result.matches = false;
-      result.message =
-        "This issues does not have all the required information.  " +
-        "Looks like you forgot to fill out some sections: (" +
-        missing +
-        ").  " +
-        "Please update the issue with more information.";
+      result.message = MSG_MISSING_INFO;
       return result;
     }
 
