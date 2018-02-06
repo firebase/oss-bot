@@ -169,7 +169,7 @@ export const githubWebhook = functions.https.onRequest(
       if (action.type == types.ActionType.GITHUB_LABEL) {
         const labelAction = action as types.GithubLabelAction;
         promises.push(
-          gh_client.addComment(
+          gh_client.addLabel(
             labelAction.org,
             labelAction.name,
             labelAction.number,
