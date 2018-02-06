@@ -9,7 +9,7 @@
     "@types/node": "^9.4.0",
     "@types/request": "0.0.45",
     "chai": "^4.1.2",
-    "firebase-tools": "^3.9.2",
+    "firebase-tools": "^3.17.4",
     "mjml": "^3.3.3",
     "mocha": "^3.3.0",
     "npx": "^9.7.1",
@@ -24,7 +24,7 @@
   "scripts": {
     "test": "mocha",
     "debug": "mocha --debug-brk",
-    "fmt": "prettier --write src/**.ts test/**.ts",
+    "fmt": "prettier --write src/**/*.ts src/**.ts",
     "build": "npm run fmt && npm run build-ts && npm run tslint",
     "build-ts": "tsc",
     "build-mjml": "mjml templates/weekly.mjml --output dist/weekly.mustache",
@@ -47,6 +47,7 @@
     "diff": "^3.2.0",
     "firebase-admin": "^5.8.2",
     "firebase-functions": "^0.8.1",
+    "firebase-tools": "^3.17.4",
     "mailgun-js": "^0.8.2",
     "marked": "^0.3.6",
     "mustache": "^2.3.0"
