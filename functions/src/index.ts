@@ -33,7 +33,7 @@ export {
 } from "./report";
 
 // Config
-const config_json = JSON.parse(functions.config().runtime.config);
+const config_json = functions.config().runtime.config;
 const bot_config = new config.BotConfig(config_json);
 
 // Github events

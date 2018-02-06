@@ -1,6 +1,6 @@
 {
   "samtstern": {
-    "BotTest": {
+    "bottest": {
       "labels": {
         "auth": {
           "regex": "Product:[\\s]+?[Aa]uth",

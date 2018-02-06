@@ -52,8 +52,10 @@ export class BotConfig {
    * Get the config object for a specific repo.
    */
   getRepoConfig(org: string, name: string) {
-    if (this.config[org] && this.config[org][name]) {
-      return this.config[org][name];
+    const lowerOrg = org.toLowerCase();
+    const lowerName = name.toLowerCase();
+    if (this.config[lowerOrg] && this.config[lowerOrg][lowerName]) {
+      return this.config[lowerOrg][lowerName];
     }
   }
 
