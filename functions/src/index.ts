@@ -211,12 +211,15 @@ export const botCleanup = functions.pubsub
   .topic("cleanup")
   .onPublish(async event => {
     console.log("The cleanup job is running!");
+    if (1 + 1 == 2) {
+      console.log("Cleanup is currently disabled");
+      return;
+    }
 
-    const promises: Promise<any>[] = [];
-
+    const that = this;
     return bot_config.getAllRepos().map(function(repo) {
       // Get config for the repo
-      const repo_config = this.bot_config.getRepoConfig(repo.org, repo.name);
+      const repo_config = that.bot_config.getRepoConfig(repo.org, repo.name);
 
       // Get expiry from config
       let expiry = PR_EXPIRY_MS;

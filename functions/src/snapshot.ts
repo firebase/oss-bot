@@ -27,7 +27,9 @@ export async function GetOrganizationSnapshot(org: string) {
       await delay(0.5);
       const repoData = reposData[key];
       const fullRepoData = await GetRepoSnapshot(org, repoData.name, repoData);
-      fullReposData[fullRepoData.name.toLowerCase()] = fullRepoData;
+
+      const cleanName = cleanRepoName(fullRepoData.name);
+      fullReposData[cleanName] = fullRepoData;
     }
   }
 
@@ -86,6 +88,13 @@ async function GetRepoSnapshot(owner: string, repo: string, repoData?: any) {
   repoData.issues = keyed_issues;
 
   return repoData;
+}
+
+function cleanRepoName(name: string): string {
+  let cleanName = name.toLowerCase();
+  cleanName = cleanName.replace(".", "_");
+
+  return cleanName;
 }
 
 function scrubArray(obj: any[], fieldsToScrub: string[]) {
