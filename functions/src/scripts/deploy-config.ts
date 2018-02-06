@@ -76,5 +76,8 @@ deployConfig(configFile, project)
   })
   .catch(function(e) {
     console.warn(e);
+    if (e.context && e.context.body) {
+      console.warn(JSON.stringify(e.context.body));
+    }
     process.exit(1);
   });
