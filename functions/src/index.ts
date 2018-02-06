@@ -47,7 +47,7 @@ enum GithubEvent {
 const PR_EXPIRY_MS = 15 * 24 * 60 * 60 * 1000;
 
 // Github API client
-let gh_client;
+let gh_client: github.GithubClient;
 if (functions.config().github) {
   gh_client = new github.GithubClient(functions.config().github.token);
 } else {
@@ -55,7 +55,7 @@ if (functions.config().github) {
 }
 
 // Mailgun Email client
-let email_client;
+let email_client: email.EmailClient;
 if (functions.config().mailgun) {
   email_client = new email.EmailClient(
     functions.config().mailgun.key,
@@ -157,7 +157,7 @@ export const githubWebhook = functions.https.onRequest(
       if (action.type == types.ActionType.GITHUB_COMMENT) {
         const commentAction = action as types.GithubCommentAction;
         promises.push(
-          this.gh_client.addComment(
+          gh_client.addComment(
             commentAction.org,
             commentAction.name,
             commentAction.number,
@@ -169,7 +169,7 @@ export const githubWebhook = functions.https.onRequest(
       if (action.type == types.ActionType.GITHUB_LABEL) {
         const labelAction = action as types.GithubLabelAction;
         promises.push(
-          this.gh_client.addComment(
+          gh_client.addComment(
             labelAction.org,
             labelAction.name,
             labelAction.number,
@@ -181,7 +181,7 @@ export const githubWebhook = functions.https.onRequest(
       if (action.type == types.ActionType.EMAIL_SEND) {
         const emailAction = action as types.SendEmailAction;
         promises.push(
-          this.email_client.sendStyledEmail(
+          email_client.sendStyledEmail(
             emailAction.recipient,
             emailAction.subject,
             emailAction.header,
