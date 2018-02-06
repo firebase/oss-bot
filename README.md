@@ -15,27 +15,10 @@ Runs on Cloud Functions for Firebase using Github webhooks.
 
 ## Deployment
 
-### Deploy Cronjob
+### Deploy Functions and Cronjob
 
-First install dependencies:
-
-```
-cd appengine
-gcloud components install app-engine-python
-pip install -t lib -r requirements.txt
-```
-
-Set project ID (same as firebase project):
-
-```
-gcloud config set project <your-project-id>
-```
-
-Deploy an App Engine app:
-
-```
-gcloud app deploy app.yaml cron.yaml
-```
+After completing all configuration below, run `make deploy-test` or
+`make deploy-prod` to build, test, ande deploy.
 
 ### Customize Configuration
 
@@ -129,7 +112,7 @@ npm run task:get-weekly-email
 
 ### Test
 
-To run basic tests, use `npm run test-ts` which runs the mocha tests in `smoketest.ts`.
+To run basic tests, use `make test-functions` which runs the mocha tests in `smoketest.ts`.
 These tests are mostly a sanity check, used to verify basic behavior without
 needing an end-to-end deploy.
 
