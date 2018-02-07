@@ -232,17 +232,17 @@ export const SaveWeeklyReport = functions.pubsub
 /**
  * HTTP function that sends the Github email based on the latest weekly report.
  */
-export const SendWeeklyEmail = functions.https.onRequest(async (req, res) => {
-  const emailText = await GetWeeklyEmail("firebase");
-  const now = new Date();
+export const SendWeeklyEmail = functions.pubsub
+  .topic("send_weekly_email")
+  .onPublish(async event => {
+    const emailText = await GetWeeklyEmail("firebase");
+    const now = new Date();
 
-  const dateString = format(now, "DD/MM/YY");
-  const subject = `Firebase Github Summary for ${dateString}`;
+    const dateString = format(now, "DD/MM/YY");
+    const subject = `Firebase Github Summary for ${dateString}`;
 
-  await email_client.sendEmail(EMAIL_GROUP, subject, emailText);
-
-  res.status(200).send("Email sent!");
-});
+    await email_client.sendEmail(EMAIL_GROUP, subject, emailText);
+  });
 
 export async function GetWeeklyEmail(org: string) {
   const reportSnapshot = await database
