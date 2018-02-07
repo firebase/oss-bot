@@ -17,15 +17,11 @@ const email_client = new email.EmailClient(
 const EMAIL_GROUP = functions.config().email.recipient;
 
 export async function GetWeeklyReport(org: string) {
-  // Grab daily snapshots
-  const weeklyEntriesSnapshot = await snapshotsRef.limitToLast(7).once("value");
-  const weeklyEntries = weeklyEntriesSnapshot.val();
+  // Grab the most recent daily snapshot
+  const recentEntrySnapshot = await snapshotsRef.limitToLast(1).once("child_added");
+  const recentEntry = await recentEntrySnapshot.val();
 
-  // Grab previous week's report
-  const previousReportSnapshot = await reportsRef.limitToLast(1).once("value");
-  const previousReport = previousReportSnapshot.val();
-
-  const recentEntry = weeklyEntries[Object.keys(weeklyEntries)[6]];
+  // Compute interesting metrics
   const topSAMs = GetHighestSam(recentEntry.repos);
   const bottomSAMs = GetLowestSam(recentEntry.repos);
   const topStars = GetTopStars(recentEntry.repos);
