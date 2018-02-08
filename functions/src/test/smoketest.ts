@@ -364,6 +364,20 @@ describe("The OSS Robot", () => {
     assert.ok(label == "messaging", "Is a messaging issue");
   });
 
+  it("should correctly deal with upper/lower case labels", () => {
+    const issue = new types.Issue();
+    const dbLabel = new types.Label();
+    dbLabel.name = "DatabaSe";
+    issue.labels = [dbLabel];
+
+    const relevantLabel = issue_handler.getRelevantLabel(
+      "samtstern",
+      "BotTest",
+      issue
+    );
+    assert.equal(relevantLabel, dbLabel.name, "Is a database issue");
+  });
+
   it("should respect template configs", () => {
     const custom = bot_config.getRepoTemplateConfig(
       "samtstern",

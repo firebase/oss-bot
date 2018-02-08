@@ -52,10 +52,10 @@ export class BotConfig {
    * Get the config object for a specific repo.
    */
   getRepoConfig(org: string, name: string) {
-    const lowerOrg = org.toLowerCase();
-    const lowerName = name.toLowerCase();
-    if (this.config[lowerOrg] && this.config[lowerOrg][lowerName]) {
-      return this.config[lowerOrg][lowerName];
+    const cleanOrg = this.sanitizeKey(org);
+    const cleanName = this.sanitizeKey(name);
+    if (this.config[cleanOrg] && this.config[cleanOrg][cleanName]) {
+      return this.config[cleanOrg][cleanName];
     }
   }
 
@@ -64,8 +64,10 @@ export class BotConfig {
    */
   getRepoLabelConfig(org: string, name: string, label: string) {
     const repoConfig = this.getRepoConfig(org, name);
-    if (repoConfig && repoConfig.labels && repoConfig.labels[label]) {
-      return repoConfig.labels[label];
+
+    const cleanLabel = this.sanitizeKey(label);
+    if (repoConfig && repoConfig.labels && repoConfig.labels[cleanLabel]) {
+      return repoConfig.labels[cleanLabel];
     }
   }
 
@@ -74,8 +76,26 @@ export class BotConfig {
    */
   getRepoTemplateConfig(org: string, name: string, template: string) {
     const repoConfig = this.getRepoConfig(org, name);
-    if (repoConfig && repoConfig.templates && repoConfig.templates[template]) {
-      return repoConfig.templates[template];
+
+    const cleanTemplate = this.sanitizeKey(template);
+    if (
+      repoConfig &&
+      repoConfig.templates &&
+      repoConfig.templates[cleanTemplate]
+    ) {
+      return repoConfig.templates[cleanTemplate];
     }
+  }
+
+  /**
+   * Keys are sanitized before they are stored in config and therefore need
+   * to be sanitized when retrieved.
+   */
+  sanitizeKey(key: string): string {
+    let cleanKey = key;
+    cleanKey = cleanKey.toLowerCase();
+    cleanKey = cleanKey.trim();
+
+    return cleanKey;
   }
 }

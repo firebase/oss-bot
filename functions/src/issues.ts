@@ -404,12 +404,13 @@ export class IssueHandler {
 
     // Iterate through issue labels, see if one of the existing ones works
     // TODO(samstern): Deal with needs_triage separately
-    const issueLabelNames = issue.labels.map(label => {
+    const issueLabelNames: string[] = issue.labels.map(label => {
       return label.name;
     });
-    for (const key in repo_mapping.labels) {
-      const label_mapping = repo_mapping.labels[key];
-      if (label_mapping && issueLabelNames.indexOf(key) >= 0) {
+
+    for (const key of issueLabelNames) {
+      const label_mapping = this.config.getRepoLabelConfig(org, name, key);
+      if (label_mapping) {
         return key;
       }
     }
