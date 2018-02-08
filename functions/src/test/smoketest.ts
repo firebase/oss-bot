@@ -235,6 +235,33 @@ describe("The OSS Robot", () => {
     assert.equal(actions.length, 0, "Should be no actions.");
   });
 
+  it("should take no action on an unsupported event", async () => {
+    // Note: this test is not a good black box because we are assuming
+    // that certain events are not handled. It's possible that expanded event
+    // support in the future could make this test fail, in which case we can
+    // just delete it.
+
+    const commentActions = await issue_handler.handleIssueCommentEvent(
+      undefined,
+      issues.CommentAction.EDITED,
+      comment_created_bot_test.issue,
+      comment_created_bot_test.comment,
+      comment_created_bot_test.repository,
+      comment_created_bot_test.sender
+    );
+
+    const issueActions = await issue_handler.handleIssueEvent(
+      undefined,
+      issues.IssueAction.UNASSIGNED,
+      comment_created_bot_test.issue,
+      comment_created_bot_test.repository,
+      comment_created_bot_test.sender
+    );
+
+    assert.equal(commentActions.length, 0, "Should be no comment actions.");
+    assert.equal(issueActions.length, 0, "Should be no issue actions.");
+  });
+
   it("should check a good issue against the template", () => {
     return issue_handler
       .checkMatchesTemplate("foo", "bar", good_issue)

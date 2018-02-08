@@ -89,7 +89,8 @@ export class PullRequestHandler {
         break;
     }
 
-    return;
+    // Return empty action array if no action to be taken.
+    return Promise.resolve([]);
   }
 
   /**

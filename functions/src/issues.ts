@@ -135,7 +135,8 @@ export class IssueHandler {
         break;
     }
 
-    return;
+    // Return empty action array if no action to be taken.
+    return Promise.resolve([]);
   }
 
   /**
@@ -163,7 +164,8 @@ export class IssueHandler {
         break;
     }
 
-    return;
+    // Return empty action array if no action to be taken.
+    return Promise.resolve([]);
   }
 
   /**

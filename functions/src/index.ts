@@ -150,6 +150,11 @@ export const githubWebhook = functions.https.onRequest(
         return;
     }
 
+    // TODO(samstern): Should not need this
+    if (actions == undefined) {
+      actions = [];
+    }
+
     // TODO(samstern): Maybe add an "execute" method to each action
     // to clean this up?
     const promises: Promise<any>[] = [];

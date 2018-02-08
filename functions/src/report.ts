@@ -18,7 +18,9 @@ const EMAIL_GROUP = functions.config().email.recipient;
 
 export async function GetWeeklyReport(org: string) {
   // Grab the most recent daily snapshot
-  const recentEntrySnapshot = await snapshotsRef.limitToLast(1).once("child_added");
+  const recentEntrySnapshot = await snapshotsRef
+    .limitToLast(1)
+    .once("child_added");
   const recentEntry = await recentEntrySnapshot.val();
 
   // Compute interesting metrics
