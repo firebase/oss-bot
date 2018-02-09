@@ -159,6 +159,11 @@ export const githubWebhook = functions.https.onRequest(
     // to clean this up?
     const promises: Promise<any>[] = [];
     for (const action of actions) {
+      if (action == undefined) {
+        console.warn("Got undefined action.");
+        continue;
+      }
+
       if (action.type == types.ActionType.GITHUB_COMMENT) {
         const commentAction = action as types.GithubCommentAction;
         promises.push(
