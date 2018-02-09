@@ -50,7 +50,12 @@ export class GithubClient {
   /**
    * Add a label to a github issue, returns a promise.
    */
-  addLabel(org: string, name: string, number: number, label: string) {
+  addLabel(
+    org: string,
+    name: string,
+    number: number,
+    label: string
+  ): Promise<any> {
     this.auth();
 
     return this.api.issues.addLabels({
@@ -64,7 +69,12 @@ export class GithubClient {
   /**
    * Add a comment to a github issue, returns a promise.
    */
-  addComment(org: string, name: string, number: number, body: string) {
+  addComment(
+    org: string,
+    name: string,
+    number: number,
+    body: string
+  ): Promise<any> {
     this.auth();
 
     return this.api.issues.createComment({
@@ -107,7 +117,7 @@ export class GithubClient {
   }
 
   /** */
-  closeIssue(org: string, name: string, number: number) {
+  closeIssue(org: string, name: string, number: number): Promise<any> {
     this.auth();
 
     // Add the closed-by-bot label

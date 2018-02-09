@@ -34,7 +34,7 @@ export class EmailClient {
   /**
    * Send a new email.
    */
-  sendEmail(recipient: string, subject: string, body: string) {
+  sendEmail(recipient: string, subject: string, body: string): Promise<any> {
     const data = {
       from: "Firebase OSS Bot <firebase-oss-bot@ossbot.computer>",
       to: recipient,
@@ -68,7 +68,7 @@ export class EmailClient {
     body_html: string,
     link: string,
     action: string
-  ) {
+  ): Promise<any> {
     const smartmail_markup = this.getSmartmailMarkup(link, action);
 
     const body = `
@@ -103,7 +103,7 @@ export class EmailClient {
    * Note: Get registered with google.
    * https://developers.google.com/gmail/markup/registering-with-google
    */
-  getSmartmailMarkup(url: string, title: string) {
+  getSmartmailMarkup(url: string, title: string): string {
     const email_markup = `
       <div itemscope itemtype="http://schema.org/EmailMessage">
         <div itemprop="potentialAction" itemscope itemtype="http://schema.org/ViewAction">

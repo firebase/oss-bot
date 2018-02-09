@@ -47,23 +47,15 @@ enum GithubEvent {
 const PR_EXPIRY_MS = 15 * 24 * 60 * 60 * 1000;
 
 // Github API client
-let gh_client: github.GithubClient;
-if (functions.config().github) {
-  gh_client = new github.GithubClient(functions.config().github.token);
-} else {
-  console.warn("No Github token specified in functions.config()");
-}
+const gh_client: github.GithubClient = new github.GithubClient(
+  functions.config().github.token
+);
 
 // Mailgun Email client
-let email_client: email.EmailClient;
-if (functions.config().mailgun) {
-  email_client = new email.EmailClient(
-    functions.config().mailgun.key,
-    functions.config().mailgun.domain
-  );
-} else {
-  console.warn("No Mailgun key/domain specified in functions.config()");
-}
+const email_client: email.EmailClient = new email.EmailClient(
+  functions.config().mailgun.key,
+  functions.config().mailgun.domain
+);
 
 // Handler for Github issues
 const issue_handler = new issues.IssueHandler(gh_client, bot_config);

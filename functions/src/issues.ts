@@ -258,6 +258,10 @@ export class IssueHandler {
       body: body
     });
 
+    if (!action) {
+      return [];
+    }
+
     return [action];
   }
 
@@ -276,6 +280,10 @@ export class IssueHandler {
       header: "Changed: Status",
       body: body
     });
+
+    if (!action) {
+      return [];
+    }
 
     return [action];
   }
@@ -302,11 +310,11 @@ export class IssueHandler {
       label: label
     });
 
-    if (action) {
-      return [action];
-    } else {
+    if (!action) {
       return [];
     }
+
+    return [action];
   }
 
   /**
@@ -335,11 +343,11 @@ export class IssueHandler {
       body: body
     });
 
-    if (action) {
-      return [action];
-    } else {
+    if (!action) {
       return [];
     }
+
+    return [action];
   }
 
   /**
@@ -349,7 +357,7 @@ export class IssueHandler {
     repo: types.Repository,
     issue: types.Issue,
     opts: SendIssueUpdateEmailOpts
-  ): types.SendEmailAction {
+  ): types.SendEmailAction | undefined {
     // Get basic issue information
     const org = repo.owner.login;
     const name = repo.name;
@@ -391,7 +399,11 @@ export class IssueHandler {
   /**
    * Pick the first label from an issue that has a related configuration.
    */
-  getRelevantLabel(org: string, name: string, issue: types.Issue): string {
+  getRelevantLabel(
+    org: string,
+    name: string,
+    issue: types.Issue
+  ): string | undefined {
     // Make sure we at least have configuration for this repository
     const repo_mapping = this.config.getRepoConfig(org, name);
     if (!repo_mapping) {
@@ -448,7 +460,7 @@ export class IssueHandler {
    * Check if an issue is a feature request.
    */
   isFeatureRequest(issue: types.Issue): boolean {
-    return issue.title && issue.title.startsWith("FR");
+    return !!issue.title && issue.title.startsWith("FR");
   }
 
   /**

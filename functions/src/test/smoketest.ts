@@ -139,9 +139,12 @@ const issue_opened_js_sdk_messaging = require("./mock_data/issue_opened_js_sdk_5
 const comment_created_bot_test = require("./mock_data/comment_created_bot_test.json");
 
 // Fake WebhookEvent
-const we = {
-  action: "foo"
-};
+const whEvent = new types.WebhookEvent();
+whEvent.action = "foo";
+
+// Fake Sender
+const sender = new types.Sender();
+sender.login = "johndoe";
 
 function assertMatchingAction(actions: types.Action[], props: any): void {
   assert.ok(
@@ -202,7 +205,7 @@ describe("The OSS Robot", () => {
 
   it("should handle issue opened, take action", async () => {
     const actions = await issue_handler.handleIssueEvent(
-      undefined,
+      whEvent,
       issues.IssueAction.OPENED,
       issue_opened_bot_test_full.issue,
       issue_opened_bot_test_full.repository,
@@ -224,7 +227,7 @@ describe("The OSS Robot", () => {
 
   it("should handle comment created, take no action", async () => {
     const actions = await issue_handler.handleIssueCommentEvent(
-      undefined,
+      whEvent,
       issues.CommentAction.CREATED,
       comment_created_bot_test.issue,
       comment_created_bot_test.comment,
@@ -242,7 +245,7 @@ describe("The OSS Robot", () => {
     // just delete it.
 
     const commentActions = await issue_handler.handleIssueCommentEvent(
-      undefined,
+      whEvent,
       issues.CommentAction.EDITED,
       comment_created_bot_test.issue,
       comment_created_bot_test.comment,
@@ -251,7 +254,7 @@ describe("The OSS Robot", () => {
     );
 
     const issueActions = await issue_handler.handleIssueEvent(
-      undefined,
+      whEvent,
       issues.IssueAction.UNASSIGNED,
       comment_created_bot_test.issue,
       comment_created_bot_test.repository,
@@ -292,7 +295,7 @@ describe("The OSS Robot", () => {
       issues.IssueAction.OPENED,
       issue_opened_bot_test_empty.issue,
       test_repo,
-      undefined
+      sender
     );
 
     assert.equal(actions.length, 3, "Should be three actions");
