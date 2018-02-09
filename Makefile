@@ -3,7 +3,8 @@ PROD_PROJECT="ossbot-f0cad"
 
 build-appengine:
 	cd appengine \
-		&& rm -rf lib \
+		&& rm -rf lib env \
+		&& virtualenv env && source env/bin/activate \
 		&& gcloud components install app-engine-python \
 		&& pip install -t lib -r requirements.txt \
 		&& cd -
