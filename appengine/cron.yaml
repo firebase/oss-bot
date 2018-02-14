@@ -7,6 +7,6 @@ cron:
   schedule: every wednesday 09:00
   timezone: America/Los_Angeles
 - description: Send weekly email report every Wednesday at 9:30am
-  url: /publish/send_weekly_report
+  url: /publish/send_weekly_email
   schedule: every wednesday 09:30
   timezone: America/Los_Angeles
