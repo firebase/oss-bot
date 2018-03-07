@@ -207,7 +207,8 @@ export class IssueHandler {
     actions.push(labelAction);
 
     // Add a comment, if necessary
-    if (new_label == LABEL_NEEDS_TRIAGE) {
+    const foundLabel = new_label != LABEL_NEEDS_TRIAGE;
+    if (!foundLabel) {
       console.log("Needs triage, adding friendly comment");
       const commentAction = new types.GithubCommentAction(
         org,
@@ -224,9 +225,13 @@ export class IssueHandler {
     const checkTemplateRes = await this.checkMatchesTemplate(org, name, issue);
     console.log(`Check template result: ${JSON.stringify(checkTemplateRes)}`);
 
-    // Don"t act if this issue is a feature request
-    if (isFR) {
-      console.log("Feature request, ignoring template matching");
+    // There are some situations where we don't want to nag about the template
+    //  1) This is a feature request
+    //  2) We were able to label with some something besides needs_triage
+    const skipTemplateComment = isFR || foundLabel;
+
+    if (skipTemplateComment) {
+      console.log("FR or labeled issue, ignoring template matching");
     } else if (!checkTemplateRes.matches) {
       // If it does not match, add the suggested comment and close the issue
       const template_action = new types.GithubCommentAction(
@@ -332,15 +337,10 @@ export class IssueHandler {
     }
 
     const comment_html = marked(comment.body);
-    const body = `
-  <div>
-  <p>@${comment.user.login}:</p>
-  ${comment_html}
-  </div>`;
 
     const action = this.getIssueUpdateEmailAction(repo, issue, {
-      header: "New Comment",
-      body: body
+      header: `New Comment by ${comment.user.login}`,
+      body: comment_html
     });
 
     if (!action) {

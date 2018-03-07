@@ -212,12 +212,7 @@ describe("The OSS Robot", () => {
       issue_opened_bot_test_full.sender
     );
 
-    assert.equal(actions.length, 2, "Should be two actions");
-
-    assertMatchingAction(actions, {
-      types: types.ActionType.GITHUB_COMMENT,
-      message: issues.MSG_FOLLOW_TEMPLATE
-    });
+    assert.equal(actions.length, 1, "Should be one action");
 
     assertMatchingAction(actions, {
       type: types.ActionType.GITHUB_LABEL,
