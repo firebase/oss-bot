@@ -10,13 +10,13 @@ deploy-appengine-test: build-appengine
 	gcloud config set project $(TEST_PROJECT)
 	cd appengine \
 		&& npm run deploy \
-    && cd -
+        && cd -
 
 deploy-appengine-prod: build-appengine
 	gcloud config set project $(PROD_PROJECT)
 	cd appengine \
 		&& npm run deploy \
-    && cd -
+        && cd -
 
 build-functions: functions/src/*.ts functions/src/test/*.ts
 	cd functions \
