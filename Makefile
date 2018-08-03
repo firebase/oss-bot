@@ -30,10 +30,10 @@ test-functions: build-functions
 		&& cd -
 
 deploy-functions-config-prod:
-	ts-node functions/src/scripts/deploy-config.ts functions/config/config.json $(PROD_PROJECT)
+	functions/node_modules/.bin/ts-node functions/src/scripts/deploy-config.ts functions/config/config.json $(PROD_PROJECT)
 
 deploy-functions-config-test:
-	ts-node functions/src/scripts/deploy-config.ts functions/src/test/mock_data/config.json $(TEST_PROJECT)
+	functions/node_modules/.bin/ts-node functions/src/scripts/deploy-config.ts functions/src/test/mock_data/config.json $(TEST_PROJECT)
 
 deploy-functions-test: test-functions deploy-functions-config-test
 	firebase --project=$(TEST_PROJECT) deploy

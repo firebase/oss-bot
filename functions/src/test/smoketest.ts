@@ -197,7 +197,12 @@ describe("The OSS Robot", () => {
 
         // Make sure each key in the repo config is valid
         for (const key in repo_config) {
-          assert.ok(valid_keys.indexOf(key) >= 0, `${key} is a valid key`);
+          assert.ok(
+            valid_keys.indexOf(key) >= 0,
+            `${key} is not a valid key, repo ${repo} has config ${JSON.stringify(
+              repo_config
+            )}`
+          );
         }
       }
     }

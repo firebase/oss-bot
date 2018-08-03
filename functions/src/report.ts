@@ -99,14 +99,15 @@ function GetIssuesWithFilter(repos: { [s: string]: any }, filter: Function) {
 
     if (repo.private) return;
 
-    matchingIssues += Object.keys(
-      repo.issues || {}
-    ).reduce((sum, issue_id: string) => {
-      const issue = repo.issues[issue_id];
+    matchingIssues += Object.keys(repo.issues || {}).reduce(
+      (sum, issue_id: string) => {
+        const issue = repo.issues[issue_id];
 
-      if (filter(issue)) return sum + 1;
-      else return sum;
-    }, 0);
+        if (filter(issue)) return sum + 1;
+        else return sum;
+      },
+      0
+    );
   });
 
   return matchingIssues;
@@ -135,8 +136,7 @@ function GetRepoSAM(repo: any) {
   if (!closed_issues) return 0;
 
   return (
-    open_issues /
-    (open_issues + closed_issues) *
+    (open_issues / (open_issues + closed_issues)) *
     Math.log(Math.E + open_issues + closed_issues)
   );
 }
