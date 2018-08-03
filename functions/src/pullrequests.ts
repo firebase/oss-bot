@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import * as github from "./github";
-import * as email from "./email";
 import * as config from "./config";
 import * as types from "./types";
 

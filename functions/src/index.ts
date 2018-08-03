@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import * as functions from "firebase-functions";
-import { resolve } from "path";
+
 // Local includes
 import * as github from "./github";
 import * as email from "./email";

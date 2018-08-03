@@ -18,7 +18,6 @@ import * as marked from "marked";
 import * as github from "./github";
 import * as template from "./template";
 import * as config from "./config";
-import * as email from "./email";
 import * as types from "./types";
 
 export const MSG_FOLLOW_TEMPLATE =

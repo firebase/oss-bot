@@ -3,23 +3,20 @@ PROD_PROJECT="ossbot-f0cad"
 
 build-appengine:
 	cd appengine \
-		&& rm -rf lib env \
-		&& virtualenv env && source env/bin/activate \
-		&& gcloud components install app-engine-python \
-		&& pip install -t lib -r requirements.txt \
+		&& npm install \
 		&& cd -
 
 deploy-appengine-test: build-appengine
 	gcloud config set project $(TEST_PROJECT)
 	cd appengine \
-		&& gcloud --quiet app deploy app.yaml cron.yaml \
-		&& cd -
+		&& npm run deploy \
+        && cd -
 
 deploy-appengine-prod: build-appengine
 	gcloud config set project $(PROD_PROJECT)
 	cd appengine \
-		&& gcloud --quiet app deploy app.yaml cron.yaml \
-		&& cd -
+		&& npm run deploy \
+        && cd -
 
 build-functions: functions/src/*.ts functions/src/test/*.ts
 	cd functions \
@@ -33,10 +30,10 @@ test-functions: build-functions
 		&& cd -
 
 deploy-functions-config-prod:
-	ts-node functions/src/scripts/deploy-config.ts functions/config/config.json $(PROD_PROJECT)
+	functions/node_modules/.bin/ts-node functions/src/scripts/deploy-config.ts functions/config/config.json $(PROD_PROJECT)
 
 deploy-functions-config-test:
-	ts-node functions/src/scripts/deploy-config.ts functions/src/test/mock_data/config.json $(TEST_PROJECT)
+	functions/node_modules/.bin/ts-node functions/src/scripts/deploy-config.ts functions/src/test/mock_data/config.json $(TEST_PROJECT)
 
 deploy-functions-test: test-functions deploy-functions-config-test
 	firebase --project=$(TEST_PROJECT) deploy

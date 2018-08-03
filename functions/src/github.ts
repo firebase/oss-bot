@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as request from "request";
 import * as GithubApi from "@octokit/rest";
 
 import * as config from "./config";
