@@ -28,11 +28,19 @@ export class GithubIssueAction extends Action {
 
 export class GithubCommentAction extends GithubIssueAction {
   message: string;
+  collapse: boolean;
 
-  constructor(org: string, name: string, number: number, message: string) {
+  constructor(
+    org: string,
+    name: string,
+    number: number,
+    message: string,
+    collapse: boolean
+  ) {
     super(ActionType.GITHUB_COMMENT, org, name, number);
 
     this.message = message;
+    this.collapse = collapse;
   }
 }
 

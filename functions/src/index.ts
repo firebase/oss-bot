@@ -150,6 +150,9 @@ export const githubWebhook = functions.https.onRequest(
     // TODO(samstern): Maybe add an "execute" method to each action
     // to clean this up?
     const promises: Promise<any>[] = [];
+
+    const collapsibleComments = [];
+
     for (const action of actions) {
       if (action == undefined) {
         console.warn("Got undefined action.");
@@ -158,14 +161,19 @@ export const githubWebhook = functions.https.onRequest(
 
       if (action.type == types.ActionType.GITHUB_COMMENT) {
         const commentAction = action as types.GithubCommentAction;
-        promises.push(
-          gh_client.addComment(
-            commentAction.org,
-            commentAction.name,
-            commentAction.number,
-            commentAction.message
-          )
-        );
+
+        if (commentAction.collapse == true) {
+          collapsibleComments.push(commentAction);
+        } else {
+          promises.push(
+            gh_client.addComment(
+              commentAction.org,
+              commentAction.name,
+              commentAction.number,
+              commentAction.message
+            )
+          );
+        }
       }
 
       if (action.type == types.ActionType.GITHUB_LABEL) {
@@ -193,6 +201,37 @@ export const githubWebhook = functions.https.onRequest(
           )
         );
       }
+    }
+
+    // Handle all collapsible comments together.
+    if (collapsibleComments.length == 1) {
+      // Only one comment, post it directly.
+      const comment = collapsibleComments[0];
+      promises.push(
+        gh_client.addComment(
+          comment.org,
+          comment.name,
+          comment.number,
+          comment.message
+        )
+      );
+    } else if (collapsibleComments.length > 1) {
+      // More than one comment, combine them into bullets.
+      // TODO: What if the comments are cross-repo or cross-issue?
+      let msg = "I found a few problems with this issue:";
+      for (const comment of collapsibleComments) {
+        msg += `\n  * ${comment.message}`;
+      }
+
+      const firstComment = collapsibleComments[0];
+      promises.push(
+        gh_client.addComment(
+          firstComment.org,
+          firstComment.name,
+          firstComment.number,
+          msg
+        )
+      );
     }
 
     // Wait for the promise to resolve the HTTP request
