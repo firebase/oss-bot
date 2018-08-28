@@ -21,16 +21,16 @@ import * as config from "./config";
 import * as types from "./types";
 
 export const MSG_FOLLOW_TEMPLATE =
-  "Hmmm this issue does not seem to follow the issue template. " +
+  "This issue does not seem to follow the issue template. " +
   "Make sure you provide all the required information.";
 
 export const MSG_MISSING_INFO =
-  "This issues does not have all the required information.  " +
+  "This issues does not have all the information required by the template.  " +
   "Looks like you forgot to fill out some sections.  " +
   "Please update the issue with more information.";
 
 export const MSG_NEEDS_TRIAGE =
-  "Hey there! I couldn't figure out what this issue is about, " +
+  "I couldn't figure out how to label this issue, " +
   "so I've labeled it for a human to triage. Hang tight.";
 
 // Event: issues
@@ -213,7 +213,8 @@ export class IssueHandler {
         org,
         name,
         number,
-        MSG_NEEDS_TRIAGE
+        MSG_NEEDS_TRIAGE,
+        true
       );
       actions.push(commentAction);
     } else {
@@ -237,7 +238,8 @@ export class IssueHandler {
         org,
         name,
         number,
-        checkTemplateRes.message
+        checkTemplateRes.message,
+        true
       );
 
       actions.push(template_action);
