@@ -214,9 +214,13 @@ function GetTopIssues(repos: { [s: string]: any }, count?: number) {
 /**
  * PubSub function that saves the weekly report to RTDB.
  */
-export const SaveWeeklyReport = functions.pubsub
-  .topic("save_weekly_report")
-  .onPublish(async event => {
+export const SaveWeeklyReport = functions
+  .runWith({
+    timeoutSeconds: 540,
+    memory: "2GB"
+  })
+  .pubsub.topic("save_weekly_report")
+  .onPublish(async (event: any) => {
     const now = new Date();
 
     // Save report to the DB

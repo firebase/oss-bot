@@ -88,6 +88,21 @@ export class BotConfig {
   }
 
   /**
+   * Get the default template path for a type.
+   */
+  static getDefaultTemplateConfig(template: string) {
+    if (template === "issue") {
+      return "ISSUE_TEMPLATE.md";
+    }
+
+    if (template == "pull_request") {
+      return "PULL_REQUEST_TEMPLATE.md";
+    }
+
+    return undefined;
+  }
+
+  /**
    * Keys are sanitized before they are stored in config and therefore need
    * to be sanitized when retrieved.
    */

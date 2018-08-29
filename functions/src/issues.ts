@@ -472,13 +472,26 @@ export class IssueHandler {
     name: string,
     issue: types.Issue
   ): Promise<CheckMatchesTemplateResult> {
+    const result = new CheckMatchesTemplateResult();
+
+    const templateOpts = this.parseIssueOptions(org, name, issue);
+    console.log("Template options: ", templateOpts);
+
+    if (!templateOpts.validate) {
+      console.log(`Template optons specify no verification.`);
+      return result;
+    }
+
     // TODO(samstern): Should I catch inability to get the issue template
     // and handle it here?
-    const data = await this.gh_client.getIssueTemplate(org, name, this.config);
+    const data = await this.gh_client.getIssueTemplate(
+      org,
+      name,
+      templateOpts.path
+    );
     const checker = new template.TemplateChecker("###", "[REQUIRED]", data);
-    const issueBody = issue.body;
 
-    const result = new CheckMatchesTemplateResult();
+    const issueBody = issue.body;
 
     if (!checker.matchesTemplateSections(issueBody)) {
       console.log("checkMatchesTemplate: some sections missing");
@@ -496,6 +509,35 @@ export class IssueHandler {
     }
 
     return result;
+  }
+
+  parseIssueOptions(
+    org: string,
+    name: string,
+    issue: types.Issue
+  ): types.TemplateOptions {
+    const defaultTemplate =
+      this.config.getRepoTemplateConfig(org, name, "issue") ||
+      config.BotConfig.getDefaultTemplateConfig("issue");
+
+    const options = new types.TemplateOptions(defaultTemplate, true);
+
+    const path_re = /template_path=(.*)/;
+    const validate_re = /validate_template=(.*)/;
+
+    const body = issue.body;
+
+    const path_match = body.match(path_re);
+    if (path_match) {
+      options.path = path_match[1];
+    }
+
+    const validate_match = body.match(validate_re);
+    if (validate_match) {
+      options.validate = validate_match[1] == "true";
+    }
+
+    return options;
   }
 
   /**
