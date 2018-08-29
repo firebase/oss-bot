@@ -35,14 +35,17 @@ export class MockGithubClient extends github.GithubClient {
     return Promise.resolve(undefined);
   }
 
-  getIssueTemplate(org: string, name: string, config: config.BotConfig) {
-    console.log(`mock: github.getIssueTemplate(${org}, ${name})`);
+  getIssueTemplate(org: string, name: string, file: string) {
+    console.log(`mock: github.getIssueTemplate(${org}, ${name}, ${file})`);
 
-    const filePath = path.join(
-      __dirname,
-      "mock_data",
-      "issue_template_empty.md"
-    );
+    // Just use the file name of the path (ignore directories) and replace the
+    // default with our designated empty file.
+    let templatePath = path.basename(file);
+    if (templatePath === config.BotConfig.getDefaultTemplateConfig("issue")) {
+      templatePath = "issue_template_empty.md";
+    }
+
+    const filePath = path.join(__dirname, "mock_data", templatePath);
     const template = fs.readFileSync(filePath).toString();
     return Promise.resolve(template);
   }

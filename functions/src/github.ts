@@ -87,14 +87,9 @@ export class GithubClient {
   /**
    * Gets issue template from a github repo.
    */
-  getIssueTemplate(org: string, name: string, config: config.BotConfig) {
-    const issue_file =
-      config.getRepoTemplateConfig(org, name, "issue") || "ISSUE_TEMPLATE.md";
-
-    console.log(
-      `GithubClient.getIssueTemplate: ${org}/${name}, file=${issue_file}`
-    );
-    return this.getFileContent(org, name, issue_file);
+  getIssueTemplate(org: string, name: string, file: string) {
+    console.log(`GithubClient.getIssueTemplate: ${org}/${name}, file=${file}`);
+    return this.getFileContent(org, name, file);
   }
 
   /**

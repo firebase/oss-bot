@@ -125,8 +125,12 @@ async function delay(seconds: number) {
   });
 }
 
-export const SaveOrganizationSnapshot = functions.pubsub
-  .topic("cleanup")
+export const SaveOrganizationSnapshot = functions
+  .runWith({
+    timeoutSeconds: 540,
+    memory: "2GB"
+  })
+  .pubsub.topic("cleanup")
   .onPublish(async event => {
     const snapshot = await GetOrganizationSnapshot("firebase");
     return database

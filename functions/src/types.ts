@@ -81,6 +81,16 @@ export class SendEmailAction extends Action {
   }
 }
 
+export class TemplateOptions {
+  path: string;
+  validate: boolean;
+
+  constructor(path: string, validate: boolean) {
+    this.path = path;
+    this.validate = validate;
+  }
+}
+
 export class User {
   login: string;
   id: number;

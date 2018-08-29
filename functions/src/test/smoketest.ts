@@ -111,6 +111,22 @@ const partial_issue = new SimpleIssue({
     .toString()
 });
 
+// Issue with options, empty
+const issue_with_opts_empty = new SimpleIssue({
+  body: fs
+    .readFileSync(
+      path.join(__dirname, "mock_data", "issue_template_empty_with_opts.md")
+    )
+    .toString()
+});
+
+// Issue with options, bad
+const issue_with_opts_bad = new SimpleIssue({
+  body: fs
+    .readFileSync(path.join(__dirname, "mock_data", "issue_with_opts_bad.md"))
+    .toString()
+});
+
 // Issue that is really a feature request
 const fr_issue = new SimpleIssue({
   title: "FR: I want to change the Firebase",
@@ -326,13 +342,50 @@ describe("The OSS Robot", () => {
     // Should fail the tempalte check for not filling out all sections
     return issue_handler.checkMatchesTemplate("foo", "bar", issue).then(res => {
       assert.ok(!res.matches, "Does not fully match template.");
-      assert.ok(
-        res.message.indexOf("Hmmm") == -1,
-        "Message does not contain 'Hmm.'"
-      );
-      assert.ok(
-        res.message.indexOf("forgot to") > -1,
-        "Message does contain 'forgot to'."
+      assert.equal(res.message, issues.MSG_MISSING_INFO);
+    });
+  });
+
+  it("should get the right template config when unspecified", () => {
+    const issue = good_issue;
+
+    const opts = issue_handler.parseIssueOptions("samtstern", "BotTest", issue);
+    const path = bot_config.getRepoTemplateConfig(
+      "samtstern",
+      "BotTest",
+      "issue"
+    );
+
+    assert.ok(opts.validate, "Default is to validate.");
+    assert.equal(opts.path, path);
+  });
+
+  it("should get the right template config when specified", () => {
+    const issue = issue_with_opts_empty;
+
+    const opts = issue_handler.parseIssueOptions("samtstern", "BotTest", issue);
+
+    assert.ok(!opts.validate, "Validate false is specified");
+    assert.equal(opts.path, "issue_template_empty_with_opts.md");
+  });
+
+  it("should ignore validation when the opts say not to", () => {
+    const issue = issue_with_opts_empty;
+
+    return issue_handler.checkMatchesTemplate("foo", "bar", issue).then(res => {
+      assert.ok(res.matches, "Matches because there was no validation");
+    });
+  });
+
+  it("should validate against the right template", () => {
+    const issue = issue_with_opts_bad;
+
+    return issue_handler.checkMatchesTemplate("foo", "bar", issue).then(res => {
+      assert.ok(!res.matches, "Matches because there was no validation");
+      assert.equal(
+        res.message,
+        issues.MSG_MISSING_INFO,
+        `Message contains required: ${res.message}`
       );
     });
   });
