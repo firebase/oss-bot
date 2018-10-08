@@ -69,7 +69,7 @@ async function storeDailyMetrics(
   }
 
   // Get the dated SAM score
-  const samScore = await this.getDatedSAM(
+  const samScore = await getDatedSAM(
     projectData.repo,
     m.year(),
     m.month(),
@@ -108,7 +108,7 @@ export const BackfillMetrics = functions.https.onRequest(async (req, res) => {
   const projectId = req.param("project");
 
   try {
-    for (let i = 1; i <= 7; i++) {
+    for (let i = 1; i <= 30; i++) {
       await storeDailyMetrics(projectId, admin.database(), i);
     }
     res.status(200).send(`${projectId} --> done`);

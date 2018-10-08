@@ -1,5 +1,6 @@
 function drawChart(ctx, title, labels, downloadVals, samVals) {
-  var chart = new Chart.Line(ctx, {
+  var chart = new Chart(ctx, {
+    type: 'line',
     data: {
       labels: labels,
       datasets: [
@@ -43,6 +44,8 @@ function drawChart(ctx, title, labels, downloadVals, samVals) {
             type: 'linear',
             position: 'right',
             ticks: {
+              min: 0.0,
+              max: 2.0,
               beginAtZero: true
             },
             gridLines: {
@@ -57,14 +60,27 @@ function drawChart(ctx, title, labels, downloadVals, samVals) {
 
 function makeMetricChart(id, ctx) {
   var db = firebase.database();
-  let dataVal;
-  let infoVal;
+  var downloadsVal;
+  var samVal;
+  var infoVal;
 
-  var getData = db.ref('metrics-data')
-    .child(id)
+  var baseDataRef = db.ref('metrics-data').child(id);
+  var numRecords = 15;
+
+  var getDownloads = baseDataRef
+    .child("downloads")
+    .limitToLast(numRecords)
     .once('value')
     .then(function(snap) {
-      dataVal = snap.val();
+      downloadsVal = snap.val();
+    });
+
+  var getSam = baseDataRef
+    .child("sam")
+    .limitToLast(numRecords)
+    .once('value')
+    .then(function (snap) {
+      samVal = snap.val();
     });
 
   var getInfo = db.ref('metrics')
@@ -74,7 +90,7 @@ function makeMetricChart(id, ctx) {
       infoVal = snap.val();
     });
 
-  Promise.all([getInfo, getData])
+  Promise.all([getInfo, getDownloads, getSam])
     .then(function() {
 
       var name = infoVal.name;
@@ -83,10 +99,22 @@ function makeMetricChart(id, ctx) {
       var samVals = [];
 
       // Download keys are the "master"
-      Object.keys(dataVal.downloads).forEach(function (date) {
+      Object.keys(downloadsVal).forEach(function (date) {
         labels.push(date);
-        downloadVals.push(dataVal.downloads[date]);
-        samVals.push(dataVal.sam[date]);
+
+        var numDownloads = downloadsVal[date];
+        if (numDownloads > 0) {
+          downloadVals.push(numDownloads);
+        } else {
+          downloadVals.push(null);
+        }
+
+        var samScore = samVal[date];
+        if (samScore > 0) {
+          samVals.push(samScore);
+        } else {
+          samVals.push(null);
+        }
       });
 
       drawChart(ctx, name, labels, downloadVals, samVals);
@@ -95,7 +123,6 @@ function makeMetricChart(id, ctx) {
 
 window.initializeCharts = function() {
   this.document.querySelectorAll('.card').forEach(function(element) {
-    console.log(element)
     var chart = element.querySelector('canvas');
     var repoId = element.getAttribute('data-repo');
 
