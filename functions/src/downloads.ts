@@ -1,24 +1,47 @@
 import fetch from "node-fetch";
 import * as moment from "moment";
 
-export class Bintray {
+/**
+ * GET request with a URL and some URL params.
+ */
+function getJSON(baseUrl: string, params: any): Promise<any> {
+  const paramStr = Object.keys(params)
+    .map(key => {
+      return `${key}=${params[key]}`;
+    })
+    .join("&");
+
+  const url = `${baseUrl}?${paramStr}`;
+
+  return fetch(url, { method: "GET" }).then((res: any) => {
+    return res.json();
+  });
+}
+
+export class Npm {
   /**
-   * GET request with a URL and some URL params.
+   * Get the downloads for a package on a single day.
    */
-  static getJSON(baseUrl: string, params: any): Promise<any> {
-    const paramStr = Object.keys(params)
-      .map(key => {
-        return `${key}=${params[key]}`;
-      })
-      .join("&");
+  static async getDownloadsOnDay(
+    pkg: string,
+    year: number,
+    month: number,
+    date: number
+  ) {
+    // Notes:
+    //  - Months are 0-indexed but years and dates are 1-indexed
+    const day = moment.utc([year, month, date]);
+    const dayKey = day.format("YYYY-MM-DD");
+    const url = `https://api.npmjs.org/downloads/point/${dayKey}/${pkg}`;
 
-    const url = `${baseUrl}?${paramStr}`;
-
-    return fetch(url, { method: "GET" }).then((res: any) => {
-      return res.json();
+    console.log(`[npm] Fetching downloads for ${dayKey}.`);
+    return getJSON(url, {}).then((result: any) => {
+      return result.downloads;
     });
   }
+}
 
+export class Bintray {
   /**
    * Get the downloads for a package on a single day.
    */
@@ -69,10 +92,12 @@ export class Bintray {
       pkgPath: `${owner}/${pkg}`
     };
 
-    const resJson = await this.getJSON(baseUrl, params);
+    const resJson = await getJSON(baseUrl, params);
     const totals: any = {};
 
-    console.log(`Fetching downloads for ${pkg} from ${start} to ${end}`);
+    console.log(
+      `[bintray] Fetching downloads for ${pkg} from ${start} to ${end}`
+    );
 
     // Response has 'data' which is an array of objects that each have:
     //  version - string version number of the library.

@@ -83,4 +83,7 @@ window.initChart = function() {
 
   var ctx2 = document.getElementById('chart-2').getContext('2d');
   makeMetricChart('firebase-ui-firestore-android', ctx2);
+
+  var ctx3 = document.getElementById('chart-3').getContext('2d');
+  makeMetricChart('firebase-admin-node', ctx3);
 };

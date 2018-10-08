@@ -1,4 +1,4 @@
-import { Bintray } from "./bintray";
+import { Bintray, Npm } from "./downloads";
 import { GetRepoSAM } from "./report";
 import * as admin from "firebase-admin";
 import * as moment from "moment";
@@ -47,18 +47,26 @@ export class Library {
       .once("value");
     const projectData = projectSnap.val();
 
-    if (projectData.source !== "bintray") {
-      throw "Only bintray supported (for now)";
+    // Get the number of downloads from the appropriate source
+    let numDownloads;
+    if (projectData.source === "bintray") {
+      numDownloads = await Bintray.getDownloadsOnDay(
+        projectData.owner,
+        projectData.pkg,
+        m.year(),
+        m.month(),
+        m.date()
+      );
+    } else if (projectData.source === "npm") {
+      numDownloads = await Npm.getDownloadsOnDay(
+        projectData.pkg,
+        m.year(),
+        m.month(),
+        m.date()
+      );
+    } else {
+      throw `Source not supported: ${projectData.source}`;
     }
-
-    // Get downloads for yesterday (today may still be adding up).
-    const numDownloads = await Bintray.getDownloadsOnDay(
-      projectData.owner,
-      projectData.pkg,
-      m.year(),
-      m.month(),
-      m.date()
-    );
 
     // Get the dated SAM score
     const samScore = await this.getDatedSAM(
