@@ -4,13 +4,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Firebase Download Tracker</title>
+    <title>Firebase Metrics Tracker</title>
     <link rel="stylesheet" href="stats.css" />
 
     <script defer src="/__/firebase/5.5.3/firebase-app.js"></script>
     <script defer src="/__/firebase/5.5.3/firebase-auth.js"></script>
     <script defer src="/__/firebase/5.5.3/firebase-database.js"></script>
-    <!-- initialize the SDK after all desired features are loaded -->
     <script defer src="/__/firebase/init.js"></script>
 
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
@@ -18,30 +17,23 @@
 </head>
 
 <body>
-    <div class="card">
-        <div class="chart">
-            <canvas id="chart-1"></canvas>
-        </div>
+    <div class="card" data-repo="firebase-ui-database-android">
+        <canvas class="chart"></canvas>
     </div>
 
-    <div class="card">
-        <div class="chart">
-            <canvas id="chart-2"></canvas>
-        </div>
+    <div class="card" data-repo="firebase-ui-firestore-android">
+        <canvas class="chart"></canvas>
     </div>
 
-    <div class="card">
-        <div class="chart">
-            <canvas id="chart-3"></canvas>
-        </div>
+    <div class="card" data-repo="firebase-admin-node">
+        <canvas class="chart"></canvas>
     </div>
 
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            console.log('Loaded');
-
-            firebase.auth().signInAnonymously().then(initChart);
+            console.log('All scripts loaded, initializing...');
+            firebase.auth().signInAnonymously().then(initializeCharts);
         });
     </script>
 </body>

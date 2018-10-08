@@ -1,4 +1,4 @@
-function makeChart(ctx, title, labels, downloadVals, samVals) {
+function drawChart(ctx, title, labels, downloadVals, samVals) {
   var chart = new Chart.Line(ctx, {
     data: {
       labels: labels,
@@ -57,33 +57,48 @@ function makeChart(ctx, title, labels, downloadVals, samVals) {
 
 function makeMetricChart(id, ctx) {
   var db = firebase.database();
-  db.ref('metrics')
-    .child(id)
-    .once('value', function (snap) {
-      var val = snap.val();
+  let dataVal;
+  let infoVal;
 
+  var getData = db.ref('metrics-data')
+    .child(id)
+    .once('value')
+    .then(function(snap) {
+      dataVal = snap.val();
+    });
+
+  var getInfo = db.ref('metrics')
+    .child(id)
+    .once('value')
+    .then(function (snap) {
+      infoVal = snap.val();
+    });
+
+  Promise.all([getInfo, getData])
+    .then(function() {
+
+      var name = infoVal.name;
       var labels = [];
-      var downloadVals = [];
+      var downloadVals =[];
       var samVals = [];
 
       // Download keys are the "master"
-      Object.keys(val.downloads).forEach(function (date) {
+      Object.keys(dataVal.downloads).forEach(function (date) {
         labels.push(date);
-        downloadVals.push(val.downloads[date]);
-        samVals.push(val.sam[date]);
+        downloadVals.push(dataVal.downloads[date]);
+        samVals.push(dataVal.sam[date]);
       });
 
-      makeChart(ctx, val.name, labels, downloadVals, samVals);
+      drawChart(ctx, name, labels, downloadVals, samVals);
     });
 }
 
-window.initChart = function() {
-  var ctx1 = document.getElementById('chart-1').getContext('2d');
-  makeMetricChart('firebase-ui-database-android', ctx1);
+window.initializeCharts = function() {
+  this.document.querySelectorAll('.card').forEach(function(element) {
+    console.log(element)
+    var chart = element.querySelector('canvas');
+    var repoId = element.getAttribute('data-repo');
 
-  var ctx2 = document.getElementById('chart-2').getContext('2d');
-  makeMetricChart('firebase-ui-firestore-android', ctx2);
-
-  var ctx3 = document.getElementById('chart-3').getContext('2d');
-  makeMetricChart('firebase-admin-node', ctx3);
+    makeMetricChart(repoId, chart.getContext('2d'));
+  });
 };
