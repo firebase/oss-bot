@@ -10,6 +10,7 @@
     "@types/marked": "0.0.28",
     "@types/mocha": "^2.2.47",
     "@types/node": "^9.6.25",
+    "@types/node-fetch": "^2.1.2",
     "@types/request": "0.0.45",
     "chai": "^4.1.2",
     "firebase-tools": "^4.2.1",
@@ -42,6 +43,7 @@
   },
   "private": true,
   "dependencies": {
+    "@google-cloud/pubsub": "^0.20.1",
     "@octokit/rest": "^14.0.8",
     "@types/chalk": "^0.4.31",
     "@types/mustache": "^0.8.29",
@@ -52,6 +54,8 @@
     "firebase-functions": "^2.0.5",
     "mailgun-js": "^0.8.2",
     "marked": "^0.3.6",
-    "mustache": "^2.3.0"
+    "moment": "^2.22.2",
+    "mustache": "^2.3.0",
+    "node-fetch": "^2.2.0"
   }
 }

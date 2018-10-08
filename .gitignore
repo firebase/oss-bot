@@ -3,6 +3,7 @@
 functions/dist
 functions/config/*
 .firebaserc
+.firebase
 *.log
 functions/config/config.json
 /**/.runtimeconfig.json

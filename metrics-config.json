@@ -1,0 +1,47 @@
+{
+    "angularfire": {
+        "name": "AngularFire (legacy)",
+        "pkg": "angularfire",
+        "repo": "angularfire",
+        "source": "npm"
+    },
+    "emberfire": {
+        "name": "Emberfire",
+        "pkg": "emberfire",
+        "repo": "emberfire",
+        "source": "npm"
+    },
+    "firebase-admin-node": {
+        "name": "Firebase Admin (Node)",
+        "pkg": "firebase-admin",
+        "repo": "firebase-admin-node",
+        "source": "npm"
+    },
+    "firebase-tools": {
+        "name": "Firebase CLI",
+        "pkg": "firebase-tools",
+        "repo": "firebase-tools",
+        "source": "npm"
+    },
+    "firebase-ui-auth-android": {
+        "name": "Firebase UI Auth (Android)",
+        "owner": "firebaseui",
+        "pkg": "firebase-ui/firebase-ui-auth",
+        "repo": "firebaseui-android",
+        "source": "bintray"
+    },
+    "firebase-ui-database-android": {
+        "name": "Firebase UI Database (Android)",
+        "owner": "firebaseui",
+        "pkg": "firebase-ui/firebase-ui-database",
+        "repo": "firebaseui-android",
+        "source": "bintray"
+    },
+    "firebase-ui-firestore-android": {
+        "name": "Firebase UI Firestore (Android)",
+        "owner": "firebaseui",
+        "pkg": "firebase-ui/firebase-ui-firestore",
+        "repo": "firebaseui-android",
+        "source": "bintray"
+    }
+}

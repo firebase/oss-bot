@@ -25,12 +25,20 @@ import * as config from "./config";
 import * as types from "./types";
 
 export { GetOrganizationSnapshot, SaveOrganizationSnapshot } from "./snapshot";
+
 export {
   GetWeeklyReport,
   SaveWeeklyReport,
   GetWeeklyEmail,
   SendWeeklyEmail
 } from "./report";
+
+export {
+  BackfillMetrics,
+  UpdateMetricsWebhook,
+  UpdateMetrics,
+  UpdateAllMetrics
+} from "./metrics";
 
 // Config
 const config_json = functions.config().runtime.config;
