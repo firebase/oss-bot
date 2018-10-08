@@ -129,18 +129,6 @@ function GetTotalOpenPullRequests(snapshot: any) {
   });
 }
 
-function GetRepoSAM(repo: any) {
-  const open_issues = repo.open_issues_count || 0;
-  const closed_issues = repo.closed_issues_count || 0;
-
-  if (!closed_issues) return 0;
-
-  return (
-    (open_issues / (open_issues + closed_issues)) *
-    Math.log(Math.E + open_issues + closed_issues)
-  );
-}
-
 function GetSortedSam(
   repos: { [s: string]: any },
   sortFn: (x: any, y: any) => number,
@@ -209,6 +197,18 @@ function GetTopIssues(repos: { [s: string]: any }, count?: number) {
 
   if (count) topIssues = topIssues.slice(0, count);
   return topIssues;
+}
+
+export function GetRepoSAM(repo: any) {
+  const open_issues = repo.open_issues_count || 0;
+  const closed_issues = repo.closed_issues_count || 0;
+
+  if (!closed_issues) return 0;
+
+  return (
+    (open_issues / (open_issues + closed_issues)) *
+    Math.log(Math.E + open_issues + closed_issues)
+  );
 }
 
 /**

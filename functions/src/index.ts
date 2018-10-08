@@ -31,6 +31,7 @@ export {
   GetWeeklyEmail,
   SendWeeklyEmail
 } from "./report";
+export { AddStatsProject, StoreDailyStats } from "./stats";
 
 // Config
 const config_json = functions.config().runtime.config;

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Firebase Download Tracker</title>
+
+    <script defer src="/__/firebase/5.5.3/firebase-app.js"></script>
+    <script defer src="/__/firebase/5.5.3/firebase-auth.js"></script>
+    <script defer src="/__/firebase/5.5.3/firebase-database.js"></script>
+    <!-- initialize the SDK after all desired features are loaded -->
+    <script defer src="/__/firebase/init.js"></script>
+
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
+    <script defer src="./stats.js"></script>
+</head>
+
+<body>
+    <div style="width: 500px; height: 300px;">
+        <canvas id="chart-1"></canvas>
+    </div>
+
+    <div style="width: 500px; height: 300px;">
+        <canvas id="chart-2"></canvas>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('Loaded');
+
+            firebase.auth().signInAnonymously().then(initChart);
+        });
+    </script>
+</body>
+
+</html>
