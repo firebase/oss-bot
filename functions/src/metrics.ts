@@ -4,6 +4,11 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as moment from "moment";
 
+const PubSub = require("@google-cloud/pubsub");
+const pubsubClient = new PubSub({
+  projectId: process.env.GCLOUD_PROJECT
+});
+
 // TODO: Should probably move this out
 async function getDatedSAM(
   repo: string,
@@ -129,21 +134,30 @@ export const UpdateMetricsWebhook = functions.https.onRequest(
   }
 );
 
-export const UpdateMetrics = functions.pubsub
-  .topic("update-metrics")
+export const UpdateMetrics = functions
+  .runWith({
+    timeoutSeconds: 540,
+    memory: "2GB"
+  })
+  .pubsub.topic("update-metrics")
   .onPublish(async (message, context) => {
     const projectId = message.json["project"];
     await storeDailyMetrics(projectId, admin.database());
   });
 
-// TODO: Implement
-export const UpdateAllMetrics = functions.https.onRequest(async (req, res) => {
-  const db = admin.database();
-  const snap = await db.ref("metrics").once("value");
-  const val = snap.val();
+export const UpdateAllMetrics = functions.pubsub
+  .topic("update-all-metrics")
+  .onPublish(async (message, context) => {
+    const db = admin.database();
+    const snap = await db.ref("metrics").once("value");
+    const val = snap.val();
 
-  Object.keys(val).forEach(async (projectId: string) => {
-    console.log(`Updating metrics for: ${projectId}`);
-    // TODO: Send a pubsub for eachone
+    const publisher = pubsubClient.topic("update-metrics").publisher();
+
+    Object.keys(val).forEach(async (projectId: string) => {
+      console.log(`Updating metrics for: ${projectId}`);
+
+      const dataBuffer = Buffer.from(JSON.stringify({ project: projectId }));
+      await publisher.publish(dataBuffer);
+    });
   });
-});

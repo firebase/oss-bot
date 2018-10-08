@@ -43,6 +43,7 @@
   },
   "private": true,
   "dependencies": {
+    "@google-cloud/pubsub": "^0.20.1",
     "@octokit/rest": "^14.0.8",
     "@types/chalk": "^0.4.31",
     "@types/mustache": "^0.8.29",

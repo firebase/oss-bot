@@ -1,7 +1,12 @@
 cron:
 - description: Push a cleanup event onto pubsub every day
   url: /publish/cleanup
-  schedule: every 24 hours
+  schedule: every day 12:00
+  timezone: America/Los_Angeles
+- description: Update all metrics once per day
+  url: /publish/update-all-metrics
+  schedule: every day 13:00
+  timezone: America/Los_Angeles
 - description: Save weekly email report every Wednesday at 9am
   url: /publish/save_weekly_report
   schedule: every wednesday 09:00

@@ -1,19 +1,15 @@
-TEST_PROJECT="ossbot-test"
-PROD_PROJECT="ossbot-f0cad"
+PROJECT ?= ossbot-test
+
+check-config:
+	echo "Project is $(PROJECT)"
 
 build-appengine:
 	cd appengine \
 		&& npm install \
 		&& cd -
 
-deploy-appengine-test: build-appengine
-	gcloud config set project $(TEST_PROJECT)
-	cd appengine \
-		&& npm run deploy \
-        && cd -
-
-deploy-appengine-prod: build-appengine
-	gcloud config set project $(PROD_PROJECT)
+deploy-appengine: build-appengine
+	gcloud config set project $(PROJECT)
 	cd appengine \
 		&& npm run deploy \
         && cd -
@@ -29,18 +25,16 @@ test-functions: build-functions
 		&& npm run test-ts \
 		&& cd -
 
-deploy-functions-config-prod:
-	functions/node_modules/.bin/ts-node functions/src/scripts/deploy-config.ts functions/config/config.json $(PROD_PROJECT)
+deploy-metrics-config:
+	firebase --project=$(PROJECT) database:set /metrics metrics-config.json
 
-deploy-functions-config-test:
-	functions/node_modules/.bin/ts-node functions/src/scripts/deploy-config.ts functions/src/test/mock_data/config.json $(TEST_PROJECT)
+deploy-hosting: deploy-metrics-config
+	firebase --project=$(PROJECT) deploy --only hosting
 
-deploy-functions-test: test-functions deploy-functions-config-test
-	firebase --project=$(TEST_PROJECT) deploy
+deploy-functions-config:
+	functions/node_modules/.bin/ts-node functions/src/scripts/deploy-config.ts functions/src/test/mock_data/config.json $(PROJECT)
 
-deploy-functions-prod: test-functions deploy-functions-config-prod
-	firebase --project=$(PROD_PROJECT) deploy
+deploy-functions: test-functions deploy-functions-config
+	firebase --project=$(PROJECT) deploy --only functions
 
-deploy-test: deploy-appengine-test deploy-functions-test
-
-deploy-prod: deploy-appengine-prod deploy-functions-prod
+deploy: check-config deploy-appengine deploy-functions deploy-hosting
