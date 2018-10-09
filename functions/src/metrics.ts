@@ -1,4 +1,4 @@
-import { Bintray, Npm } from "./downloads";
+import { Bintray, Npm, Cocoapods } from "./downloads";
 import { GetRepoSAM } from "./report";
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
@@ -52,36 +52,41 @@ async function storeDailyMetrics(
     .once("value");
   const projectData = projectSnap.val();
 
-  // Get the number of downloads from the appropriate source
-  let numDownloads;
+  // Gather stats about the project
+  const stats: any = {};
+
+  // Stats from the appropriate source
   if (projectData.source === "bintray") {
-    numDownloads = await Bintray.getDownloadsOnDay(
-      projectData.owner,
+    stats["downloads"] = await Bintray.getDownloadsOnDay(
       projectData.pkg,
       m.year(),
       m.month(),
       m.date()
     );
   } else if (projectData.source === "npm") {
-    numDownloads = await Npm.getDownloadsOnDay(
+    stats["downloads"] = await Npm.getDownloadsOnDay(
       projectData.pkg,
       m.year(),
       m.month(),
       m.date()
     );
+  } else if (projectData.source == "cocoapods") {
+    // Note cocoapods only offers total download stats.
+    const res = await Cocoapods.getStats(projectData.pkg);
+    stats["downloads"] = res.downloads;
+    stats["apps"] = res.apps;
   } else {
     throw `Source not supported: ${projectData.source}`;
   }
 
   // Get the dated SAM score
-  const samScore = await getDatedSAM(
+  stats["sam"] = await getDatedSAM(
     projectData.repo,
     m.year(),
     m.month(),
     m.date()
   );
 
-  // TODO: Better key
   const dateKey = `${m.format("YYYY-MM-DD")}`;
 
   const dataRef = admin
@@ -90,20 +95,16 @@ async function storeDailyMetrics(
     .child("metrics-data")
     .child(projectId);
 
-  await dataRef
-    .child("downloads")
-    .child(dateKey)
-    .set(numDownloads);
+  Object.keys(stats).forEach(async (key: string) => {
+    const val = stats[key];
+    await dataRef
+      .child(key)
+      .child(dateKey)
+      .set(val);
+  });
 
-  await dataRef
-    .child("sam")
-    .child(dateKey)
-    .set(samScore);
-
-  return {
-    downloads: numDownloads,
-    sam: samScore
-  };
+  console.log(`${projectId} stats on ${dateKey}: ${JSON.stringify(stats)}`);
+  return stats;
 }
 
 // TODO: The client should insert the ID directly into the RTDB

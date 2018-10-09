@@ -15,8 +15,6 @@
  */
 import * as GithubApi from "@octokit/rest";
 
-import * as config from "./config";
-
 /**
  * Get a new client for interacting with Github.
  * @param {string} token Github API token.

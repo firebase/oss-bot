@@ -26,7 +26,7 @@ test-functions: build-functions
 		&& cd -
 
 deploy-metrics-config:
-	firebase --project=$(PROJECT) database:set /metrics metrics-config.json
+	firebase --project=$(PROJECT) database:set -y /metrics metrics-config.json
 
 deploy-hosting: deploy-metrics-config
 	firebase --project=$(PROJECT) deploy --only hosting

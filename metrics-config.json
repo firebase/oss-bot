@@ -25,23 +25,26 @@
     },
     "firebase-ui-auth-android": {
         "name": "Firebase UI Auth (Android)",
-        "owner": "firebaseui",
-        "pkg": "firebase-ui/firebase-ui-auth",
+        "pkg": "firebaseui/firebase-ui/firebase-ui-auth",
         "repo": "firebaseui-android",
         "source": "bintray"
     },
     "firebase-ui-database-android": {
         "name": "Firebase UI Database (Android)",
-        "owner": "firebaseui",
-        "pkg": "firebase-ui/firebase-ui-database",
+        "pkg": "firebaseui/firebase-ui/firebase-ui-database",
         "repo": "firebaseui-android",
         "source": "bintray"
     },
     "firebase-ui-firestore-android": {
         "name": "Firebase UI Firestore (Android)",
-        "owner": "firebaseui",
-        "pkg": "firebase-ui/firebase-ui-firestore",
+        "pkg": "firebaseui/firebase-ui/firebase-ui-firestore",
         "repo": "firebaseui-android",
         "source": "bintray"
+    },
+    "firebase-ui-ios": {
+        "name": "Firebase UI (iOS)",
+        "pkg": "FirebaseUI",
+        "repo": "firebaseui-ios",
+        "source": "cocoapods"
     }
 }

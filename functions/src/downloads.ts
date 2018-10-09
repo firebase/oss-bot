@@ -46,7 +46,6 @@ export class Bintray {
    * Get the downloads for a package on a single day.
    */
   static async getDownloadsOnDay(
-    owner: string,
     pkg: string,
     year: number,
     month: number,
@@ -59,7 +58,6 @@ export class Bintray {
     const before = day.clone().subtract(2, "day");
 
     return this.getDownloadsInRange(
-      owner,
       pkg,
       before.toISOString(),
       day.toISOString()
@@ -79,17 +77,12 @@ export class Bintray {
    *
    * timestamp is a string of millis since the epoch.
    */
-  static async getDownloadsInRange(
-    owner: string,
-    pkg: string,
-    start: string,
-    end: string
-  ) {
+  static async getDownloadsInRange(pkg: string, start: string, end: string) {
     const baseUrl = "https://bintray.com/statistics/packageStatistics";
     const params = {
       startDate: start,
       endDate: end,
-      pkgPath: `${owner}/${pkg}`
+      pkgPath: pkg
     };
 
     const resJson = await getJSON(baseUrl, params);
@@ -116,5 +109,20 @@ export class Bintray {
     });
 
     return totals;
+  }
+}
+
+export class Cocoapods {
+  static async getStats(pod: string) {
+    const url = `http://metrics.cocoapods.org/api/v1/pods/${pod}.json`;
+    const resJSON = await getJSON(url, {});
+
+    const totalDownloads = resJSON.stats.download_total;
+    const totalApps = resJSON.stats.app_total;
+
+    return {
+      downloads: totalDownloads,
+      apps: totalApps
+    };
   }
 }

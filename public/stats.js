@@ -1,26 +1,121 @@
-function drawChart(ctx, title, labels, downloadVals, samVals) {
+var COLOR_PINK = 'rgb(255, 99, 132)';
+var COLOR_GREEN = 'rgb(99, 255, 132)';
+var COLOR_BLUE = 'rgb(51, 153, 255)';
+
+var DOWNLOADS_AXIS = {
+  id: 'y-downloads',
+  type: 'linear',
+  position: 'left',
+  scaleLabel: {
+    display: true,
+    labelString: 'Downloads'
+  },
+  ticks: {
+    beginAtZero: true
+  }
+};
+
+var APPS_AXIS = {
+  id: 'y-apps',
+  type: 'linear',
+  position: 'left',
+  scaleLabel: {
+    display: true,
+    labelString: 'Apps'
+  },
+  ticks: {
+    beginAtZero: true
+  }
+};
+
+var SAM_AXIS = {
+  id: 'y-sam',
+  type: 'linear',
+  position: 'right',
+  scaleLabel: {
+    display: true,
+    labelString: 'SAM'
+  },
+  ticks: {
+    min: 0.0,
+    max: 2.0,
+    beginAtZero: true
+  },
+  gridLines: {
+    drawOnChartArea: false
+  }
+};
+
+var SOURCE_CONFIGS = {
+  bintray: {
+    series: [
+      {
+        key: 'downloads',
+        label: 'Downloads',
+        cumulative: false,
+        color: COLOR_PINK,
+        axis: DOWNLOADS_AXIS
+      },
+      {
+        key: 'sam',
+        label: 'SAM Score',
+        cumulative: false,
+        color: COLOR_GREEN,
+        axis: SAM_AXIS
+      }
+    ]
+  },
+  npm: {
+    series: [
+      {
+        key: 'downloads',
+        label: 'Downloads',
+        cumulative: false,
+        color: COLOR_PINK,
+        axis: DOWNLOADS_AXIS
+      },
+      {
+        key: 'sam',
+        label: 'SAM Score',
+        cumulative: false,
+        color: COLOR_GREEN,
+        axis: SAM_AXIS
+      }
+    ]
+  },
+  cocoapods: {
+    series: [
+      {
+        key: 'downloads',
+        label: 'Downloads',
+        cumulative: true,
+        color: COLOR_PINK,
+        axis: DOWNLOADS_AXIS
+      },
+      {
+        key: 'apps',
+        label: 'Apps',
+        cumulative: true,
+        color: COLOR_BLUE,
+        axis: APPS_AXIS
+      },
+      {
+        key: 'sam',
+        label: 'SAM Score',
+        cumulative: false,
+        color: COLOR_GREEN,
+        axis: SAM_AXIS
+      }
+    ]
+  }
+};
+
+function drawChart(ctx, title, labels, axes, dataSets) {
   var chart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labels,
-      datasets: [
-        {
-          label: 'Downloads',
-          type: 'line',
-          borderColor: 'rgb(255, 99, 132)',
-          fill: false,
-          data: downloadVals,
-          yAxisID: 'y-downloads'
-        },
-        {
-          label: 'SAM Score',
-          type: 'line',
-          borderColor: 'rgb(99, 255, 132)',
-          fill: false,
-          data: samVals,
-          yAxisID: 'y-sam'
-        }
-      ]
+      datasets: dataSets
     },
     options: {
       responsive: true,
@@ -30,29 +125,7 @@ function drawChart(ctx, title, labels, downloadVals, samVals) {
         text: title
       },
       scales: {
-        yAxes: [
-          {
-            id: 'y-downloads',
-            type: 'linear',
-            position: 'left',
-            ticks: {
-              beginAtZero: true
-            }
-          },
-          {
-            id: 'y-sam',
-            type: 'linear',
-            position: 'right',
-            ticks: {
-              min: 0.0,
-              max: 2.0,
-              beginAtZero: true
-            },
-            gridLines: {
-              drawOnChartArea: false
-            }
-          }
-        ]
+        yAxes: axes
       }
     }
   });
@@ -60,64 +133,92 @@ function drawChart(ctx, title, labels, downloadVals, samVals) {
 
 function makeMetricChart(id, ctx) {
   var db = firebase.database();
-  var downloadsVal;
-  var samVal;
-  var infoVal;
-
   var baseDataRef = db.ref('metrics-data').child(id);
-  var numRecords = 15;
+  var limit = 15;
 
-  var getDownloads = baseDataRef
-    .child("downloads")
-    .limitToLast(numRecords)
-    .once('value')
-    .then(function(snap) {
-      downloadsVal = snap.val();
-    });
-
-  var getSam = baseDataRef
-    .child("sam")
-    .limitToLast(numRecords)
-    .once('value')
-    .then(function (snap) {
-      samVal = snap.val();
-    });
-
-  var getInfo = db.ref('metrics')
+  var getInfo = db
+    .ref('metrics')
     .child(id)
     .once('value')
-    .then(function (snap) {
-      infoVal = snap.val();
+    .then(function(snap) {
+      return snap.val();
     });
 
-  Promise.all([getInfo, getDownloads, getSam])
-    .then(function() {
+  // Collect graph info
+  var name;
+  var labels;
+  var axes = [];
+  var dataSets = [];
 
-      var name = infoVal.name;
-      var labels = [];
-      var downloadVals =[];
-      var samVals = [];
+  getInfo
+    .then(function(infoVal) {
+      name = infoVal.name;
 
-      // Download keys are the "master"
-      Object.keys(downloadsVal).forEach(function (date) {
-        labels.push(date);
+      var source = infoVal.source;
+      var config = SOURCE_CONFIGS[source];
 
-        var numDownloads = downloadsVal[date];
-        if (numDownloads > 0) {
-          downloadVals.push(numDownloads);
-        } else {
-          downloadVals.push(null);
+      var promises = [];
+      config.series.forEach(function(series) {
+        // Collect the axes, no duplicates
+        if (axes.indexOf(series.axis) < 0) {
+          axes.push(series.axis);
         }
 
-        var samScore = samVal[date];
-        if (samScore > 0) {
-          samVals.push(samScore);
-        } else {
-          samVals.push(null);
-        }
+        // Make the datasets
+        var seriesPromise = baseDataRef
+          .child(series.key)
+          .limitToLast(limit)
+          .once('value')
+          .then(function(snap) {
+            var data = snap.val();
+
+            // Take the x-axis labels from the first series
+            if (!labels) {
+              labels = Object.keys(data);
+              labels.sort();
+            }
+
+            // Create a Chart.js based on the series config
+            var dataSet = {
+              label: series.label,
+              type: 'line',
+              borderColor: series.color,
+              fill: false,
+              data: [],
+              yAxisID: series.axis.id
+            };
+
+            // Accumulate the data
+            labels.forEach(function(label) {
+              var pt = data[label];
+              if (pt > 0) {
+                dataSet.data.push(pt);
+              } else {
+                dataSet.data.push(null);
+              }
+            });
+
+            // For cumulative data, do diffs
+            if (series.cumulative) {
+              var newData = [null];
+              for (var i = 1; i < dataSet.data.length; i++) {
+                newData.push(dataSet.data[i] - dataSet.data[i - 1]);
+              }
+              dataSet.data = newData;
+            }
+
+            dataSets.push(dataSet);
+          });
+
+        // Add the promise to the list
+        promises.push(seriesPromise);
       });
 
-      drawChart(ctx, name, labels, downloadVals, samVals);
+      return Promise.all(promises);
+    })
+    .then(function() {
+      // Once we have all data, draw the chart
+      drawChart(ctx, name, labels, axes, dataSets);
     });
 }
 
