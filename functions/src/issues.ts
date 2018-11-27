@@ -25,7 +25,7 @@ export const MSG_FOLLOW_TEMPLATE =
   "Make sure you provide all the required information.";
 
 export const MSG_MISSING_INFO =
-  "This issues does not have all the information required by the template.  " +
+  "This issue does not have all the information required by the template.  " +
   "Looks like you forgot to fill out some sections.  " +
   "Please update the issue with more information.";
 
