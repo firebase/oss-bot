@@ -116,7 +116,7 @@ function RepoSnapshotPath(repo: string, date: Date) {
   return `${DateSnapshotPath(date)}/repos/${repo}`;
 }
 
-function DateSlug(date: Date) {
+export function DateSlug(date: Date) {
   return format(date, "YY-MM-DD");
 }
 

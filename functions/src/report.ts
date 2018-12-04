@@ -225,10 +225,22 @@ class Diff {
   }
 }
 
+interface RepoIssue {
+  number: number;
+  title: string;
+  link: string;
+}
+
 interface RepoReport {
+  // Date strings
+  start: string;
+  end: string;
+
   open_issues: Diff;
   stars: Diff;
   forks: Diff;
+
+  closed_issues: RepoIssue[];
 }
 
 export async function MakeRepoReport(repo: string): Promise<RepoReport> {
@@ -238,21 +250,47 @@ export async function MakeRepoReport(repo: string): Promise<RepoReport> {
 
   // Use yesterday and 7 days ago in case today's snapshot job
   // has not run yet.
-  const yesterday = new Date(now.getTime() - dayMs);
-  const weekAgo = new Date(yesterday.getTime() - 7 * dayMs);
+  const startDate = new Date(now.getTime() - dayMs);
+  const endDate = new Date(startDate.getTime() - 7 * dayMs);
 
-  const after = (await snap.FetchRepoSnapshot(repo, yesterday)) as any;
-  const before = (await snap.FetchRepoSnapshot(repo, weekAgo)) as any;
+  const after = (await snap.FetchRepoSnapshot(repo, startDate)) as any;
+  const before = (await snap.FetchRepoSnapshot(repo, endDate)) as any;
 
   // TODO: Handle holes in the data
   if (after === undefined || before === undefined) {
-    throw `Couldn't get snapshots for ${yesterday} and ${weekAgo}`;
+    throw `Couldn't get snapshots for ${startDate} and ${endDate}`;
   }
 
+  // Simple counting stats
+  const open_issues = new Diff(
+    before.open_issues_count,
+    after.open_issues_count
+  );
+  const stars = new Diff(before.stargazers_count, after.stargazers_count);
+  const forks = new Diff(before.forks_count, after.forks_count);
+
+  // Check for difference in issues
+  const closed_issues: RepoIssue[] = [];
+  Object.keys(before.issues).forEach((id: string) => {
+    const beforeIssue = before.issues[id];
+    if (!after.issues[id]) {
+      closed_issues.push({
+        number: beforeIssue.number,
+        title: beforeIssue.title,
+        link: `https://github.com/firebase/${repo}/issues/${beforeIssue.number}`
+      });
+    }
+  });
+
   return {
-    open_issues: new Diff(before.open_issues_count, after.open_issues_count),
-    stars: new Diff(before.stargazers_count, after.stargazers_count),
-    forks: new Diff(before.forks_count, after.forks_count)
+    start: snap.DateSlug(startDate),
+    end: snap.DateSlug(endDate),
+
+    open_issues,
+    stars,
+    forks,
+
+    closed_issues
   };
 }
 
