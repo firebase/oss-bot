@@ -34,7 +34,7 @@ deploy-hosting: deploy-metrics-config
 deploy-functions-config:
 	functions/node_modules/.bin/ts-node functions/src/scripts/deploy-config.ts functions/config/config.json $(PROJECT)	
 
-deploy-functions: test-functions deploy-functions-config
+deploy-functions: test-functions
 	firebase --project=$(PROJECT) deploy --only functions
 
-deploy: check-config deploy-appengine deploy-functions deploy-hosting
+deploy: check-config deploy-appengine deploy-functions-config deploy-functions deploy-hosting

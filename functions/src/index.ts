@@ -27,6 +27,7 @@ import * as types from "./types";
 export { GetOrganizationSnapshot, SaveOrganizationSnapshot } from "./snapshot";
 
 export {
+  GetRepoReport,
   GetWeeklyReport,
   SaveWeeklyReport,
   GetWeeklyEmail,

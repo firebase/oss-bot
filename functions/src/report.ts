@@ -212,9 +212,17 @@ export function GetRepoSAM(repo: any) {
   );
 }
 
-interface Diff {
+class Diff {
   before: number;
   after: number;
+  diff: number;
+
+  constructor(before: number, after: number) {
+    this.before = before;
+    this.after = after;
+
+    this.diff = after - before;
+  }
 }
 
 interface RepoReport {
@@ -223,7 +231,7 @@ interface RepoReport {
   forks: Diff;
 }
 
-export async function GetRepoReport(repo: string): Promise<RepoReport> {
+export async function MakeRepoReport(repo: string): Promise<RepoReport> {
   // Get two snapshots
   const dayMs = 24 * 60 * 60 * 1000;
   const now = new Date();
@@ -242,20 +250,31 @@ export async function GetRepoReport(repo: string): Promise<RepoReport> {
   }
 
   return {
-    open_issues: {
-      before: before.open_issues_count,
-      after: after.open_issues_count
-    },
-    stars: {
-      before: before.stargazers_count,
-      after: after.stargazers_count
-    },
-    forks: {
-      before: before.forks_count,
-      after: after.forks_count
-    }
+    open_issues: new Diff(before.open_issues_count, after.open_issues_count),
+    stars: new Diff(before.stargazers_count, after.stargazers_count),
+    forks: new Diff(before.forks_count, after.forks_count)
   };
 }
+
+export const GetRepoReport = functions
+  .runWith({
+    timeoutSeconds: 540,
+    memory: "2GB"
+  })
+  .https.onRequest(async (req, res) => {
+    const repo = req.param("repo");
+    if (repo === undefined) {
+      res.status(500).send("Must specify 'repo' param");
+      return;
+    }
+
+    try {
+      const report = await MakeRepoReport(repo);
+      res.status(200).send(JSON.stringify(report));
+    } catch (e) {
+      res.status(500).send(e);
+    }
+  });
 
 /**
  * PubSub function that saves the weekly report to RTDB.
