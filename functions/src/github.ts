@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import * as util from "./util";
 import * as GithubApi from "@octokit/rest";
 
 /**
@@ -97,7 +98,7 @@ export class GithubClient {
     this.auth();
 
     return this.api.repos
-      .getContent({
+      .getContents({
         owner: org,
         repo: name,
         path: file
@@ -108,7 +109,9 @@ export class GithubClient {
       });
   }
 
-  /** */
+  /**
+   * Closes an issue on a github repo.
+   */
   closeIssue(org: string, name: string, number: number): Promise<any> {
     this.auth();
 
@@ -121,7 +124,7 @@ export class GithubClient {
     });
 
     // Close the issue
-    const close_issue = this.api.issues.edit({
+    const close_issue = this.api.issues.update({
       owner: org,
       repo: name,
       number: number,
@@ -137,8 +140,8 @@ export class GithubClient {
   getOldPullRequests(org: string, name: string, expiry: number) {
     this.auth();
 
-    return this.api.pullRequests
-      .getAll({
+    return this.api.pulls
+      .list({
         owner: org,
         repo: name,
         state: "open",
@@ -162,4 +165,61 @@ export class GithubClient {
         return results;
       });
   }
+}
+
+/**
+ * Interface for a Github API call.
+ */
+export interface GithubFn<S, T> {
+  (args: S): Promise<GithubApi.Response<T>>;
+}
+
+export interface PageParams {
+  // Results per page (max 100)
+  per_page?: number;
+
+  // Page number of the results to fetch.
+  page?: number;
+
+  // Ignore extra properties
+  [others: string]: any;
+}
+
+/**
+ * Read all pages of a Github API call and return them all as an
+ * array.
+ */
+export async function paginate<S extends PageParams, T>(
+  fn: GithubFn<S, Array<T>>,
+  options: S
+) {
+  const per_page = 100;
+  let pagesRemaining = true;
+  let page = 0;
+
+  let allData = [] as T[];
+  while (pagesRemaining) {
+    page++;
+
+    // Merge pagination options with the options passed in
+    const pageOptions = Object.assign(
+      {
+        per_page,
+        page
+      },
+      options
+    );
+
+    const res = await fn(pageOptions);
+    allData = allData.concat(res.data);
+
+    // We assume another page remaining if we got exactly as many
+    // issues as we asked for.
+    pagesRemaining = res.data.length == per_page;
+
+    // Wait 0.5s between pages
+    await util.delay(0.5);
+  }
+
+  return allData;
 }
