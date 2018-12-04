@@ -174,6 +174,10 @@ export interface GithubFn<S, T> {
   (args: S): Promise<GithubApi.Response<T>>;
 }
 
+/**
+ * Interface for the parameters to a call to the GitHub API
+ * that can be paginated.
+ */
 export interface PageParams {
   // Results per page (max 100)
   per_page?: number;

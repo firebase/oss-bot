@@ -5,6 +5,7 @@ import * as mustache from "mustache";
 import { readFileSync } from "fs";
 import * as path from "path";
 import * as email from "./email";
+import * as snap from "./snapshot";
 
 const snapshotsRef = database.ref("snapshots/github");
 const reportsRef = database.ref("reports/github");
@@ -209,6 +210,51 @@ export function GetRepoSAM(repo: any) {
     (open_issues / (open_issues + closed_issues)) *
     Math.log(Math.E + open_issues + closed_issues)
   );
+}
+
+interface Diff {
+  before: number;
+  after: number;
+}
+
+interface RepoReport {
+  open_issues: Diff;
+  stars: Diff;
+  forks: Diff;
+}
+
+export async function GetRepoReport(repo: string): Promise<RepoReport> {
+  // Get two snapshots
+  const dayMs = 24 * 60 * 60 * 1000;
+  const now = new Date();
+
+  // Use yesterday and 7 days ago in case today's snapshot job
+  // has not run yet.
+  const yesterday = new Date(now.getTime() - dayMs);
+  const weekAgo = new Date(yesterday.getTime() - 7 * dayMs);
+
+  const after = (await snap.FetchRepoSnapshot(repo, yesterday)) as any;
+  const before = (await snap.FetchRepoSnapshot(repo, weekAgo)) as any;
+
+  // TODO: Handle holes in the data
+  if (after === undefined || before === undefined) {
+    throw `Couldn't get snapshots for ${yesterday} and ${weekAgo}`;
+  }
+
+  return {
+    open_issues: {
+      before: before.open_issues_count,
+      after: after.open_issues_count
+    },
+    stars: {
+      before: before.stargazers_count,
+      after: after.stargazers_count
+    },
+    forks: {
+      before: before.forks_count,
+      after: after.forks_count
+    }
+  };
 }
 
 /**

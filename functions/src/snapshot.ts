@@ -44,8 +44,10 @@ export async function GetRepoSnapshot(
       owner: "firebase",
       repo: "oss-bot"
     });
-    repoData = res.data;
-    repoData = scrubObject(repoData, ["owner", "organization", "url"]);
+
+    // TODO: Why do we have to scrub at all?  Wouldn't it be better
+    //       to preserve the full API response?
+    repoData = scrubObject(res.data, ["owner", "organization", "url"]);
   }
 
   repoData.closed_issues_count = 0;
@@ -106,6 +108,31 @@ function scrubObject(obj: any, fieldsToScrub: string[]) {
   return obj;
 }
 
+function DateSnapshotPath(date: Date) {
+  return `/snapshots/github/${DateSlug(date)}`;
+}
+
+function RepoSnapshotPath(repo: string, date: Date) {
+  return `${DateSnapshotPath(date)}/repos/${repo}`;
+}
+
+function DateSlug(date: Date) {
+  return format(date, "YY-MM-DD");
+}
+
+/**
+ * Get the snapshot for a repo on a specific Date.
+ */
+export async function FetchRepoSnapshot(
+  repo: string,
+  date: Date
+): Promise<Object | undefined> {
+  const path = RepoSnapshotPath(repo, date);
+  const snap = await database.ref(path).once("value");
+  const data = snap.toJSON();
+  return data ? data : undefined;
+}
+
 export const SaveOrganizationSnapshot = functions
   .runWith({
     timeoutSeconds: 540,
@@ -114,8 +141,5 @@ export const SaveOrganizationSnapshot = functions
   .pubsub.topic("cleanup")
   .onPublish(async event => {
     const snapshot = await GetOrganizationSnapshot("firebase");
-    return database
-      .ref("snapshots/github")
-      .child(format(new Date(), "YY-MM-DD"))
-      .set(snapshot);
+    return database.ref(DateSnapshotPath(new Date())).set(snapshot);
   });
