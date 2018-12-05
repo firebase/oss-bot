@@ -11,7 +11,11 @@ cron:
   url: /publish/save_weekly_report
   schedule: every wednesday 09:00
   timezone: America/Los_Angeles
-- description: Send weekly email report every Wednesday at 9:30am
+- description: Send weekly email whole org report every Wednesday at 9:30am
   url: /publish/send_weekly_email
   schedule: every wednesday 09:30
+  timezone: America/Los_Angeles
+- description: Send weekly email repo reports every Wednesday at 10:00am
+  url: /publish/send_weekly_repo_email
+  schedule: every wednesday 10:00
   timezone: America/Los_Angeles

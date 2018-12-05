@@ -1,19 +1,46 @@
-import * as functions from "firebase-functions";
-import { database } from "./database";
 import { format } from "date-fns";
-import * as mustache from "mustache";
 import { readFileSync } from "fs";
+import * as functions from "firebase-functions";
 import * as path from "path";
+import * as mustache from "mustache";
+
+import { database } from "./database";
 import * as email from "./email";
+import * as snap from "./snapshot";
+import * as util from "./util";
+import { snapshot, report } from "./types";
+import { BotConfig } from "./config";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Used for duck-typing objects for calculating a SAM Score.
+ */
+interface SAMScoreable {
+  open_issues_count: number;
+  closed_issues_count: number;
+}
+
+/**
+ * Function that filters issues.
+ */
+interface IssueFilter {
+  (issue: snapshot.Issue): boolean;
+}
 
 const snapshotsRef = database.ref("snapshots/github");
-const reportsRef = database.ref("reports/github");
 
 const email_client = new email.EmailClient(
   functions.config().mailgun.key,
   functions.config().mailgun.domain
 );
 
+// Config
+// TODO: This should be a singleton
+const config_json = functions.config().runtime.config;
+const bot_config = new BotConfig(config_json);
+
+const EMAIL_DEBUG = functions.config().email.debug === "true";
 const EMAIL_GROUP = functions.config().email.recipient;
 
 export async function GetWeeklyReport(org: string) {
@@ -21,13 +48,13 @@ export async function GetWeeklyReport(org: string) {
   const recentEntrySnapshot = await snapshotsRef
     .limitToLast(1)
     .once("child_added");
-  const recentEntry = await recentEntrySnapshot.val();
+  const recentEntry = (await recentEntrySnapshot.val()) as snapshot.Org;
 
   // Compute interesting metrics
-  const topSAMs = GetHighestSam(recentEntry.repos);
-  const bottomSAMs = GetLowestSam(recentEntry.repos);
-  const topStars = GetTopStars(recentEntry.repos);
-  const topIssues = GetTopIssues(recentEntry.repos);
+  const topSAMs = GetHighestSam(recentEntry);
+  const bottomSAMs = GetLowestSam(recentEntry);
+  const topStars = GetTopStars(recentEntry);
+  const topIssues = GetTopIssues(recentEntry);
 
   const totalOpenPullRequests = GetTotalOpenPullRequests(recentEntry);
   const totalOpenIssues = GetTotalOpenIssues(recentEntry);
@@ -56,55 +83,62 @@ export async function GetWeeklyReport(org: string) {
   };
 }
 
-function GetTotalOpenIssues(snapshot: any) {
-  if (!snapshot) return 0;
+function GetTotalOpenIssues(snapshot: snapshot.Org) {
+  if (!snapshot) {
+    return 0;
+  }
 
-  return GetIssuesWithFilter(snapshot.repos, (issue: any) => {
+  return GetIssuesWithFilter(snapshot, (issue: snapshot.Issue) => {
     return !issue.pull_request;
   });
 }
 
-function GetTotalStars(snapshot: any) {
-  if (!snapshot) return 0;
+function GetTotalStars(org: snapshot.Org) {
+  if (!org) return 0;
 
-  return Object.keys(snapshot.repos).reduce((sum, key) => {
-    return sum + snapshot.repos[key].stargazers_count;
+  return Object.keys(org.repos).reduce((sum, key) => {
+    return sum + org.repos[key].stargazers_count;
   }, 0);
 }
 
-function GetTotalSamScore(snapshot: any) {
-  const sumOfRepos = Object.keys(snapshot.repos)
+function GetTotalSamScore(org: snapshot.Org) {
+  const sumOfRepos = Object.keys(org.repos)
     .map((repoName: string) => {
-      const repo = snapshot.repos[repoName];
+      const repo = org.repos[repoName];
       return {
         open_issues_count: repo.open_issues_count,
         closed_issues_count: repo.closed_issues_count
       };
     })
-    .reduce((a: any, b: any) => {
+    .reduce((a: SAMScoreable, b: SAMScoreable) => {
       return {
         open_issues_count: a.open_issues_count + b.open_issues_count,
         closed_issues_count: a.closed_issues_count + b.closed_issues_count
       };
     });
 
-  return GetRepoSAM(sumOfRepos);
+  return ComputeSAMScore(sumOfRepos);
 }
 
-function GetIssuesWithFilter(repos: { [s: string]: any }, filter: Function) {
+function GetIssuesWithFilter(org: snapshot.Org, filter: IssueFilter) {
   let matchingIssues = 0;
 
-  Object.keys(repos).forEach(repoName => {
-    const repo = repos[repoName];
+  Object.keys(org.repos).forEach(repoName => {
+    const repo = org.repos[repoName];
 
-    if (repo.private) return;
+    if (repo.private) {
+      return;
+    }
 
     matchingIssues += Object.keys(repo.issues || {}).reduce(
       (sum, issue_id: string) => {
         const issue = repo.issues[issue_id];
 
-        if (filter(issue)) return sum + 1;
-        else return sum;
+        if (filter(issue)) {
+          return sum + 1;
+        } else {
+          return sum;
+        }
       },
       0
     );
@@ -113,31 +147,35 @@ function GetIssuesWithFilter(repos: { [s: string]: any }, filter: Function) {
   return matchingIssues;
 }
 
-function GetTotalOpenIssuesWithNoComments(snapshot: any) {
-  if (!snapshot) return 0;
+function GetTotalOpenIssuesWithNoComments(snapshot: snapshot.Org) {
+  if (!snapshot) {
+    return 0;
+  }
 
-  return GetIssuesWithFilter(snapshot.repos, (issue: any) => {
+  return GetIssuesWithFilter(snapshot, (issue: snapshot.Issue) => {
     return !issue.pull_request && !issue.comments;
   });
 }
 
-function GetTotalOpenPullRequests(snapshot: any) {
-  if (!snapshot) return 0;
+function GetTotalOpenPullRequests(snapshot: snapshot.Org) {
+  if (!snapshot) {
+    return 0;
+  }
 
-  return GetIssuesWithFilter(snapshot.repos, (issue: any) => {
+  return GetIssuesWithFilter(snapshot, (issue: snapshot.Issue) => {
     return issue.pull_request;
   });
 }
 
 function GetSortedSam(
-  repos: { [s: string]: any },
+  org: snapshot.Org,
   sortFn: (x: any, y: any) => number,
   count?: number
 ) {
-  let sortedSAM = Object.keys(repos)
+  let sortedSAM = Object.keys(org.repos)
     .map((repoName: string) => {
-      const repo = repos[repoName];
-      const sam = GetRepoSAM(repo);
+      const repo = org.repos[repoName];
+      const sam = ComputeSAMScore(repo);
       return { name: repoName, sam };
     })
     .sort(sortFn)
@@ -149,9 +187,9 @@ function GetSortedSam(
   return sortedSAM;
 }
 
-function GetLowestSam(repos: { [s: string]: any }, count?: number) {
+function GetLowestSam(org: snapshot.Org, count?: number) {
   return GetSortedSam(
-    repos,
+    org,
     (a, b) => {
       return a.sam - b.sam;
     },
@@ -159,9 +197,9 @@ function GetLowestSam(repos: { [s: string]: any }, count?: number) {
   );
 }
 
-function GetHighestSam(repos: { [s: string]: any }, count?: number) {
+function GetHighestSam(org: snapshot.Org, count?: number) {
   return GetSortedSam(
-    repos,
+    org,
     (a, b) => {
       return b.sam - a.sam;
     },
@@ -169,10 +207,10 @@ function GetHighestSam(repos: { [s: string]: any }, count?: number) {
   );
 }
 
-function GetTopStars(repos: { [s: string]: any }, count?: number) {
-  let topStars = Object.keys(repos)
+function GetTopStars(org: snapshot.Org, count?: number) {
+  let topStars = Object.keys(org.repos)
     .map((repoName: string) => {
-      const repo = repos[repoName];
+      const repo = org.repos[repoName];
       const stars = repo.stargazers_count;
       return { name: repoName, stars };
     })
@@ -184,10 +222,10 @@ function GetTopStars(repos: { [s: string]: any }, count?: number) {
   return topStars;
 }
 
-function GetTopIssues(repos: { [s: string]: any }, count?: number) {
-  let topIssues = Object.keys(repos)
+function GetTopIssues(org: snapshot.Org, count?: number) {
+  let topIssues = Object.keys(org.repos)
     .map((repoName: string) => {
-      const repo = repos[repoName];
+      const repo = org.repos[repoName];
       const issues = repo.open_issues_count;
       return { name: repoName, issues };
     })
@@ -199,7 +237,7 @@ function GetTopIssues(repos: { [s: string]: any }, count?: number) {
   return topIssues;
 }
 
-export function GetRepoSAM(repo: any) {
+export function ComputeSAMScore(repo: SAMScoreable) {
   const open_issues = repo.open_issues_count || 0;
   const closed_issues = repo.closed_issues_count || 0;
 
@@ -211,6 +249,149 @@ export function GetRepoSAM(repo: any) {
   );
 }
 
+async function FetchClosestSnapshot(repo: string, date: Date) {
+  // Try to get a snapshot within 3 days of the requested date
+  // (moving backwards iteratively).
+  for (let i = 0; i < 2; i++) {
+    const msOffset = DAY_MS * i;
+    const offsetDate = new Date(date.getTime() - msOffset);
+
+    const snapshot = await snap.FetchRepoSnapshot(repo, offsetDate);
+    if (snapshot) {
+      return {
+        date: offsetDate,
+        snapshot
+      };
+    } else {
+      console.warn(`Could not get snapshot for ${repo} on ${date}`);
+    }
+  }
+
+  return {
+    date: date,
+    snapshot: undefined
+  };
+}
+
+export async function MakeRepoReport(repo: string): Promise<report.Repo> {
+  // Get two snapshots
+  const now = new Date();
+
+  // Use yesterday and 7 days ago in case today's snapshot job
+  // has not run yet.
+  const startDate = new Date(now.getTime() - DAY_MS);
+  const endDate = new Date(startDate.getTime() - 7 * DAY_MS);
+
+  const after = await FetchClosestSnapshot(repo, startDate);
+  const afterDate = after.date;
+  const afterSnap = after.snapshot;
+
+  const before = await FetchClosestSnapshot(repo, endDate);
+  const beforeDate = before.date;
+  const beforeSnap = before.snapshot;
+
+  if (!afterSnap) {
+    throw `Couldn't get 'after' snapshot for ${startDate}`;
+  }
+
+  if (!beforeSnap) {
+    throw `Couldn't get 'before' snapshot for ${endDate}`;
+  }
+
+  // Simple counting stats
+  const open_issues = new report.Diff(
+    beforeSnap.open_issues_count,
+    afterSnap.open_issues_count
+  );
+  const stars = new report.Diff(
+    beforeSnap.stargazers_count,
+    afterSnap.stargazers_count
+  );
+  const forks = new report.Diff(beforeSnap.forks_count, afterSnap.forks_count);
+
+  // SAM Score
+  const sam = new report.Diff(
+    ComputeSAMScore(beforeSnap),
+    ComputeSAMScore(afterSnap)
+  );
+
+  // Check for difference in issues
+  const before_ids = Object.keys(beforeSnap.issues);
+  const after_ids = Object.keys(afterSnap.issues);
+
+  // TODO: Should probably move this to Utils
+  function setDiff<T>(a: T[], b: T[]) {
+    return a.filter((x: T) => {
+      return b.indexOf(x) < 0;
+    });
+  }
+
+  // TODO: This could be moved out
+  function toChangedIssue(issue: snapshot.Issue): report.ChangedIssue {
+    return {
+      number: issue.number,
+      title: issue.title,
+      link: `https://github.com/firebase/${repo}/issues/${issue.number}`
+    };
+  }
+
+  // Issues present in only the "before" snap are newly closed, issues present in only
+  // the "after" snap are newly opened.
+  const closed_issues: report.ChangedIssue[] = setDiff(
+    before_ids,
+    after_ids
+  ).map(id => {
+    const issue = beforeSnap.issues[id];
+    return toChangedIssue(issue);
+  });
+  const opened_issues: report.ChangedIssue[] = setDiff(
+    after_ids,
+    before_ids
+  ).map(id => {
+    const issue = afterSnap.issues[id];
+    return toChangedIssue(issue);
+  });
+
+  return {
+    name: repo,
+
+    start: util.DateSlug(beforeDate),
+    end: util.DateSlug(afterDate),
+
+    sam,
+    open_issues,
+    stars,
+    forks,
+
+    opened_issues,
+    closed_issues
+  };
+}
+
+/**
+ * HTTP Function to get a JSON report on a repo.
+ */
+export const GetRepoReport = functions
+  .runWith({
+    timeoutSeconds: 540,
+    memory: "2GB"
+  })
+  .https.onRequest(async (req, res) => {
+    // TODO: Allow passing in the 'start' date to get historical data.
+    const repo = req.param("repo");
+    if (repo === undefined) {
+      res.status(500).send("Must specify 'repo' param");
+      return;
+    }
+
+    try {
+      const report = await MakeRepoReport(repo);
+      res.status(200).send(JSON.stringify(report));
+    } catch (e) {
+      res.status(500).send(e);
+    }
+  });
+
 /**
  * PubSub function that saves the weekly report to RTDB.
  */
@@ -220,19 +401,19 @@ export const SaveWeeklyReport = functions
     memory: "2GB"
   })
   .pubsub.topic("save_weekly_report")
-  .onPublish(async (event: any) => {
+  .onPublish(async (message: functions.pubsub.Message) => {
     const now = new Date();
 
     // Save report to the DB
     const report = await GetWeeklyReport("firebase");
     return database
       .ref("reports/github")
-      .child(format(now, "YY-MM-DD"))
+      .child(util.DateSlug(now))
       .set(report);
   });
 
 /**
- * HTTP function that sends the Github email based on the latest weekly report.
+ * PubSub function that sends the Github email based on the latest weekly report.
  */
 export const SendWeeklyEmail = functions.pubsub
   .topic("send_weekly_email")
@@ -245,6 +426,44 @@ export const SendWeeklyEmail = functions.pubsub
 
     await email_client.sendEmail(EMAIL_GROUP, subject, emailText);
   });
+
+/**
+ * PubSub function that sends the Github email based on the latest weekly report.
+ */
+export const SendWeeklyRepoEmails = functions.pubsub
+  .topic("send_weekly_repo_email")
+  .onPublish(async event => {
+    const allRepos = bot_config.getAllRepos();
+    for (const repo of allRepos) {
+      const reportConfig = bot_config.getRepoReportingConfig(
+        repo.org,
+        repo.name
+      );
+      if (!reportConfig) {
+        console.log(`No reporting config for ${repo.name}`);
+        continue;
+      }
+
+      if (EMAIL_DEBUG) {
+        console.warn(`Debug mode, redirecting emails for ${repo.name}`);
+        reportConfig.email = EMAIL_GROUP;
+      }
+
+      const emailText = await GetWeeklyRepoEmail(repo.name);
+      const dateString = format(new Date(), "DD/MM/YY");
+      const subject = `${repo.name} Github Summary for ${dateString}`;
+
+      console.log(`Sending email for ${repo.name} to ${reportConfig.email}`);
+      await email_client.sendEmail(reportConfig.email, subject, emailText);
+    }
+  });
+
+export async function GetWeeklyRepoEmail(repo: string) {
+  const report = await MakeRepoReport(repo);
+
+  const template = readFileSync(path.join(__dirname, "./repo-weekly.mustache"));
+  return mustache.render(template.toString(), report);
+}
 
 export async function GetWeeklyEmail(org: string) {
   const reportSnapshot = await database

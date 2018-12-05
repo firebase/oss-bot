@@ -1,0 +1,81 @@
+<mjml>
+  <mj-body>
+    <mj-container>
+      <mj-section>
+
+        <mj-column>
+          <mj-image width="100" src="https://firebasestorage.googleapis.com/v0/b/ossbot-f0cad.appspot.com/o/firebase%2Bgithub.png?alt=media&token=3843b41f-e904-4a7b-9d37-87ca0bc5c35e"></mj-image>
+          <mj-text font-size="20" color="#626262" align="center">
+            Weekly GitHub Report
+          </mj-text>
+          <mj-divider border-color="#CCC"></mj-divider>
+        </mj-column>
+
+      </mj-section>
+
+      <mj-section>
+        <mj-column>
+          <mj-text font-size="14px" color="#FF6F00" font-family="helvetica">
+            Hello friends! It's me, <b>Osscar the OSS bot</b>, and here is what is happening in your GitHub repo this week!
+          </mj-text>
+          
+          <mj-text font-size="14px" font-family="helvetica">
+            This report covers <b>{{name}}</b> from {{start}} to {{end}}.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section>
+        <mj-column>
+          <mj-text font-size="16px">
+            The SAM score for the repository is: <b>{{sam.after}}</b>.
+          </mj-text>
+          <mj-text font-size="12px">
+            That's a change of <b>{{sam.diff}}</b> this week. Remember, lower is better.
+          </mj-text>
+
+          <mj-text font-size="14px">
+            Here's how your other stats changed this week:
+            <ul>
+              <li>
+                <b>{{open_issues.after}}</b> open issues (Δ={{open_issues.diff}})
+              </li>
+              <li>
+                <b>{{stars.after}}</b> stars (Δ={{stars.diff}})
+              </li>
+              <li>
+                <b>{{forks.after}}</b> forks (Δ={{forks.diff}})
+              </li>
+            </ul>
+          </mj-text>
+
+          <mj-text font-size="14px">
+            These issues were newly opened this week:
+            <ul>
+              {{#opened_issues}}
+              <li><a href="{{link}}">#{{number}} - {{title}}</a></li>
+              {{/opened_issues}}
+            </ul>
+          </mj-text>
+
+          <mj-text font-size="14px">
+            You closed the following issues this week:
+            <ul>
+              {{#closed_issues}}
+              <li><a href="{{link}}">#{{number}} - {{title}}</a></li>
+              {{/closed_issues}}
+            </ul>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <mj-section>
+        <mj-column>
+          <mj-text color="#999" font-style="italic">
+             This is an automated email from <a href="http://who/samstern">samstern@</a>. Please send any feedback directly to him.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-container>
+  </mj-body>
+</mjml>
