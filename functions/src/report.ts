@@ -302,6 +302,12 @@ export async function MakeRepoReport(repo: string): Promise<report.Repo> {
   );
   const forks = new report.Diff(beforeSnap.forks_count, afterSnap.forks_count);
 
+  // SAM Score
+  const sam = new report.Diff(
+    ComputeSAMScore(beforeSnap),
+    ComputeSAMScore(afterSnap)
+  );
+
   // Check for difference in issues
   const closed_issues: report.ClosedIssue[] = [];
   Object.keys(beforeSnap.issues).forEach((id: string) => {
@@ -322,6 +328,7 @@ export async function MakeRepoReport(repo: string): Promise<report.Repo> {
     start: util.DateSlug(beforeDate),
     end: util.DateSlug(afterDate),
 
+    sam,
     open_issues,
     stars,
     forks,
@@ -339,6 +346,7 @@ export const GetRepoReport = functions
     memory: "2GB"
   })
   .https.onRequest(async (req, res) => {
+    // TODO: Allow passing in the 'start' date to get historical data.
     const repo = req.param("repo");
     if (repo === undefined) {
       res.status(500).send("Must specify 'repo' param");

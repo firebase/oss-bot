@@ -394,6 +394,8 @@ export namespace report {
     start: string;
     end: string;
 
+    sam: Diff;
+
     open_issues: Diff;
     stars: Diff;
     forks: Diff;
