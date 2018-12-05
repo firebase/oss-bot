@@ -8,7 +8,8 @@ import { database } from "./database";
 import * as email from "./email";
 import * as snap from "./snapshot";
 import * as util from "./util";
-import { DataSnapshot } from "firebase-functions/lib/providers/database";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Used for duck-typing objects for calculating a SAM Score.
@@ -22,7 +23,7 @@ interface SAMScoreable {
  * Function that filters issues.
  */
 interface IssueFilter {
-  (issue: snapshot.Issue): boolean
+  (issue: snapshot.Issue): boolean;
 }
 
 /**
@@ -306,47 +307,74 @@ export function ComputeSAMScore(repo: SAMScoreable) {
   );
 }
 
+async function FetchClosestSnapshot(repo: string, date: Date) {
+  // Try to get a snapshot within 3 days of the requested date
+  // (moving backwards iteratively).
+  for (let i = 0; i < 2; i++) {
+    const msOffset = DAY_MS * i;
+    const offsetDate = new Date(date.getTime() - msOffset);
+
+    const snapshot = await snap.FetchRepoSnapshot(repo, offsetDate);
+    if (snapshot) {
+      return {
+        date: offsetDate,
+        snapshot
+      };
+    } else {
+      console.warn(`Could not get snapshot for ${repo} on ${date}`);
+    }
+  }
+
+  return {
+    date: date,
+    snapshot: undefined
+  };
+}
+
 export async function MakeRepoReport(repo: string): Promise<report.Repo> {
   // Get two snapshots
-  const dayMs = 24 * 60 * 60 * 1000;
   const now = new Date();
 
   // Use yesterday and 7 days ago in case today's snapshot job
   // has not run yet.
-  const startDate = new Date(now.getTime() - dayMs);
-  const endDate = new Date(startDate.getTime() - 7 * dayMs);
+  const startDate = new Date(now.getTime() - DAY_MS);
+  const endDate = new Date(startDate.getTime() - 7 * DAY_MS);
 
-  const after = await snap.FetchRepoSnapshot(repo, startDate);
-  const before = await snap.FetchRepoSnapshot(repo, endDate);
+  const after = await FetchClosestSnapshot(repo, startDate);
+  const afterDate = after.date;
+  const afterSnap = after.snapshot;
 
-  // TODO: Handle holes in the data
-  if (!after) {
-    throw `Couldn't get snapshot for ${startDate}`;
+  const before = await FetchClosestSnapshot(repo, endDate);
+  const beforeDate = before.date;
+  const beforeSnap = before.snapshot;
+
+  if (!afterSnap) {
+    throw `Couldn't get 'after' snapshot for ${startDate}`;
   }
 
-  if (!before) {
-    throw `Couldn't get snapshot for ${endDate}`;
+  if (!beforeSnap) {
+    throw `Couldn't get 'before' snapshot for ${endDate}`;
   }
 
   // Simple counting stats
   const open_issues = new report.Diff(
-    before.open_issues_count,
-    after.open_issues_count
+    beforeSnap.open_issues_count,
+    afterSnap.open_issues_count
   );
   const stars = new report.Diff(
-    before.stargazers_count,
-    after.stargazers_count
+    beforeSnap.stargazers_count,
+    afterSnap.stargazers_count
   );
-  const forks = new report.Diff(before.forks_count, after.forks_count);
+  const forks = new report.Diff(beforeSnap.forks_count, afterSnap.forks_count);
 
   // Check for difference in issues
   const closed_issues: report.ClosedIssue[] = [];
-  Object.keys(before.issues).forEach((id: string) => {
-    const issue = before.issues[id];
+  Object.keys(beforeSnap.issues).forEach((id: string) => {
+    const issue = beforeSnap.issues[id];
 
     // Any issue that's in before and not after must have been
     // closed in the intermediate time.
-    if (!after.issues[id]) {
+    if (!afterSnap.issues[id]) {
       closed_issues.push({
         number: issue.number,
         title: issue.title,
@@ -356,8 +384,8 @@ export async function MakeRepoReport(repo: string): Promise<report.Repo> {
   });
 
   return {
-    start: util.DateSlug(startDate),
-    end: util.DateSlug(endDate),
+    start: util.DateSlug(beforeDate),
+    end: util.DateSlug(afterDate),
 
     open_issues,
     stars,
