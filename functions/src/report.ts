@@ -9,6 +9,7 @@ import * as email from "./email";
 import * as snap from "./snapshot";
 import * as util from "./util";
 import { snapshot, report } from "./types";
+import { BotConfig } from "./config";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -34,6 +35,12 @@ const email_client = new email.EmailClient(
   functions.config().mailgun.domain
 );
 
+// Config
+// TODO: This should be a singleton
+const config_json = functions.config().runtime.config;
+const bot_config = new BotConfig(config_json);
+
+const EMAIL_DEBUG = functions.config().email.debug === "true";
 const EMAIL_GROUP = functions.config().email.recipient;
 
 export async function GetWeeklyReport(org: string) {
@@ -406,7 +413,7 @@ export const SaveWeeklyReport = functions
   });
 
 /**
- * HTTP function that sends the Github email based on the latest weekly report.
+ * PubSub function that sends the Github email based on the latest weekly report.
  */
 export const SendWeeklyEmail = functions.pubsub
   .topic("send_weekly_email")
@@ -418,6 +425,37 @@ export const SendWeeklyEmail = functions.pubsub
     const subject = `Firebase Github Summary for ${dateString}`;
 
     await email_client.sendEmail(EMAIL_GROUP, subject, emailText);
+  });
+
+/**
+ * PubSub function that sends the Github email based on the latest weekly report.
+ */
+export const SendWeeklyRepoEmails = functions.pubsub
+  .topic("send_weekly_repo_email")
+  .onPublish(async event => {
+    const allRepos = bot_config.getAllRepos();
+    for (const repo of allRepos) {
+      const reportConfig = bot_config.getRepoReportingConfig(
+        repo.org,
+        repo.name
+      );
+      if (!reportConfig) {
+        console.log(`No reporting config for ${repo.name}`);
+        return;
+      }
+
+      if (EMAIL_DEBUG) {
+        console.warn(`Debug mode, redirecting emails for ${repo.name}`);
+        reportConfig.email = EMAIL_GROUP;
+      }
+
+      const emailText = await GetWeeklyRepoEmail(repo.name);
+      const dateString = format(new Date(), "DD/MM/YY");
+      const subject = `${repo.name} Github Summary for ${dateString}`;
+
+      console.log(`Sending email for ${repo.name} to ${reportConfig.email}`);
+      await email_client.sendEmail(reportConfig.email, subject, emailText);
+    }
   });
 
 export async function GetWeeklyRepoEmail(repo: string) {

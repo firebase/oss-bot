@@ -88,6 +88,17 @@ export class BotConfig {
   }
 
   /**
+   * Get the config for weekly repo report emails.
+   */
+  getRepoReportingConfig(org: string, name: string) {
+    const repoConfig = this.getRepoConfig(org, name);
+
+    if (repoConfig && repoConfig.reports) {
+      return repoConfig.reports;
+    }
+  }
+
+  /**
    * Get the default template path for a type.
    */
   static getDefaultTemplateConfig(template: string) {

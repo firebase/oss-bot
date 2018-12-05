@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 import * as functions from "firebase-functions";
+import * as path from "path";
 
 // Local includes
 import * as github from "./github";
@@ -31,7 +32,8 @@ export {
   GetWeeklyReport,
   SaveWeeklyReport,
   GetWeeklyEmail,
-  SendWeeklyEmail
+  SendWeeklyEmail,
+  SendWeeklyRepoEmails
 } from "./report";
 
 export {
