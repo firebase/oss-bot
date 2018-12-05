@@ -384,13 +384,15 @@ export namespace report {
     }
   }
 
-  export interface ClosedIssue {
+  export interface ChangedIssue {
     number: number;
     title: string;
     link: string;
   }
 
   export interface Repo {
+    name: string;
+
     start: string;
     end: string;
 
@@ -400,6 +402,7 @@ export namespace report {
     stars: Diff;
     forks: Diff;
 
-    closed_issues: ClosedIssue[];
+    opened_issues: ChangedIssue[];
+    closed_issues: ChangedIssue[];
   }
 }

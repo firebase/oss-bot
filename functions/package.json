@@ -31,7 +31,7 @@
     "fmt": "prettier --write src/**/*.ts src/**.ts",
     "build": "npm run fmt && npm run build-ts && npm run tslint && npm run build-mjml",
     "build-ts": "tsc",
-    "build-mjml": "mjml templates/weekly.mjml --output dist/weekly.mustache",
+    "build-mjml": "mjml templates/weekly.mjml --output dist/weekly.mustache && mjml templates/repo-weekly.mjml --output dist/repo-weekly.mustache",
     "test-ts": "mocha -r ts-node/register src/test/smoketest.ts",
     "watch-ts": "tsc -w",
     "tslint": "tslint -c tslint.json -p tsconfig.json",

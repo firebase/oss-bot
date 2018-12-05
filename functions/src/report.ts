@@ -309,22 +309,45 @@ export async function MakeRepoReport(repo: string): Promise<report.Repo> {
   );
 
   // Check for difference in issues
-  const closed_issues: report.ClosedIssue[] = [];
-  Object.keys(beforeSnap.issues).forEach((id: string) => {
-    const issue = beforeSnap.issues[id];
+  const before_ids = Object.keys(beforeSnap.issues);
+  const after_ids = Object.keys(afterSnap.issues);
 
-    // Any issue that's in before and not after must have been
-    // closed in the intermediate time.
-    if (!afterSnap.issues[id]) {
-      closed_issues.push({
-        number: issue.number,
-        title: issue.title,
-        link: `https://github.com/firebase/${repo}/issues/${issue.number}`
-      });
-    }
+  // TODO: Should probably move this to Utils
+  function setDiff<T>(a: T[], b: T[]) {
+    return a.filter((x: T) => {
+      return b.indexOf(x) < 0;
+    });
+  }
+
+  // TODO: This could be moved out
+  function toChangedIssue(issue: snapshot.Issue): report.ChangedIssue {
+    return {
+      number: issue.number,
+      title: issue.title,
+      link: `https://github.com/firebase/${repo}/issues/${issue.number}`
+    };
+  }
+
+  // Issues present in only the "before" snap are newly closed, issues present in only
+  // the "after" snap are newly opened.
+  const closed_issues: report.ChangedIssue[] = setDiff(
+    before_ids,
+    after_ids
+  ).map(id => {
+    const issue = beforeSnap.issues[id];
+    return toChangedIssue(issue);
+  });
+  const opened_issues: report.ChangedIssue[] = setDiff(
+    after_ids,
+    before_ids
+  ).map(id => {
+    const issue = afterSnap.issues[id];
+    return toChangedIssue(issue);
   });
 
   return {
+    name: repo,
+
     start: util.DateSlug(beforeDate),
     end: util.DateSlug(afterDate),
 
@@ -333,6 +356,7 @@ export async function MakeRepoReport(repo: string): Promise<report.Repo> {
     stars,
     forks,
 
+    opened_issues,
     closed_issues
   };
 }
@@ -395,6 +419,13 @@ export const SendWeeklyEmail = functions.pubsub
 
     await email_client.sendEmail(EMAIL_GROUP, subject, emailText);
   });
+
+export async function GetWeeklyRepoEmail(repo: string) {
+  const report = await MakeRepoReport(repo);
+
+  const template = readFileSync(path.join(__dirname, "./repo-weekly.mustache"));
+  return mustache.render(template.toString(), report);
+}
 
 export async function GetWeeklyEmail(org: string) {
   const reportSnapshot = await database
