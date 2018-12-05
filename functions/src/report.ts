@@ -421,7 +421,7 @@ export const SendWeeklyEmail = functions.pubsub
     const emailText = await GetWeeklyEmail("firebase");
     const now = new Date();
 
-    const dateString = format(now, "DD/MM/YY");
+    const dateString = format(now, "MM/DD/YY");
     const subject = `Firebase Github Summary for ${dateString}`;
 
     await email_client.sendEmail(EMAIL_GROUP, subject, emailText);
@@ -450,7 +450,7 @@ export const SendWeeklyRepoEmails = functions.pubsub
       }
 
       const emailText = await GetWeeklyRepoEmail(repo.name);
-      const dateString = format(new Date(), "DD/MM/YY");
+      const dateString = format(new Date(), "MM/DD/YY");
       const subject = `${repo.name} Github Summary for ${dateString}`;
 
       console.log(`Sending email for ${repo.name} to ${reportConfig.email}`);
