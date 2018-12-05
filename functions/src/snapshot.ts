@@ -1,11 +1,48 @@
 import * as functions from "firebase-functions";
 import { database } from "./database";
 import * as github from "./github";
-import { format } from "date-fns";
 import * as util from "./util";
+import { snapshot } from "./types";
 
 const gh_client = new github.GithubClient(functions.config().github.token);
 gh_client.auth();
+
+function cleanRepoName(name: string): string {
+  let cleanName = name.toLowerCase();
+  cleanName = cleanName.replace(".", "_");
+
+  return cleanName;
+}
+
+function scrubArray(obj: any[], fieldsToScrub: string[]) {
+  return obj.map((item: any) => {
+    return scrubObject(item, fieldsToScrub);
+  });
+}
+
+function scrubObject(obj: any, fieldsToScrub: string[]) {
+  Object.keys(obj)
+    .filter(key => {
+      const isValid = fieldsToScrub.filter(fieldMatch => {
+        return key.match(new RegExp(fieldMatch));
+      });
+
+      return isValid.length;
+    })
+    .forEach(key => {
+      delete obj[key];
+    });
+
+  return obj;
+}
+
+function DateSnapshotPath(date: Date) {
+  return `/snapshots/github/${util.DateSlug(date)}`;
+}
+
+function RepoSnapshotPath(repo: string, date: Date) {
+  return `${DateSnapshotPath(date)}/repos/${repo}`;
+}
 
 export async function GetOrganizationSnapshot(org: string) {
   const getOrgRes = await gh_client.api.orgs.get({
@@ -79,50 +116,13 @@ export async function GetRepoSnapshot(
   return repoData;
 }
 
-function cleanRepoName(name: string): string {
-  let cleanName = name.toLowerCase();
-  cleanName = cleanName.replace(".", "_");
-
-  return cleanName;
-}
-
-function scrubArray(obj: any[], fieldsToScrub: string[]) {
-  return obj.map((item: any) => {
-    return scrubObject(item, fieldsToScrub);
-  });
-}
-
-function scrubObject(obj: any, fieldsToScrub: string[]) {
-  Object.keys(obj)
-    .filter(key => {
-      const isValid = fieldsToScrub.filter(fieldMatch => {
-        return key.match(new RegExp(fieldMatch));
-      });
-
-      return isValid.length;
-    })
-    .forEach(key => {
-      delete obj[key];
-    });
-
-  return obj;
-}
-
-function DateSnapshotPath(date: Date) {
-  return `/snapshots/github/${util.DateSlug(date)}`;
-}
-
-function RepoSnapshotPath(repo: string, date: Date) {
-  return `${DateSnapshotPath(date)}/repos/${repo}`;
-}
-
 /**
  * Get the snapshot for a repo on a specific Date.
  */
 export async function FetchRepoSnapshot(
   repo: string,
   date: Date
-): Promise<any> {
+): Promise<snapshot.Repo | undefined> {
   const path = RepoSnapshotPath(repo, date);
   const snap = await database.ref(path).once("value");
   return snap.val();

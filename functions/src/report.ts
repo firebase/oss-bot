@@ -8,6 +8,7 @@ import { database } from "./database";
 import * as email from "./email";
 import * as snap from "./snapshot";
 import * as util from "./util";
+import { snapshot, report } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -24,72 +25,6 @@ interface SAMScoreable {
  */
 interface IssueFilter {
   (issue: snapshot.Issue): boolean;
-}
-
-/**
- * Types for data as it is stored in the 'snapshots' tree
- * in the RTDB.
- */
-namespace snapshot {
-  export interface Org {
-    name: string;
-    public_repos: number;
-
-    repos: {
-      [repo: string]: snapshot.Repo;
-    };
-  }
-
-  export interface Repo {
-    private: boolean;
-    open_issues_count: number;
-    closed_issues_count: number;
-    stargazers_count: number;
-
-    issues: {
-      [id: string]: Issue;
-    };
-  }
-
-  export interface Issue {
-    comments: number;
-    pull_request: boolean;
-  }
-}
-
-/**
- * Types for data as it is reported.
- */
-namespace report {
-  export class Diff {
-    before: number;
-    after: number;
-    diff: number;
-
-    constructor(before: number, after: number) {
-      this.before = before;
-      this.after = after;
-
-      this.diff = after - before;
-    }
-  }
-
-  export interface ClosedIssue {
-    number: number;
-    title: string;
-    link: string;
-  }
-
-  export interface Repo {
-    start: string;
-    end: string;
-
-    open_issues: Diff;
-    stars: Diff;
-    forks: Diff;
-
-    closed_issues: ClosedIssue[];
-  }
 }
 
 const snapshotsRef = database.ref("snapshots/github");

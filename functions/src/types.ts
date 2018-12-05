@@ -332,3 +332,72 @@ export class PullRequest {
   _links: Links;
   user: User;
 }
+
+/**
+ * Types for data as it is stored in the 'snapshots' tree
+ * in the RTDB.
+ */
+export namespace snapshot {
+  export interface Org {
+    name: string;
+    public_repos: number;
+
+    repos: {
+      [repo: string]: snapshot.Repo;
+    };
+  }
+
+  export interface Repo {
+    private: boolean;
+    open_issues_count: number;
+    closed_issues_count: number;
+    stargazers_count: number;
+    forks_count: number;
+
+    issues: {
+      [id: string]: Issue;
+    };
+  }
+
+  export interface Issue {
+    number: number;
+    title: string;
+    comments: number;
+    pull_request: boolean;
+  }
+}
+
+/**
+ * Types for data as it is reported.
+ */
+export namespace report {
+  export class Diff {
+    before: number;
+    after: number;
+    diff: number;
+
+    constructor(before: number, after: number) {
+      this.before = before;
+      this.after = after;
+
+      this.diff = after - before;
+    }
+  }
+
+  export interface ClosedIssue {
+    number: number;
+    title: string;
+    link: string;
+  }
+
+  export interface Repo {
+    start: string;
+    end: string;
+
+    open_issues: Diff;
+    stars: Diff;
+    forks: Diff;
+
+    closed_issues: ClosedIssue[];
+  }
+}
