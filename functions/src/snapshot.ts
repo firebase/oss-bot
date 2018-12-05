@@ -109,15 +109,11 @@ function scrubObject(obj: any, fieldsToScrub: string[]) {
 }
 
 function DateSnapshotPath(date: Date) {
-  return `/snapshots/github/${DateSlug(date)}`;
+  return `/snapshots/github/${util.DateSlug(date)}`;
 }
 
 function RepoSnapshotPath(repo: string, date: Date) {
   return `${DateSnapshotPath(date)}/repos/${repo}`;
-}
-
-export function DateSlug(date: Date) {
-  return format(date, "YY-MM-DD");
 }
 
 /**
@@ -126,11 +122,10 @@ export function DateSlug(date: Date) {
 export async function FetchRepoSnapshot(
   repo: string,
   date: Date
-): Promise<Object | undefined> {
+): Promise<any> {
   const path = RepoSnapshotPath(repo, date);
   const snap = await database.ref(path).once("value");
-  const data = snap.toJSON();
-  return data ? data : undefined;
+  return snap.val();
 }
 
 export const SaveOrganizationSnapshot = functions

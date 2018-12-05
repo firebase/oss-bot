@@ -1,5 +1,5 @@
 import { Bintray, Npm, Cocoapods } from "./downloads";
-import { GetRepoSAM } from "./report";
+import { ComputeSAMScore } from "./report";
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as moment from "moment";
@@ -31,7 +31,7 @@ async function getDatedSAM(
     console.warn(`No snapshot for ${repo} on ${dayKey}`);
     return 0;
   }
-  return GetRepoSAM(repoSnap.val());
+  return ComputeSAMScore(repoSnap.val());
 }
 
 async function storeDailyMetrics(
