@@ -441,7 +441,7 @@ export const SendWeeklyRepoEmails = functions.pubsub
       );
       if (!reportConfig) {
         console.log(`No reporting config for ${repo.name}`);
-        return;
+        continue;
       }
 
       if (EMAIL_DEBUG) {
