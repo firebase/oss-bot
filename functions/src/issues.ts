@@ -511,16 +511,23 @@ export class IssueHandler {
     return result;
   }
 
+  /**
+   * Choose the proper issue template and validation options for a given issue.
+   * This is determined by first reading the static config and then looking for
+   * options specified in the issue body.
+   */
   parseIssueOptions(
     org: string,
     name: string,
     issue: types.Issue
   ): types.TemplateOptions {
-    const defaultTemplate =
-      this.config.getRepoTemplateConfig(org, name, "issue") ||
-      config.BotConfig.getDefaultTemplateConfig("issue");
+    let templatePath = this.config.getRepoTemplateConfig(org, name, "issue");
+    if (!templatePath) {
+      console.log(`No "issue" template specified for ${name}, using defaults.`);
+      templatePath = config.BotConfig.getDefaultTemplateConfig("issue");
+    }
 
-    const options = new types.TemplateOptions(defaultTemplate, true);
+    const options = new types.TemplateOptions(templatePath, true);
 
     const path_re = /template_path=(.*)/;
     const validate_re = /validate_template=(.*)/;
@@ -530,11 +537,15 @@ export class IssueHandler {
     const path_match = body.match(path_re);
     if (path_match) {
       options.path = path_match[1];
+      console.log(`Issue ${issue.number} specified path=${options.path}`);
     }
 
     const validate_match = body.match(validate_re);
     if (validate_match) {
       options.validate = validate_match[1] == "true";
+      console.log(
+        `Issue ${issue.number} specified validate=${options.validate}`
+      );
     }
 
     return options;
