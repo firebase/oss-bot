@@ -372,10 +372,7 @@ export async function MakeRepoReport(repo: string): Promise<report.Repo> {
  * HTTP Function to get a JSON report on a repo.
  */
 export const GetRepoReport = functions
-  .runWith({
-    timeoutSeconds: 540,
-    memory: "2GB"
-  })
+  .runWith(util.FUNCTION_OPTS)
   .https.onRequest(async (req, res) => {
     // TODO: Allow passing in the 'start' date to get historical data.
     const repo = req.param("repo");
@@ -396,10 +393,7 @@ export const GetRepoReport = functions
  * PubSub function that saves the weekly report to RTDB.
  */
 export const SaveWeeklyReport = functions
-  .runWith({
-    timeoutSeconds: 540,
-    memory: "2GB"
-  })
+  .runWith(util.FUNCTION_OPTS)
   .pubsub.topic("save_weekly_report")
   .onPublish(async (message: functions.pubsub.Message) => {
     const now = new Date();

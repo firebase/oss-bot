@@ -3,7 +3,7 @@ import { type } from "os";
 
 const firebase = require("firebase-tools");
 
-type StringMap = { [s: string]:string };
+type StringMap = { [s: string]: string };
 
 // Source: https://gist.github.com/penguinboy/762197
 function flattenObject(ob: any): any {
@@ -108,10 +108,10 @@ async function deployConfig(configFile: string, project: string) {
 
   // If no changes, we're done
   if (args.length == 0) {
-    console.log("No config changes.")
+    console.log("No config changes.");
     return;
-  } 
-    
+  }
+
   // Log out everything that is changing
   console.log(args);
 

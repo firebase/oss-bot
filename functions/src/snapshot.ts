@@ -61,7 +61,11 @@ export async function GetOrganizationSnapshot(org: string) {
   for (const key in reposData) {
     await util.delay(0.5);
     const repoData = reposData[key];
+
+    // TODO: Can I build this into the function somehow?
+    util.startTimer("GetRepoSnapshot");
     const fullRepoData = await GetRepoSnapshot(org, repoData.name, repoData);
+    util.endTimer("GetRepoSnapshot");
 
     const cleanName = cleanRepoName(fullRepoData.name);
     fullReposData[cleanName] = fullRepoData;
@@ -74,17 +78,11 @@ export async function GetOrganizationSnapshot(org: string) {
 export async function GetRepoSnapshot(
   owner: string,
   repo: string,
-  repoData?: any
+  repoData: any
 ) {
   if (!repoData) {
-    const res = await gh_client.api.repos.get({
-      owner: "firebase",
-      repo: "oss-bot"
-    });
-
-    // TODO: Why do we have to scrub at all?  Wouldn't it be better
-    //       to preserve the full API response?
-    repoData = scrubObject(res.data, ["owner", "organization", "url"]);
+    console.warn(`GetRepoSnapshot called with null data for ${owner}/${repo}`);
+    repoData = {};
   }
 
   repoData.closed_issues_count = 0;
@@ -104,8 +102,11 @@ export async function GetRepoSnapshot(
     issue.pull_request = !!issue.pull_request;
 
     if (issue.state !== "open") {
-      if (!issue.pull_request) repoData.closed_issues_count += 1;
-      else repoData.closed_pull_requests_count += 1;
+      if (!issue.pull_request) {
+        repoData.closed_issues_count += 1;
+      } else {
+        repoData.closed_pull_requests_count += 1;
+      }
     } else {
       keyed_issues["id_" + issue.number] = issue;
     }
@@ -129,10 +130,7 @@ export async function FetchRepoSnapshot(
 }
 
 export const SaveOrganizationSnapshot = functions
-  .runWith({
-    timeoutSeconds: 540,
-    memory: "2GB"
-  })
+  .runWith(util.FUNCTION_OPTS)
   .pubsub.topic("cleanup")
   .onPublish(async event => {
     const snapshot = await GetOrganizationSnapshot("firebase");

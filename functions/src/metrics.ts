@@ -1,5 +1,6 @@
 import { Bintray, Npm, Cocoapods } from "./downloads";
 import { ComputeSAMScore } from "./report";
+import * as util from "./util";
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as moment from "moment";
@@ -136,10 +137,7 @@ export const UpdateMetricsWebhook = functions.https.onRequest(
 );
 
 export const UpdateMetrics = functions
-  .runWith({
-    timeoutSeconds: 540,
-    memory: "2GB"
-  })
+  .runWith(util.FUNCTION_OPTS)
   .pubsub.topic("update-metrics")
   .onPublish(async (message, context) => {
     const projectId = message.json["project"];
