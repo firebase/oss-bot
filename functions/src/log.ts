@@ -8,8 +8,8 @@ const METADATA = {
   resource: {
     type: "cloud_function",
     labels: {
-        function_name: "CustomMetrics",
-        region: "us-central1"
+      function_name: "CustomMetrics",
+      region: "us-central1"
     }
   },
   severity: "DEBUG"
@@ -24,8 +24,12 @@ const log = logging.log(LOG_NAME);
  * Log JSON data.
  */
 export function logData(data: any) {
-  const entry = log.entry(METADATA, data);
+  // Add a message (if there isn't one)
+  if (!data.message) {
+    data.message = JSON.stringify(data);
+  }
 
+  const entry = log.entry(METADATA, data);
   // Log (fire-and-forget)
   log.write(entry);
 }

@@ -24,6 +24,7 @@ import * as pullrequests from "./pullrequests";
 import * as cron from "./cron";
 import * as config from "./config";
 import * as types from "./types";
+import * as log from "./log";
 
 export { GetOrganizationSnapshot, SaveOrganizationSnapshot } from "./snapshot";
 
@@ -116,6 +117,13 @@ export const githubWebhook = functions.https.onRequest(
     const issue = request.body.issue;
 
     let actions: types.Action[] = [];
+
+    // Log the GitHub event type
+    log.logData({
+      event: "github",
+      type: event,
+      message: `Receiving event type ${event}`
+    });
 
     switch (event) {
       case GithubEvent.ISSUE:
