@@ -178,6 +178,12 @@ export const githubWebhook = functions.https.onRequest(
         continue;
       }
 
+      log.logData({
+        event: "github_action",
+        type: action.type,
+        message: `Executing Github Action of type ${action.type}`
+      });
+
       if (action.type == types.ActionType.GITHUB_COMMENT) {
         const commentAction = action as types.GithubCommentAction;
 
@@ -197,6 +203,7 @@ export const githubWebhook = functions.https.onRequest(
 
       if (action.type == types.ActionType.GITHUB_LABEL) {
         const labelAction = action as types.GithubLabelAction;
+
         promises.push(
           gh_client.addLabel(
             labelAction.org,
@@ -254,6 +261,7 @@ export const githubWebhook = functions.https.onRequest(
     }
 
     // Wait for the promise to resolve the HTTP request
+    console.log(`Total actions taken: ${promises.length}`);
     Promise.all(promises)
       .then(res => {
         response.send("OK!");

@@ -218,7 +218,7 @@ export class IssueHandler {
       );
       actions.push(commentAction);
     } else {
-      console.log(`Not commenting, label is ${new_label}`);
+      console.log(`Does not need triage, label is ${new_label}`);
     }
 
     // Check if it matches the template
