@@ -21,8 +21,8 @@ import * as GithubApi from "@octokit/rest";
  * @param {string} token Github API token.
  */
 export class GithubClient {
-  token: string;
-  api: GithubApi;
+  private token: string;
+  private api: GithubApi;
 
   constructor(token: string) {
     // Github API token
@@ -87,6 +87,8 @@ export class GithubClient {
    * Gets issue template from a github repo.
    */
   getIssueTemplate(org: string, name: string, file: string) {
+    this.auth();
+
     console.log(`GithubClient.getIssueTemplate: ${org}/${name}, file=${file}`);
     return this.getFileContent(org, name, file);
   }
@@ -165,12 +167,62 @@ export class GithubClient {
         return results;
       });
   }
+
+  /**
+   * Get information about a GitHub organization.
+   */
+  getOrg(org: string) {
+    this.auth();
+
+    return this.api.orgs.get({
+      org
+    });
+  }
+
+  /**
+   * List all the repos in a GitHub organization.
+   */
+  getReposInOrg(org: string) {
+    this.auth();
+
+    return paginate(this.api.repos.listForOrg, {
+      org
+    });
+  }
+
+  /**
+   * List all the issues (open or closed) on a GitHub repo.
+   */
+  getIssuesForRepo(owner: string, repo: string) {
+    this.auth();
+
+    return paginate(this.api.issues.listForRepo, {
+      owner,
+      repo,
+      state: "all"
+    });
+  }
+
+  /**
+   * List Github logins of all collaborators on a repo, direct or otherwise.
+   */
+  getCollaboratorsForRepo(owner: string, repo: string) {
+    this.auth();
+
+    return paginate(this.api.repos.listCollaborators, {
+      owner,
+      repo,
+      affiliation: "all"
+    }).then(collabs => {
+      return collabs.map(c => c.login);
+    });
+  }
 }
 
 /**
  * Interface for a Github API call.
  */
-export interface GithubFn<S, T> {
+interface GithubFn<S, T> {
   (args: S): Promise<GithubApi.Response<T>>;
 }
 
@@ -178,7 +230,7 @@ export interface GithubFn<S, T> {
  * Interface for the parameters to a call to the GitHub API
  * that can be paginated.
  */
-export interface PageParams {
+interface PageParams {
   // Results per page (max 100)
   per_page?: number;
 
@@ -193,7 +245,7 @@ export interface PageParams {
  * Read all pages of a Github API call and return them all as an
  * array.
  */
-export async function paginate<S extends PageParams, T>(
+async function paginate<S extends PageParams, T>(
   fn: GithubFn<S, Array<T>>,
   options: S
 ) {

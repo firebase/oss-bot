@@ -45,16 +45,12 @@ function RepoSnapshotPath(repo: string, date: Date) {
 }
 
 export async function GetOrganizationSnapshot(org: string) {
-  const getOrgRes = await gh_client.api.orgs.get({
-    org
-  });
+  const getOrgRes = await gh_client.getOrg(org);
 
   const orgData = scrubObject(getOrgRes.data, ["owner", "organization", "url"]);
   const fullReposData: { [s: string]: any } = {};
 
-  let reposData = await github.paginate(gh_client.api.repos.listForOrg, {
-    org
-  });
+  let reposData = await gh_client.getReposInOrg(org);
 
   reposData = scrubArray(reposData, ["owner", "organization", "url"]);
 
@@ -89,11 +85,7 @@ export async function GetRepoSnapshot(
   repoData.closed_pull_requests_count = 0;
 
   const keyed_issues: { [s: string]: any } = {};
-  let issuesData = await github.paginate(gh_client.api.issues.listForRepo, {
-    owner,
-    repo,
-    state: "all"
-  });
+  let issuesData = await gh_client.getIssuesForRepo(owner, repo);
 
   issuesData = scrubArray(issuesData, ["organization", "url"]);
 
