@@ -139,9 +139,10 @@ export class GithubClient {
   /**
    * Get open PRs not modified in the last "expiry" ms.
    */
-  getOldPullRequests(org: string, name: string, expiry: number) {
+  getStalePullRequests(org: string, name: string, expiry: number) {
     this.auth();
 
+    // TODO: Paginate
     return this.api.pulls
       .list({
         owner: org,
@@ -169,6 +170,86 @@ export class GithubClient {
   }
 
   /**
+   * TODO
+   */
+  async getStaleIssues(org: string, name: string) {
+    this.auth();
+
+    const openIssues = await this.getIssuesForRepo(org, name);
+    const staleIssues = openIssues.filter(async issue => {
+      return await this.isIssueStale(org, name, issue);
+    });
+
+    return staleIssues;
+  }
+
+  // TODO: Docs
+  // TODO: Tests
+  private async isIssueStale(
+    owner: string,
+    repo: string,
+    issue: GithubApi.IssuesListForRepoResponseItem
+  ) {
+    // Closed issues can't be stale
+    if (issue.state !== "open") {
+      return false;
+    }
+
+    // TODO: Label configuration
+    const labels = issue.labels.map(label => label.name);
+    if (labels.includes("some-special-label")) {
+      return false;
+    }
+
+    let lastResponseTime: Date = new Date(issue.created_at);
+    let googlerCommented = false;
+
+    // If the issue has more than one comment, we can check if Googlers
+    // have responded.
+    if (issue.comments >= 1) {
+      // TODO: This should probably come from RTDB (we need more caching)
+      const comments = await this.getCommentsForIssue(
+        owner,
+        repo,
+        issue.number
+      );
+
+      // See if a Googler ever commented
+      // TODO: DEFINITELY need to cache this
+      const googlers = await this.getCollaboratorsForRepo(owner, repo);
+
+      for (const comment of comments) {
+        const user = comment.user.login;
+        if (googlers.indexOf(user) >= 0) {
+          googlerCommented = true;
+        }
+      }
+
+      // Get the time of the last comment
+      const lastComment = comments[comments.length - 1];
+      lastResponseTime = new Date(lastComment.created_at);
+    }
+
+    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+    const now = new Date();
+
+    const tooOld = now.getTime() - lastResponseTime.getTime() > thirtyDays;
+    if (tooOld && googlerCommented) {
+      return true;
+    }
+
+    return false;
+  }
+
+  getCommentsForIssue(owner: string, repo: string, number: number) {
+    return paginate(this.api.issues.listComments, {
+      owner,
+      repo,
+      number
+    });
+  }
+
+  /**
    * Get information about a GitHub organization.
    */
   getOrg(org: string) {
@@ -193,13 +274,14 @@ export class GithubClient {
   /**
    * List all the issues (open or closed) on a GitHub repo.
    */
-  getIssuesForRepo(owner: string, repo: string) {
+  getIssuesForRepo(owner: string, repo: string, state?: IssueState) {
     this.auth();
 
+    state = state || "all";
     return paginate(this.api.issues.listForRepo, {
       owner,
       repo,
-      state: "all"
+      state
     });
   }
 
@@ -218,6 +300,8 @@ export class GithubClient {
     });
   }
 }
+
+type IssueState = "open" | "closed" | "all";
 
 /**
  * Interface for a Github API call.

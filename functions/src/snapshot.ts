@@ -7,6 +7,12 @@ import { snapshot } from "./types";
 const gh_client = new github.GithubClient(functions.config().github.token);
 gh_client.auth();
 
+// Just #pubsubthings
+const PubSub = require("@google-cloud/pubsub");
+const pubsubClient = new PubSub({
+  projectId: process.env.GCLOUD_PROJECT
+});
+
 function cleanRepoName(name: string): string {
   let cleanName = name.toLowerCase();
   cleanName = cleanName.replace(".", "_");
@@ -44,33 +50,37 @@ function RepoSnapshotPath(repo: string, date: Date) {
   return `${DateSnapshotPath(date)}/repos/${repo}`;
 }
 
+/**
+ * Get a point-in-time snapshot of a GitHub org.
+ *
+ * Must be followed up by a job to snap each repo.
+ */
 export async function GetOrganizationSnapshot(org: string) {
-  const getOrgRes = await gh_client.getOrg(org);
+  // Get basic data about the org
+  const orgRes = await gh_client.getOrg(org);
+  const orgData = scrubObject(orgRes.data, ["owner", "organization", "url"]);
 
-  const orgData = scrubObject(getOrgRes.data, ["owner", "organization", "url"]);
-  const fullReposData: { [s: string]: any } = {};
-
+  // Fill in repos data
+  const repos: { [s: string]: any } = {};
   let reposData = await gh_client.getReposInOrg(org);
-
   reposData = scrubArray(reposData, ["owner", "organization", "url"]);
 
   for (const key in reposData) {
-    await util.delay(0.5);
     const repoData = reposData[key];
-
-    // TODO: Can I build this into the function somehow?
-    util.startTimer("GetRepoSnapshot");
-    const fullRepoData = await GetRepoSnapshot(org, repoData.name, repoData);
-    util.endTimer("GetRepoSnapshot");
-
-    const cleanName = cleanRepoName(fullRepoData.name);
-    fullReposData[cleanName] = fullRepoData;
+    const cleanName = cleanRepoName(repoData.name);
+    repos[cleanName] = repoData;
   }
 
-  orgData.repos = fullReposData;
+  orgData.repos = repos;
   return orgData;
 }
 
+/**
+ * Get a point-in-time snapshot for a Github repo.
+ *
+ * repoData is the base data retrieved by GetOrganizationSnapshot.
+ * Yes, I know this is ugly.
+ */
 export async function GetRepoSnapshot(
   owner: string,
   repo: string,
@@ -121,10 +131,56 @@ export async function FetchRepoSnapshot(
   return snap.val();
 }
 
+export const SaveRepoSnapshot = functions
+  .runWith(util.FUNCTION_OPTS)
+  .pubsub.topic("repo_snapshot")
+  .onPublish(async event => {
+    // TODO: Enable retry
+    // TODO: Retry best practices
+    // TODO: Also save collabs
+    const data = event.json;
+    const org = data.org;
+    const repo = data.repo;
+
+    if (!(org && repo)) {
+      console.log(
+        `PubSub message must include 'org' and 'repo': ${event.data}`
+      );
+    }
+
+    console.log(`SaveRepoSnapshot(${org}/${repo})`);
+    const orgRef = database.ref(DateSnapshotPath(new Date()));
+    const repoRef = orgRef.child("repos").child(repo);
+
+    // Get the "base" data that was retriebed during the org snapshot
+    const baseRepoData = (await repoRef.once("value")).val();
+
+    // TODO: Can I build this into the function somehow?
+    util.startTimer("GetRepoSnapshot");
+    const fullRepoData = await GetRepoSnapshot(org, repo, baseRepoData);
+    util.endTimer("GetRepoSnapshot");
+
+    await repoRef.set(fullRepoData);
+  });
+
 export const SaveOrganizationSnapshot = functions
   .runWith(util.FUNCTION_OPTS)
   .pubsub.topic("cleanup")
   .onPublish(async event => {
     const snapshot = await GetOrganizationSnapshot("firebase");
-    return database.ref(DateSnapshotPath(new Date())).set(snapshot);
+    await database.ref(DateSnapshotPath(new Date())).set(snapshot);
+
+    const repos = Object.keys(snapshot.repos);
+    for (const repo of repos) {
+      util.delay(1.0);
+
+      // Fan out for each repo
+      const publisher = pubsubClient.topic("repo_snapshot").publisher();
+      const data = {
+        org: "firebase",
+        repo: repo
+      };
+      console.log(JSON.stringify(data));
+      await publisher.publish(Buffer.from(JSON.stringify(data)));
+    }
   });

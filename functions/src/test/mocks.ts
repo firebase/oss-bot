@@ -55,7 +55,7 @@ export class MockGithubClient extends github.GithubClient {
     return Promise.resolve(undefined);
   }
 
-  getOldPullRequests(org: string, name: string, expiry: number) {
+  getStalePullRequests(org: string, name: string, expiry: number) {
     console.log(`mock: github.getOldPullRequests(${org}, ${name}, ${expiry})`);
 
     const filePath = path.join(
