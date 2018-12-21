@@ -36,7 +36,7 @@ export class CronHandler {
    * Handle a cleanup cycle for a particular repo.
    */
   async handleCleanup(org: string, name: string, expiry: number) {
-    const oldPullRequests = await this.gh_client.getOldPullRequests(
+    const oldPullRequests = await this.gh_client.getStalePullRequests(
       org,
       name,
       expiry
@@ -46,6 +46,7 @@ export class CronHandler {
     for (const pr of oldPullRequests) {
       console.log("Expired PR: ", pr);
 
+      // TODO: Move this to the "action" model
       // Add a comment saying why we are closing this
       const addComment = this.gh_client.addComment(
         org,

@@ -26,7 +26,7 @@ import * as config from "./config";
 import * as types from "./types";
 import * as log from "./log";
 
-export { GetOrganizationSnapshot, SaveOrganizationSnapshot } from "./snapshot";
+export { SaveOrganizationSnapshot, SaveRepoSnapshot } from "./snapshot";
 
 export {
   GetRepoReport,
