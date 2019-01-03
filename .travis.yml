@@ -7,6 +7,6 @@ install:
   - npm install -g tsc
   - npm install -g tslint
   - npm install -g prettier
-  - cd functions && npm install ; cd -
+  - cd functions && npm ci ; cd -
 script:
   - make test-functions
