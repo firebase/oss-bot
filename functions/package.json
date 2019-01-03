@@ -52,7 +52,7 @@
     "build-mjml": "mjml templates/weekly.mjml --output dist/weekly.mustache && mjml templates/repo-weekly.mjml --output dist/repo-weekly.mustache",
     "test-ts": "mocha -r ts-node/register src/test/smoketest.ts",
     "watch-ts": "tsc -w",
-    "tslint": "tslint -c tslint.json -p tsconfig.json",
+    "tslint": "tslint -c tslint.json --project tsconfig.json",
     "task:get-organization-snapshot": "npm run-script task:run-promise './dist/snapshot' 'GetOrganizationSnapshot' 'firebase'",
     "task:get-weekly-report": "npm run-script task:run-promise './dist/report' 'GetWeeklyReport' 'firebase'",
     "task:get-weekly-email": "npm run-script task:run-promise './dist/report' 'GetWeeklyEmail' 'firebase'",
