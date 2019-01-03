@@ -128,7 +128,10 @@ export async function FetchRepoSnapshot(
 ): Promise<snapshot.Repo | undefined> {
   const path = RepoSnapshotPath(repo, date);
   const snap = await database.ref(path).once("value");
-  return snap.val();
+  const data = snap.val();
+  if (!data) {
+    return data;
+  }
 }
 
 export const SaveRepoSnapshot = functions
@@ -155,9 +158,12 @@ export const SaveRepoSnapshot = functions
     // Get the "base" data that was retriebed during the org snapshot
     const baseRepoData = (await repoRef.once("value")).val();
 
+    // Get the real name (since the key is a cleaned version)
+    const repoName = baseRepoData.name;
+
     // TODO: Can I build this into the function somehow?
     util.startTimer("GetRepoSnapshot");
-    const fullRepoData = await GetRepoSnapshot(org, repo, baseRepoData);
+    const fullRepoData = await GetRepoSnapshot(org, repoName, baseRepoData);
     util.endTimer("GetRepoSnapshot");
 
     await repoRef.set(fullRepoData);
@@ -171,14 +177,14 @@ export const SaveOrganizationSnapshot = functions
     await database.ref(DateSnapshotPath(new Date())).set(snapshot);
 
     const repos = Object.keys(snapshot.repos);
-    for (const repo of repos) {
+    for (const repoKey of repos) {
       util.delay(1.0);
 
       // Fan out for each repo
       const publisher = pubsubClient.topic("repo_snapshot").publisher();
       const data = {
         org: "firebase",
-        repo: repo
+        repo: repoKey
       };
       console.log(JSON.stringify(data));
       await publisher.publish(Buffer.from(JSON.stringify(data)));

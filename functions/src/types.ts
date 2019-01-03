@@ -348,6 +348,7 @@ export namespace snapshot {
   }
 
   export interface Repo {
+    name: string;
     private: boolean;
     open_issues_count: number;
     closed_issues_count: number;

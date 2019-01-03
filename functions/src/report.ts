@@ -103,11 +103,20 @@ function GetTotalStars(org: snapshot.Org) {
 
 function GetTotalSamScore(org: snapshot.Org) {
   const sumOfRepos = Object.keys(org.repos)
-    .map((repoName: string) => {
-      const repo = org.repos[repoName];
+    .map((repoKey: string) => {
+      const repo = org.repos[repoKey];
+
+      if (repo.open_issues_count == undefined) {
+        console.warn(`Repo ${repoKey} has null open issues count.`);
+      }
+
+      if (repo.closed_issues_count == undefined) {
+        console.warn(`Repo ${repoKey} has null closed issues count.`);
+      }
+
       return {
-        open_issues_count: repo.open_issues_count,
-        closed_issues_count: repo.closed_issues_count
+        open_issues_count: repo.open_issues_count || 0,
+        closed_issues_count: repo.closed_issues_count || 0
       };
     })
     .reduce((a: SAMScoreable, b: SAMScoreable) => {
@@ -123,8 +132,8 @@ function GetTotalSamScore(org: snapshot.Org) {
 function GetIssuesWithFilter(org: snapshot.Org, filter: IssueFilter) {
   let matchingIssues = 0;
 
-  Object.keys(org.repos).forEach(repoName => {
-    const repo = org.repos[repoName];
+  Object.keys(org.repos).forEach(repoKey => {
+    const repo = org.repos[repoKey];
 
     if (repo.private) {
       return;
@@ -173,10 +182,11 @@ function GetSortedSam(
   count?: number
 ) {
   let sortedSAM = Object.keys(org.repos)
-    .map((repoName: string) => {
-      const repo = org.repos[repoName];
+    .map((repoKey: string) => {
+      const repo = org.repos[repoKey];
+      const name = repo.name;
       const sam = ComputeSAMScore(repo);
-      return { name: repoName, sam };
+      return { name, sam };
     })
     .sort(sortFn)
     .filter(repo => {
@@ -209,10 +219,11 @@ function GetHighestSam(org: snapshot.Org, count?: number) {
 
 function GetTopStars(org: snapshot.Org, count?: number) {
   let topStars = Object.keys(org.repos)
-    .map((repoName: string) => {
-      const repo = org.repos[repoName];
+    .map((repoKey: string) => {
+      const repo = org.repos[repoKey];
+      const name = repo.name;
       const stars = repo.stargazers_count;
-      return { name: repoName, stars };
+      return { name, stars };
     })
     .sort((a, b) => {
       return b.stars - a.stars;
@@ -224,10 +235,11 @@ function GetTopStars(org: snapshot.Org, count?: number) {
 
 function GetTopIssues(org: snapshot.Org, count?: number) {
   let topIssues = Object.keys(org.repos)
-    .map((repoName: string) => {
-      const repo = org.repos[repoName];
+    .map((repoKey: string) => {
+      const repo = org.repos[repoKey];
+      const name = repo.name;
       const issues = repo.open_issues_count;
-      return { name: repoName, issues };
+      return { name, issues };
     })
     .sort((a, b) => {
       return b.issues - a.issues;
@@ -241,7 +253,9 @@ export function ComputeSAMScore(repo: SAMScoreable) {
   const open_issues = repo.open_issues_count || 0;
   const closed_issues = repo.closed_issues_count || 0;
 
-  if (!closed_issues) return 0;
+  if (!closed_issues) {
+    return 0;
+  }
 
   return (
     (open_issues / (open_issues + closed_issues)) *
