@@ -22,6 +22,10 @@ const STALE_ISSUE_MSG =
   "It's been a while since anyone updated this pull request so I am going to close it. " +
   "Please @mention a repo owner if you think this is a mistake!";
 
+// Metadata the bot can leave in comments to mark its actions
+const EVT_MARK_STALE = "event: mark-stale";
+const EVT_CLOSE_STALE = "event: close-stale";
+
 /**
  * Create a new handler for cron-style tasks.
  * @param {GithubClient} gh_client client for accessing Github.
@@ -72,11 +76,16 @@ export class CronHandler {
     // Aggregate all the actions we need to perform
     const actions: types.Action[] = [];
 
-    // TODO: Pass in the config
-    const labelNeedsInfo = "Needs Info";
-    const labelStale = "Stale";
+    // TODO: This should be a per-repo configuration
+    const labelNeedsInfo = "needs-info";
+    const labelStale = "stale";
+    const needsInfoDays = 7;
+    const staleDays = 3;
 
-    // TODO: Get this from the databasew
+    const needsInfoTime = needsInfoDays * 24 * 60 * 60 * 1000;
+    const staleTime = staleDays * 24 * 60 * 60 * 1000;
+
+    // TODO: Get this from the database
     const contributors = await this.gh_client.getCollaboratorsForRepo(
       org,
       name
@@ -89,9 +98,6 @@ export class CronHandler {
 
       const stateNeedsInfo = labelNames.includes(labelNeedsInfo);
       const stateStale = labelNames.includes(labelStale);
-
-      const needsInfoTime = 7 * 24 * 60 * 60 * 1000;
-      const staleTime = 3 * 24 * 60 * 60 * 1000;
 
       // If an issue is not labeled with either the stale or needs-info labels
       // then we don't need to do any cron processing on it.
@@ -131,8 +137,13 @@ export class CronHandler {
           (lastAuthorComment && timeAgo(lastAuthorComment) > needsInfoTime);
 
         if (shouldMarkStale) {
-          // TODO: Remove the needs-info label
-          const addStaleLabel = new types.GithubLabelAction(
+          const removeNeedsInfoLabel = new types.GithubRemoveLabelAction(
+            org,
+            name,
+            number,
+            labelNeedsInfo
+          );
+          const addStaleLabel = new types.GithubAddLabelAction(
             org,
             name,
             number,
@@ -142,10 +153,10 @@ export class CronHandler {
             org,
             name,
             number,
-            "TODO: Real text",
+            this.getMarkStaleComment(issue.user.login, needsInfoDays, staleDays),
             false
           );
-          actions.push(addStaleLabel, addStaleComment);
+          actions.push(removeNeedsInfoLabel, addStaleLabel, addStaleComment);
         }
       }
 
@@ -154,8 +165,7 @@ export class CronHandler {
 
         // When the issue was marked stale, the bot will have left a comment with certain metadata
         const markStaleComment = comments.find(comment => {
-          // TODO: Standardize
-          return comment.body.includes("event: mark-stale");
+          return comment.body.includes(EVT_MARK_STALE);
         });
 
         if (!markStaleComment) {
@@ -169,7 +179,7 @@ export class CronHandler {
             org,
             name,
             number,
-            "TODO: Real text",
+            this.getCloseComment(issue.user.login),
             false
           );
           const closeIssue = new types.GithubCloseAction(org, name, number);
@@ -179,6 +189,26 @@ export class CronHandler {
     }
 
     return actions;
+  }
+
+  private getMarkStaleComment(
+    author: string,
+    needsInfoDays: number,
+    staleDays: number
+  ): string {
+    return `<!-- ${EVT_MARK_STALE} -->
+    Hey @${author}. We need more information to resolve this issue but there hasn't been an update in ${needsInfoDays} days. I'm marking the issue as stale and if there are no new updates in the next ${staleDays} days I will close it automatically.
+
+    If you have more information that will help us get to the bottom of this, just add a comment!`;
+  }
+
+  private getCloseComment(
+    author: string
+  ) {
+    return `<!-- ${EVT_CLOSE_STALE} -->
+    Since there haven't been any recent updates here, I am going to close this issue.
+    
+    @${author} if you're still experiencing this problem and want to continue the discussion just leave a comment here and we are happy to re-open this.`
   }
 }
 

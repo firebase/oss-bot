@@ -65,6 +65,25 @@ export class GithubClient {
   }
 
   /**
+   * Remove a label from github issue, returns a promise.
+   */
+  removeLabel(
+    org: string,
+    name: string,
+    number: number,
+    label: string
+  ): Promise<any> {
+    this.auth();
+
+    return this.api.issues.removeLabel({
+      owner: org,
+      repo: name,
+      number: number,
+      name: label
+    });
+  }
+
+  /**
    * Add a comment to a github issue, returns a promise.
    */
   addComment(

@@ -1,6 +1,7 @@
 export enum ActionType {
   GITHUB_COMMENT = "GITHUB_COMMENT",
-  GITHUB_LABEL = "GITHUB_LABEL",
+  GITHUB_ADD_LABEL = "GITHUB_LABEL",
+  GITHUB_REMOVE_LABEL = "GITHUB_REMOVE_LABEL",
   GITHUB_CLOSE = "GITHUB_CLOSE",
   EMAIL_SEND = "EMAIL_SEND"
 }
@@ -45,11 +46,21 @@ export class GithubCommentAction extends GithubIssueAction {
   }
 }
 
-export class GithubLabelAction extends GithubIssueAction {
+export class GithubAddLabelAction extends GithubIssueAction {
   label: string;
 
   constructor(org: string, name: string, number: number, label: string) {
-    super(ActionType.GITHUB_LABEL, org, name, number);
+    super(ActionType.GITHUB_ADD_LABEL, org, name, number);
+
+    this.label = label;
+  }
+}
+
+export class GithubRemoveLabelAction extends GithubIssueAction {
+  label: string;
+
+  constructor(org: string, name: string, number: number, label: string) {
+    super(ActionType.GITHUB_REMOVE_LABEL, org, name, number);
 
     this.label = label;
   }

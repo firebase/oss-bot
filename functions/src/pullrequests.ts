@@ -118,7 +118,7 @@ export class PullRequestHandler {
     // }
 
     // Add a needs triage label
-    const labelAction = new types.GithubLabelAction(
+    const labelAction = new types.GithubAddLabelAction(
       org,
       name,
       number,

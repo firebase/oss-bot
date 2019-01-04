@@ -278,14 +278,25 @@ function executeAction(action: types.Action): Promise<any> {
     );
   }
 
-  if (action.type == types.ActionType.GITHUB_LABEL) {
-    const labelAction = action as types.GithubLabelAction;
+  if (action.type == types.ActionType.GITHUB_ADD_LABEL) {
+    const addLabelAction = action as types.GithubAddLabelAction;
 
     return gh_client.addLabel(
-      labelAction.org,
-      labelAction.name,
-      labelAction.number,
-      labelAction.label
+      addLabelAction.org,
+      addLabelAction.name,
+      addLabelAction.number,
+      addLabelAction.label
+    );
+  }
+
+  if (action.type == types.ActionType.GITHUB_REMOVE_LABEL) {
+    const removeLabelAction = action as types.GithubRemoveLabelAction;
+
+    return gh_client.removeLabel(
+      removeLabelAction.org,
+      removeLabelAction.name,
+      removeLabelAction.number,
+      removeLabelAction.label
     );
   }
 

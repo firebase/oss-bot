@@ -236,7 +236,7 @@ describe("The OSS Robot", () => {
     assert.equal(actions.length, 1, "Should be one action");
 
     assertMatchingAction(actions, {
-      type: types.ActionType.GITHUB_LABEL,
+      type: types.ActionType.GITHUB_ADD_LABEL,
       label: "database"
     });
   });
@@ -327,7 +327,7 @@ describe("The OSS Robot", () => {
     });
 
     assertMatchingAction(actions, {
-      type: types.ActionType.GITHUB_LABEL,
+      type: types.ActionType.GITHUB_ADD_LABEL,
       label: "needs-triage"
     });
   });
@@ -403,7 +403,7 @@ describe("The OSS Robot", () => {
     const actions = await issue_handler.onNewIssue(test_repo, issue);
 
     assertMatchingAction(actions, {
-      type: types.ActionType.GITHUB_LABEL,
+      type: types.ActionType.GITHUB_ADD_LABEL,
       label: "auth"
     });
   });

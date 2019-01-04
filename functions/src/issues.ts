@@ -197,7 +197,7 @@ export class IssueHandler {
 
     // Add the label
     console.log(`Adding label: ${new_label}`);
-    const labelAction = new types.GithubLabelAction(
+    const labelAction = new types.GithubAddLabelAction(
       org,
       name,
       number,
