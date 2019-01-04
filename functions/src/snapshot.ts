@@ -170,7 +170,10 @@ export const SaveRepoSnapshot = functions
     // Store non-date-specific repo metadata
     // TODO: This should probably be broken out into a function like GetRepoSnapshot
     //       and then only saved/timed here.
-    const repoMetaRef = database.ref("repo-metadata").child(org).child(repoKey);
+    const repoMetaRef = database
+      .ref("repo-metadata")
+      .child(org)
+      .child(repoKey);
 
     // Store collaborators as a map of name --> true
     const collabNames = await gh_client.getCollaboratorsForRepo(org, repoName);

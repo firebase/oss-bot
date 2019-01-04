@@ -139,106 +139,29 @@ export class GithubClient {
   /**
    * Get open PRs not modified in the last "expiry" ms.
    */
-  getStalePullRequests(org: string, name: string, expiry: number) {
+  async getStalePullRequests(org: string, name: string, expiry: number) {
     this.auth();
 
-    // TODO: Paginate
-    return this.api.pulls
-      .list({
-        owner: org,
-        repo: name,
-        state: "open",
-        sort: "updated",
-        direction: "asc"
-      })
-      .then(res => {
-        const prs = res.data;
-        const results = [];
-
-        // For each PR, check if it was updated recently enough.
-        for (const pr of prs) {
-          const nowTime = new Date().getTime();
-          const updatedTime = new Date(pr.updated_at).getTime();
-
-          if (nowTime - updatedTime > expiry) {
-            results.push(pr);
-          }
-        }
-
-        return results;
-      });
-  }
-
-  /**
-   * TODO
-   */
-  async getStaleIssues(org: string, name: string) {
-    this.auth();
-
-    const openIssues = await this.getIssuesForRepo(org, name);
-    const staleIssues = openIssues.filter(async issue => {
-      return await this.isIssueStale(org, name, issue);
+    const prs = await paginate(this.api.pulls.list, {
+      owner: org,
+      repo: name,
+      state: "open",
+      sort: "updated",
+      direction: "asc"
     });
 
-    return staleIssues;
-  }
+    // For each PR, check if it was updated recently enough.
+    const results = [];
+    for (const pr of prs) {
+      const nowTime = new Date().getTime();
+      const updatedTime = new Date(pr.updated_at).getTime();
 
-  // TODO: Docs
-  // TODO: Tests
-  private async isIssueStale(
-    owner: string,
-    repo: string,
-    issue: GithubApi.IssuesListForRepoResponseItem
-  ) {
-    // Closed issues can't be stale
-    if (issue.state !== "open") {
-      return false;
-    }
-
-    // TODO: Label configuration
-    const labels = issue.labels.map(label => label.name);
-    if (labels.includes("some-special-label")) {
-      return false;
-    }
-
-    let lastResponseTime: Date = new Date(issue.created_at);
-    let googlerCommented = false;
-
-    // If the issue has more than one comment, we can check if Googlers
-    // have responded.
-    if (issue.comments >= 1) {
-      // TODO: This should probably come from RTDB (we need more caching)
-      const comments = await this.getCommentsForIssue(
-        owner,
-        repo,
-        issue.number
-      );
-
-      // See if a Googler ever commented
-      // TODO: DEFINITELY need to cache this
-      const googlers = await this.getCollaboratorsForRepo(owner, repo);
-
-      for (const comment of comments) {
-        const user = comment.user.login;
-        if (googlers.indexOf(user) >= 0) {
-          googlerCommented = true;
-        }
+      if (nowTime - updatedTime > expiry) {
+        results.push(pr);
       }
-
-      // Get the time of the last comment
-      const lastComment = comments[comments.length - 1];
-      lastResponseTime = new Date(lastComment.created_at);
     }
 
-    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-    const now = new Date();
-
-    const tooOld = now.getTime() - lastResponseTime.getTime() > thirtyDays;
-    if (tooOld && googlerCommented) {
-      return true;
-    }
-
-    return false;
+    return results;
   }
 
   getCommentsForIssue(owner: string, repo: string, number: number) {
