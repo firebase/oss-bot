@@ -77,7 +77,7 @@ const issue_handler = new issues.IssueHandler(gh_client, bot_config);
 const pr_handler = new pullrequests.PullRequestHandler(bot_config);
 
 // Handler for Cron jobs
-const cron_handler = new cron.CronHandler(gh_client);
+const cron_handler = new cron.CronHandler(gh_client, bot_config);
 
 /**
  * Function that responds to Github events (HTTP webhook).
@@ -237,28 +237,16 @@ export const botCleanup = functions.pubsub
   .topic("cleanup")
   .onPublish(async event => {
     console.log("The cleanup job is running!");
+    const repos = bot_config.getAllRepos();
+    for (const repo of repos) {
+      const actions = await cron_handler.handleStaleIssues(repo.org, repo.name);
 
-    // TODO: Remove
-    if (1 + 1 == 2) {
-      console.log("Cleanup is currently disabled");
-      return;
+      console.log(
+        `Taking ${actions.length} actions when cleaning up ${repo.name}`
+      );
+      const promises = actions.map(action => executeAction(action));
+      await Promise.all(promises);
     }
-
-    const that = this;
-    return bot_config.getAllRepos().map(function(repo) {
-      // Get config for the repo
-      const repo_config = that.bot_config.getRepoConfig(repo.org, repo.name);
-
-      // Get expiry from config
-      let expiry = PR_EXPIRY_MS;
-      if (repo_config.cleanup && repo_config.cleanup.pr) {
-        expiry = repo_config.cleanup.pr;
-      }
-
-      console.log(`Cleaning up: ${repo.org}/${repo.name}, expiry: ${expiry}`);
-
-      return cron_handler.handleCleanup(repo.org, repo.name, expiry);
-    });
   });
 
 function executeAction(action: types.Action): Promise<any> {

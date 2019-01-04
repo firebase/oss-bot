@@ -54,18 +54,6 @@ export class MockGithubClient extends github.GithubClient {
     console.log(`mock: github.closeIssue(${org}, ${name}, ${number})`);
     return Promise.resolve(undefined);
   }
-
-  getStalePullRequests(org: string, name: string, expiry: number) {
-    console.log(`mock: github.getOldPullRequests(${org}, ${name}, ${expiry})`);
-
-    const filePath = path.join(
-      __dirname,
-      "mock_data",
-      "old_pull_requests.json"
-    );
-    const data = JSON.parse(fs.readFileSync(filePath).toString());
-    return Promise.resolve(data);
-  }
 }
 
 export class MockEmailClient extends email.EmailClient {

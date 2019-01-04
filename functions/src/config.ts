@@ -117,19 +117,10 @@ export class BotConfig {
     org: string,
     name: string
   ): types.CleanupConfig | undefined {
-    // TODO: Actually use the values and get a per-repo config!
     const repoConfig = this.getRepoConfig(org, name);
-
-    return {
-      issue: {
-        label_needs_info: "needs-info",
-        label_needs_attention: "needs-attention",
-        label_stale: "stale",
-        ignore_labels: ["feature-request", "internal"],
-        needs_info_days: 7,
-        stale_days: 3
-      }
-    };
+    if (repoConfig && repoConfig.cleanup) {
+      return repoConfig.cleanup;
+    }
   }
 
   /**

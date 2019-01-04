@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { BotConfig } from "./config";
 import * as github from "./github";
 import * as types from "./types";
 
@@ -32,58 +33,29 @@ const EVT_CLOSE_STALE = "event: close-stale";
  */
 export class CronHandler {
   gh_client: github.GithubClient;
+  config: BotConfig;
 
-  constructor(gh_client: github.GithubClient) {
+  constructor(gh_client: github.GithubClient, config: BotConfig) {
     this.gh_client = gh_client;
-  }
-
-  /**
-   * Handle a cleanup cycle for a particular repo.
-   */
-  async handleCleanup(org: string, name: string, expiry: number) {
-    const oldPullRequests = await this.gh_client.getStalePullRequests(
-      org,
-      name,
-      expiry
-    );
-    const promises: Promise<any>[] = [];
-
-    for (const pr of oldPullRequests) {
-      console.log("Expired PR: ", pr);
-
-      // TODO: Move this to the "action" model
-      // Add a comment saying why we are closing this
-      const addComment = this.gh_client.addComment(
-        org,
-        name,
-        pr.number,
-        STALE_ISSUE_MSG
-      );
-
-      // Close the pull request
-      const closePr = this.gh_client.closeIssue(org, name, pr.number);
-
-      promises.push(addComment);
-      promises.push(closePr);
-    }
-
-    return Promise.all(promises);
+    this.config = config;
   }
 
   async handleStaleIssues(org: string, name: string): Promise<types.Action[]> {
     console.log(`Processing issues for ${org}/${name}`);
 
+    // Get the configuration for this repo
+    const cleanupConfig = this.config.getRepoCleanupConfig(org, name);
+    if (!cleanupConfig || !cleanupConfig.issue) {
+      console.log(`No stale issues config for ${org}/${name}`);
+      return [];
+    }
+    const issueConfig = cleanupConfig.issue;
+
     // Aggregate all the actions we need to perform
     const actions: types.Action[] = [];
 
-    // TODO: This should be a per-repo configuration
-    const labelNeedsInfo = "needs-info";
-    const labelStale = "stale";
-    const needsInfoDays = 7;
-    const staleDays = 3;
-
-    const needsInfoTime = needsInfoDays * 24 * 60 * 60 * 1000;
-    const staleTime = staleDays * 24 * 60 * 60 * 1000;
+    const needsInfoTime = issueConfig.needs_info_days * 24 * 60 * 60 * 1000;
+    const staleTime = issueConfig.stale_days * 24 * 60 * 60 * 1000;
 
     // TODO: Get this from the database
     const contributors = await this.gh_client.getCollaboratorsForRepo(
@@ -96,8 +68,8 @@ export class CronHandler {
       const number = issue.number;
       const labelNames = issue.labels.map(label => label.name);
 
-      const stateNeedsInfo = labelNames.includes(labelNeedsInfo);
-      const stateStale = labelNames.includes(labelStale);
+      const stateNeedsInfo = labelNames.includes(issueConfig.label_needs_info);
+      const stateStale = labelNames.includes(issueConfig.label_stale);
 
       // If an issue is not labeled with either the stale or needs-info labels
       // then we don't need to do any cron processing on it.
@@ -141,13 +113,13 @@ export class CronHandler {
             org,
             name,
             number,
-            labelNeedsInfo
+            issueConfig.label_needs_info
           );
           const addStaleLabel = new types.GithubAddLabelAction(
             org,
             name,
             number,
-            labelStale
+            issueConfig.label_stale
           );
           const addStaleComment = new types.GithubCommentAction(
             org,
@@ -155,8 +127,8 @@ export class CronHandler {
             number,
             this.getMarkStaleComment(
               issue.user.login,
-              needsInfoDays,
-              staleDays
+              issueConfig.needs_info_days,
+              issueConfig.stale_days
             ),
             false
           );

@@ -156,33 +156,8 @@ export class GithubClient {
   }
 
   /**
-   * Get open PRs not modified in the last "expiry" ms.
+   * Get all comments on a GitHUb issue.
    */
-  async getStalePullRequests(org: string, name: string, expiry: number) {
-    this.auth();
-
-    const prs = await paginate(this.api.pulls.list, {
-      owner: org,
-      repo: name,
-      state: "open",
-      sort: "updated",
-      direction: "asc"
-    });
-
-    // For each PR, check if it was updated recently enough.
-    const results = [];
-    for (const pr of prs) {
-      const nowTime = new Date().getTime();
-      const updatedTime = new Date(pr.updated_at).getTime();
-
-      if (nowTime - updatedTime > expiry) {
-        results.push(pr);
-      }
-    }
-
-    return results;
-  }
-
   getCommentsForIssue(owner: string, repo: string, number: number) {
     return paginate(this.api.issues.listComments, {
       owner,
