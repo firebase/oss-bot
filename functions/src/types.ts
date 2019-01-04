@@ -1,6 +1,7 @@
 export enum ActionType {
   GITHUB_COMMENT = "GITHUB_COMMENT",
   GITHUB_LABEL = "GITHUB_LABEL",
+  GITHUB_CLOSE = "GITHUB_CLOSE",
   EMAIL_SEND = "EMAIL_SEND"
 }
 
@@ -51,6 +52,12 @@ export class GithubLabelAction extends GithubIssueAction {
     super(ActionType.GITHUB_LABEL, org, name, number);
 
     this.label = label;
+  }
+}
+
+export class GithubCloseAction extends GithubIssueAction {
+  constructor(org: string, name: string, number: number) {
+    super(ActionType.GITHUB_CLOSE, org, name, number);
   }
 }
 
