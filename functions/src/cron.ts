@@ -153,7 +153,11 @@ export class CronHandler {
             org,
             name,
             number,
-            this.getMarkStaleComment(issue.user.login, needsInfoDays, staleDays),
+            this.getMarkStaleComment(
+              issue.user.login,
+              needsInfoDays,
+              staleDays
+            ),
             false
           );
           actions.push(removeNeedsInfoLabel, addStaleLabel, addStaleComment);
@@ -202,13 +206,11 @@ export class CronHandler {
     If you have more information that will help us get to the bottom of this, just add a comment!`;
   }
 
-  private getCloseComment(
-    author: string
-  ) {
+  private getCloseComment(author: string) {
     return `<!-- ${EVT_CLOSE_STALE} -->
     Since there haven't been any recent updates here, I am going to close this issue.
     
-    @${author} if you're still experiencing this problem and want to continue the discussion just leave a comment here and we are happy to re-open this.`
+    @${author} if you're still experiencing this problem and want to continue the discussion just leave a comment here and we are happy to re-open this.`;
   }
 }
 

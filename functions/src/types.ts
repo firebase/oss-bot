@@ -109,6 +109,44 @@ export class TemplateOptions {
   }
 }
 
+export class Config {
+  [org: string]: OrgConfig;
+}
+
+export class OrgConfig {
+  [repo: string]: RepoConfig;
+}
+
+export class RepoConfig {
+  reports?: ReportConfig;
+  labels?: { [labelName: string]: LabelConfig };
+  templates?: { [templateName: string]: string };
+  cleanup?: CleanupConfig;
+}
+
+export class ReportConfig {
+  email: string;
+}
+
+export class LabelConfig {
+  regex: string;
+  email?: string;
+}
+
+export class CleanupConfig {
+  pr?: number;
+  issue?: IssueCleanupConfig;
+}
+
+export class IssueCleanupConfig {
+  label_needs_info: string;
+  label_needs_attention: string;
+  label_stale: string;
+  ignore_labels: string[];
+  needs_info_days: number;
+  stale_days: number;
+}
+
 export class User {
   login: string;
   id: number;
