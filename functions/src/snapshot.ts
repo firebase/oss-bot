@@ -138,35 +138,48 @@ export const SaveRepoSnapshot = functions
   .runWith(util.FUNCTION_OPTS)
   .pubsub.topic("repo_snapshot")
   .onPublish(async event => {
-    // TODO: Enable retry
-    // TODO: Retry best practices
-    // TODO: Also save collabs
+    // TODO: Enable retry, using retry best practices
     const data = event.json;
     const org = data.org;
-    const repo = data.repo;
 
-    if (!(org && repo)) {
+    const repoName = data.repo;
+    const repoKey = cleanRepoName(repoName);
+
+    if (!(org && repoName)) {
       console.log(
         `PubSub message must include 'org' and 'repo': ${event.data}`
       );
     }
 
-    console.log(`SaveRepoSnapshot(${org}/${repo})`);
+    console.log(`SaveRepoSnapshot(${org}/${repoName})`);
     const orgRef = database.ref(DateSnapshotPath(new Date()));
-    const repoRef = orgRef.child("repos").child(repo);
+    const repoSnapRef = orgRef.child("repos").child(repoKey);
 
     // Get the "base" data that was retriebed during the org snapshot
-    const baseRepoData = (await repoRef.once("value")).val();
+    const baseRepoData = (await repoSnapRef.once("value")).val();
+    if (!baseRepoData) {
+      console.warn(`Couldn't get base repo data for ${org}/${repoName}.`);
+    }
 
-    // Get the real name (since the key is a cleaned version)
-    const repoName = baseRepoData.name;
-
-    // TODO: Can I build this into the function somehow?
+    // Store the repo snapshot under the proper path
     util.startTimer("GetRepoSnapshot");
     const fullRepoData = await GetRepoSnapshot(org, repoName, baseRepoData);
     util.endTimer("GetRepoSnapshot");
+    await repoSnapRef.set(fullRepoData);
 
-    await repoRef.set(fullRepoData);
+    // Store non-date-specific repo metadata
+    // TODO: This should probably be broken out into a function like GetRepoSnapshot
+    //       and then only saved/timed here.
+    const repoMetaRef = database.ref("repo-metadata").child(org).child(repoKey);
+
+    // Store collaborators as a map of name --> true
+    const collabNames = await gh_client.getCollaboratorsForRepo(org, repoName);
+    const collabMap: { [s: string]: boolean } = {};
+    collabNames.forEach((name: string) => {
+      collabMap[name] = true;
+    });
+
+    await repoMetaRef.child("collaborators").set(collabMap);
   });
 
 export const SaveOrganizationSnapshot = functions
@@ -180,11 +193,13 @@ export const SaveOrganizationSnapshot = functions
     for (const repoKey of repos) {
       util.delay(1.0);
 
+      const repoName = snapshot.repos[repoKey].name;
+
       // Fan out for each repo
       const publisher = pubsubClient.topic("repo_snapshot").publisher();
       const data = {
         org: "firebase",
-        repo: repoKey
+        repo: repoName
       };
       console.log(JSON.stringify(data));
       await publisher.publish(Buffer.from(JSON.stringify(data)));
