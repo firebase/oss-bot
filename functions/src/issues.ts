@@ -302,10 +302,6 @@ export class IssueHandler {
     issue: types.Issue,
     label: string
   ): types.Action[] {
-    // Basic info
-    const org = repo.owner.login;
-    const name = repo.name;
-
     // Render the issue body
     const body_html = marked(issue.body);
 
@@ -337,18 +333,56 @@ export class IssueHandler {
       return await this.onNewIssue(repo, issue);
     }
 
-    const comment_html = marked(comment.body);
+    // Basic info
+    const org = repo.owner.login;
+    const name = repo.name;
+    const number = issue.number;
 
-    const action = this.getIssueUpdateEmailAction(repo, issue, {
+    const actions: types.Action[] = [];
+
+    // Send an email to subscribers
+    const comment_html = marked(comment.body);
+    const emailAction = this.getIssueUpdateEmailAction(repo, issue, {
       header: `New Comment by ${comment.user.login}`,
       body: comment_html
     });
 
-    if (!action) {
-      return [];
+    if (emailAction) {
+      actions.push(emailAction);
     }
 
-    return [action];
+    // Check for staleness things
+    const cleanupConfig = this.config.getRepoCleanupConfig(repo.owner.login, repo.name);
+    if (cleanupConfig && cleanupConfig.issue) {
+      const issueConfig = cleanupConfig.issue;
+      const labelNames = issue.labels.map(label => label.name);
+
+      const isNeedsInfo = labelNames.includes(issueConfig.label_needs_info);
+      const isStale = labelNames.includes(issueConfig.label_stale);
+      
+      const isAuthorComment = comment.user.login;
+
+      if (isStale) {
+        // Any comment on a stale issue removes the stale flag
+        actions.push(new types.GithubRemoveLabelAction(org, name, number, issueConfig.label_stale));
+
+        // An author comment on a stale issue moves this to "needs attention" and a comment
+        // by anyone else moves this to "needs info".
+        if (isAuthorComment) {
+          actions.push(new types.GithubAddLabelAction(org, name, number, issueConfig.label_needs_attention));
+        } else {
+          actions.push(new types.GithubAddLabelAction(org, name, number, issueConfig.label_needs_info));
+        }
+      }
+
+      if (isNeedsInfo && isAuthorComment) {
+        // An author comment on a needs-info issue moves it to needs-attention.
+        actions.push(new types.GithubRemoveLabelAction(org, name, number, issueConfig.label_needs_info));
+        actions.push(new types.GithubAddLabelAction(org, name, number, issueConfig.label_needs_attention));
+      }
+    }
+
+    return actions;
   }
 
   /**
