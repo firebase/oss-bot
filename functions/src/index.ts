@@ -234,7 +234,7 @@ export const githubWebhook = functions.https.onRequest(
  * Function that responds to pubsub events sent via an AppEngine crojob.
  */
 export const botCleanup = functions.pubsub
-  .topic("cleanup")
+  .topic("clean_stale")
   .onPublish(async event => {
     console.log("The cleanup job is running!");
     const repos = bot_config.getAllRepos();

@@ -2,6 +2,9 @@ cron:
 - description: Push a cleanup event onto pubsub every day
   url: /publish/cleanup
   schedule: every day 12:00
+- description: Push a clean stale issues event to pubsub every night
+  url: /publish/clean_stale
+  schedule: every day 18:00
   timezone: America/Los_Angeles
 - description: Update all metrics once per day
   url: /publish/update-all-metrics

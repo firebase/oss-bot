@@ -173,16 +173,16 @@ export class CronHandler {
     staleDays: number
   ): string {
     return `<!-- ${EVT_MARK_STALE} -->
-    Hey @${author}. We need more information to resolve this issue but there hasn't been an update in ${needsInfoDays} days. I'm marking the issue as stale and if there are no new updates in the next ${staleDays} days I will close it automatically.
+Hey @${author}. We need more information to resolve this issue but there hasn't been an update in ${needsInfoDays} days. I'm marking the issue as stale and if there are no new updates in the next ${staleDays} days I will close it automatically.
 
-    If you have more information that will help us get to the bottom of this, just add a comment!`;
+If you have more information that will help us get to the bottom of this, just add a comment!`;
   }
 
   private getCloseComment(author: string) {
     return `<!-- ${EVT_CLOSE_STALE} -->
-    Since there haven't been any recent updates here, I am going to close this issue.
+Since there haven't been any recent updates here, I am going to close this issue.
     
-    @${author} if you're still experiencing this problem and want to continue the discussion just leave a comment here and we are happy to re-open this.`;
+@${author} if you're still experiencing this problem and want to continue the discussion just leave a comment here and we are happy to re-open this.`;
   }
 }
 
