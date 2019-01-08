@@ -517,4 +517,24 @@ describe("The OSS Robot", () => {
       "Does not have skip tag"
     );
   });
+
+  it("should mark a needs-info issue stale after 7 days", async () => {
+    assert.ok(false);
+  });
+
+  it("should close a stale issue after 3 days", () => {
+    assert.ok(false);
+  });
+
+  it("should move a stale issue to needs-attention after an author comment", () => {
+    assert.ok(false);
+  });
+
+  it("should move a stale issue to needs-info after a non-author comment", () => {
+    assert.ok(false);
+  });
+
+  it("should ignore cron processing on an issue with certain labels", () => {
+    assert.ok(false);
+  });
 });

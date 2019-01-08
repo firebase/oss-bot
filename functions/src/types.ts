@@ -142,7 +142,7 @@ export interface IssueCleanupConfig {
   label_needs_info: string;
   label_needs_attention: string;
   label_stale: string;
-  ignore_labels: string[];
+  ignore_labels?: string[];
   needs_info_days: number;
   stale_days: number;
 }
@@ -187,10 +187,10 @@ export class Milestone {
   creator: User;
   open_issues: number;
   closed_issues: number;
-  created_at: Date;
-  updated_at: Date;
-  closed_at: Date;
-  due_on: Date;
+  created_at: string;
+  updated_at: string;
+  closed_at: string;
+  due_on: string;
 }
 
 export class Permissions {
@@ -263,9 +263,9 @@ export class Repository {
   has_wiki: boolean;
   has_pages: boolean;
   has_downloads: boolean;
-  pushed_at: Date;
-  created_at: Date;
-  updated_at: Date;
+  pushed_at: string;
+  created_at: string;
+  updated_at: string;
   permissions: Permissions;
   allow_rebase_merge: boolean;
   allow_squash_merge: boolean;
@@ -293,9 +293,9 @@ export class Issue {
   locked: boolean;
   comments: number;
   pull_request: PullRequest;
-  closed_at?: any;
-  created_at: Date;
-  updated_at: Date;
+  closed_at?: string;
+  created_at: string;
+  updated_at: string;
   repository: Repository;
 }
 
@@ -305,8 +305,8 @@ export class Comment {
   html_url: string;
   body: string;
   user: User;
-  created_at: Date;
-  updated_at: Date;
+  created_at: string;
+  updated_at: string;
 }
 
 export class Sender {
@@ -379,10 +379,10 @@ export class PullRequest {
   assignee: User;
   milestone: Milestone;
   locked: boolean;
-  created_at: Date;
-  updated_at: Date;
-  closed_at: Date;
-  merged_at: Date;
+  created_at: string;
+  updated_at: string;
+  closed_at: string;
+  merged_at: string;
   head: Commit;
   base: Commit;
   _links: Links;
@@ -461,5 +461,35 @@ export namespace report {
 
     opened_issues: ChangedIssue[];
     closed_issues: ChangedIssue[];
+  }
+}
+
+/**
+ * Internal type specifications that allow us to merge data sources.
+ */
+export namespace internal {
+  export interface Issue {
+    id: number;
+    number: number;
+    state: string;
+    title: string;
+    body: string;
+    user: internal.User;
+    labels: internal.Label[];
+    created_at: string;
+    updated_at: string;
+  }
+
+  export interface User {
+    login: string;
+  }
+
+  export interface Label {
+    name: string;
+  }
+
+  export interface Timestamped {
+    updated_at: string;
+    created_at: string;
   }
 }
