@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 import "mocha";
-import { expect } from "chai";
 
 import * as fs from "fs";
 import * as path from "path";
 import * as assert from "assert";
+import * as simple from "simple-mock";
 
+import * as github from "../github";
 import * as issues from "../issues";
 import * as pullrequests from "../pullrequests";
 import * as cron from "../cron";
@@ -63,7 +64,7 @@ class SimpleRepo extends types.Repository {
   }
 }
 
-// Label mapping configuration
+// Bot configuration
 const config_json = require("./mock_data/config.json");
 const bot_config = new config.BotConfig(config_json);
 
@@ -75,12 +76,6 @@ const issue_handler = new issues.IssueHandler(
 
 // Issue event handler
 const pr_handler = new pullrequests.PullRequestHandler(bot_config);
-
-// Cron handler
-const cron_handler = new cron.CronHandler(
-  new mocks.MockGithubClient("abc123"),
-  bot_config
-);
 
 // Standard repo
 const test_repo = new SimpleRepo({
@@ -516,25 +511,5 @@ describe("The OSS Robot", () => {
       !pr_handler.hasSkipTag(test_repo, pr_triage),
       "Does not have skip tag"
     );
-  });
-
-  it("should mark a needs-info issue stale after 7 days", async () => {
-    assert.ok(false);
-  });
-
-  it("should close a stale issue after 3 days", () => {
-    assert.ok(false);
-  });
-
-  it("should move a stale issue to needs-attention after an author comment", () => {
-    assert.ok(false);
-  });
-
-  it("should move a stale issue to needs-info after a non-author comment", () => {
-    assert.ok(false);
-  });
-
-  it("should ignore cron processing on an issue with certain labels", () => {
-    assert.ok(false);
   });
 });

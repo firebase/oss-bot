@@ -469,13 +469,18 @@ export namespace report {
  */
 export namespace internal {
   export interface Issue {
-    id: number;
     number: number;
     state: string;
     title: string;
-    body: string;
     user: internal.User;
     labels: internal.Label[];
+    created_at: string;
+    updated_at: string;
+  }
+
+  export interface Comment {
+    body: string;
+    user: User;
     created_at: string;
     updated_at: string;
   }

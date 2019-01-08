@@ -86,7 +86,11 @@ export class CronHandler {
     // If an issue is not labeled with either the stale or needs-info labels
     // then we don't need to do any cron processing on it.
     if (!(stateNeedsInfo || stateStale)) {
-      console.log(`Issue ${name}#${number} does not need processing.`);
+      console.log(
+        `Issue ${name}#${number} does not need processing, labels=${JSON.stringify(
+          labelNames
+        )}.`
+      );
       return actions;
     }
 
@@ -178,7 +182,7 @@ export class CronHandler {
     return actions;
   }
 
-  private getMarkStaleComment(
+  getMarkStaleComment(
     author: string,
     needsInfoDays: number,
     staleDays: number
@@ -189,7 +193,7 @@ Hey @${author}. We need more information to resolve this issue but there hasn't 
 If you have more information that will help us get to the bottom of this, just add a comment!`;
   }
 
-  private getCloseComment(author: string) {
+  getCloseComment(author: string) {
     return `<!-- ${EVT_CLOSE_STALE} -->
 Since there haven't been any recent updates here, I am going to close this issue.
 
