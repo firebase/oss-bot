@@ -105,11 +105,11 @@ export class IssueHandler {
    * Handle an event associated with a Github issue.
    */
   async handleIssueEvent(
-    event: types.WebhookEvent,
+    event: types.github.WebhookEvent,
     action: IssueAction,
     issue: types.internal.Issue,
     repo: types.internal.Repository,
-    sender: types.Sender
+    sender: types.github.Sender
   ): Promise<types.Action[]> {
     switch (action) {
       case IssueAction.OPENED:
@@ -142,12 +142,12 @@ export class IssueHandler {
    * Handle an event associated with a Github issue comment.
    */
   async handleIssueCommentEvent(
-    event: types.WebhookEvent,
+    event: types.github.WebhookEvent,
     action: CommentAction,
     issue: types.internal.Issue,
     comment: types.internal.Comment,
     repo: types.internal.Repository,
-    sender: types.Sender
+    sender: types.github.Sender
   ): Promise<types.Action[]> {
     switch (action) {
       case CommentAction.CREATED:

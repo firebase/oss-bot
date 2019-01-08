@@ -18,18 +18,15 @@ import "mocha";
 import * as fs from "fs";
 import * as path from "path";
 import * as assert from "assert";
-import * as simple from "simple-mock";
 
-import * as github from "../github";
 import * as issues from "../issues";
 import * as pullrequests from "../pullrequests";
-import * as cron from "../cron";
 import * as config from "../config";
 import * as types from "../types";
 
 import * as mocks from "./mocks";
 
-class SimpleIssue extends types.Issue {
+class SimpleIssue extends types.github.Issue {
   constructor(opts: any) {
     super();
 
@@ -38,7 +35,7 @@ class SimpleIssue extends types.Issue {
   }
 }
 
-class SimplePullRequest extends types.PullRequest {
+class SimplePullRequest extends types.github.PullRequest {
   constructor(opts: any) {
     super();
 
@@ -47,7 +44,7 @@ class SimplePullRequest extends types.PullRequest {
   }
 }
 
-class SimpleUser extends types.User {
+class SimpleUser extends types.github.User {
   constructor(opts: any) {
     super();
 
@@ -55,7 +52,7 @@ class SimpleUser extends types.User {
   }
 }
 
-class SimpleRepo extends types.Repository {
+class SimpleRepo extends types.github.Repository {
   constructor(opts: any) {
     super();
 
@@ -153,11 +150,11 @@ const issue_opened_js_sdk_messaging = require("./mock_data/issue_opened_js_sdk_5
 const comment_created_bot_test = require("./mock_data/comment_created_bot_test.json");
 
 // Fake WebhookEvent
-const whEvent = new types.WebhookEvent();
+const whEvent = new types.github.WebhookEvent();
 whEvent.action = "foo";
 
 // Fake Sender
-const sender = new types.Sender();
+const sender = new types.github.Sender();
 sender.login = "johndoe";
 
 function assertMatchingAction(actions: types.Action[], props: any): void {
@@ -419,8 +416,8 @@ describe("The OSS Robot", () => {
   });
 
   it("should correctly deal with upper/lower case labels", () => {
-    const issue = new types.Issue();
-    const dbLabel = new types.Label();
+    const issue = new types.github.Issue();
+    const dbLabel = new types.github.Label();
     dbLabel.name = "DatabaSe";
     issue.labels = [dbLabel];
 

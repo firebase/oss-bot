@@ -54,11 +54,11 @@ export class PullRequestHandler {
    * Handle an issue associated with a Github pull request.
    */
   async handlePullRequestEvent(
-    event: types.WebhookEvent,
+    event: types.github.WebhookEvent,
     action: PullRequestAction,
-    pr: types.PullRequest,
-    repo: types.Repository,
-    sender: types.Sender
+    pr: types.github.PullRequest,
+    repo: types.github.Repository,
+    sender: types.github.Sender
   ): Promise<types.Action[]> {
     switch (action) {
       case PullRequestAction.OPENED:
@@ -95,8 +95,8 @@ export class PullRequestHandler {
    * Handle a newly opened pull request.
    */
   async onNewPullRequest(
-    repo: types.Repository,
-    pr: types.PullRequest
+    repo: types.github.Repository,
+    pr: types.github.PullRequest
   ): Promise<types.Action[]> {
     // Get basic issue information
     const org = repo.owner.login;
@@ -129,8 +129,8 @@ export class PullRequestHandler {
   }
 
   async onPullRequestLabeled(
-    repo: types.Repository,
-    pr: types.PullRequest
+    repo: types.github.Repository,
+    pr: types.github.PullRequest
   ): Promise<types.Action[]> {
     // TODO(samstern): Send a an email to the right peopl
     return [];
@@ -139,14 +139,14 @@ export class PullRequestHandler {
   /**
    * Determine if a PR has the [triage-skip] tag.
    */
-  hasSkipTag(repo: types.Repository, pr: types.PullRequest) {
+  hasSkipTag(repo: types.github.Repository, pr: types.github.PullRequest) {
     return pr.title.indexOf("[triage-skip]") >= 0;
   }
 
   /**
    * Determine if the pull request links to a github issue (fuzzy).
    */
-  hasIssueLink(repo: types.Repository, pr: types.PullRequest) {
+  hasIssueLink(repo: types.github.Repository, pr: types.github.PullRequest) {
     // Match either /issues/NUM or #NUM
     const issueRegex = new RegExp("(/issues/|#)[0-9]+");
 
