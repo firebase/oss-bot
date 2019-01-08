@@ -468,19 +468,28 @@ export namespace report {
  * Internal type specifications that allow us to merge data sources.
  */
 export namespace internal {
+  export interface Repository {
+    name: string;
+    owner: internal.User;
+  }
+
   export interface Issue {
     number: number;
     state: string;
     title: string;
+    body: string;
     user: internal.User;
     labels: internal.Label[];
     created_at: string;
     updated_at: string;
+
+    assignee?: internal.User;
+    html_url?: string;
   }
 
   export interface Comment {
     body: string;
-    user: User;
+    user: internal.User;
     created_at: string;
     updated_at: string;
   }

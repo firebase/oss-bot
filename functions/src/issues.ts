@@ -107,8 +107,8 @@ export class IssueHandler {
   async handleIssueEvent(
     event: types.WebhookEvent,
     action: IssueAction,
-    issue: types.Issue,
-    repo: types.Repository,
+    issue: types.internal.Issue,
+    repo: types.internal.Repository,
     sender: types.Sender
   ): Promise<types.Action[]> {
     switch (action) {
@@ -144,9 +144,9 @@ export class IssueHandler {
   async handleIssueCommentEvent(
     event: types.WebhookEvent,
     action: CommentAction,
-    issue: types.Issue,
-    comment: types.Comment,
-    repo: types.Repository,
+    issue: types.internal.Issue,
+    comment: types.internal.Comment,
+    repo: types.internal.Repository,
     sender: types.Sender
   ): Promise<types.Action[]> {
     switch (action) {
@@ -173,8 +173,8 @@ export class IssueHandler {
    *   2. Notify the appropriate team (if possible).
    */
   async onNewIssue(
-    repo: types.Repository,
-    issue: types.Issue
+    repo: types.internal.Repository,
+    issue: types.internal.Issue
   ): Promise<types.Action[]> {
     const actions: types.Action[] = [];
 
@@ -255,7 +255,19 @@ export class IssueHandler {
   /**
    * Send an email update when an issue has a new assignee.
    */
-  onIssueAssigned(repo: types.Repository, issue: types.Issue): types.Action[] {
+  onIssueAssigned(
+    repo: types.internal.Repository,
+    issue: types.internal.Issue
+  ): types.Action[] {
+    if (!issue.assignee) {
+      console.warn(
+        `onIssueAssigned called for an issue with no assignee: ${repo.name}#${
+          issue.number
+        }`
+      );
+      return [];
+    }
+
     const assignee = issue.assignee.login;
     const body = "Assigned to " + assignee;
 
@@ -276,8 +288,8 @@ export class IssueHandler {
    * such as open to closed or closed to reopened.
    */
   onIssueStatusChanged(
-    repo: types.Repository,
-    issue: types.Issue,
+    repo: types.internal.Repository,
+    issue: types.internal.Issue,
     new_status: IssueStatus
   ): types.Action[] {
     const body = "New status: " + new_status;
@@ -298,8 +310,8 @@ export class IssueHandler {
    * Send an email update if an issue was labeled with a new label that has email configured.
    */
   onIssueLabeled(
-    repo: types.Repository,
-    issue: types.Issue,
+    repo: types.internal.Repository,
+    issue: types.internal.Issue,
     label: string
   ): types.Action[] {
     // Render the issue body
@@ -323,9 +335,9 @@ export class IssueHandler {
    * Send an email when a new comment is added to an issue.
    */
   async onCommentCreated(
-    repo: types.Repository,
-    issue: types.Issue,
-    comment: types.Comment
+    repo: types.internal.Repository,
+    issue: types.internal.Issue,
+    comment: types.internal.Comment
   ): Promise<types.Action[]> {
     // Trick for testing
     if (comment.body == "eval") {
@@ -378,17 +390,14 @@ export class IssueHandler {
           )
         );
 
-        // An author comment on a stale issue moves this to "needs attention".
-        if (isAuthorComment) {
-          actions.push(
-            new types.GithubAddLabelAction(
-              org,
-              name,
-              number,
-              issueConfig.label_needs_attention
-            )
-          );
-        }
+        // An author comment on a stale issue moves this to "needs attention",
+        // a comment by someone else moves this to needs-info.
+        const labelToAdd = isAuthorComment
+          ? issueConfig.label_needs_attention
+          : issueConfig.label_needs_info;
+        actions.push(
+          new types.GithubAddLabelAction(org, name, number, labelToAdd)
+        );
       }
 
       if (isNeedsInfo && isAuthorComment) {
@@ -419,8 +428,8 @@ export class IssueHandler {
    * Send an email when an issue has been updated.
    */
   getIssueUpdateEmailAction(
-    repo: types.Repository,
-    issue: types.Issue,
+    repo: types.internal.Repository,
+    issue: types.internal.Issue,
     opts: SendIssueUpdateEmailOpts
   ): types.SendEmailAction | undefined {
     // Get basic issue information
@@ -450,13 +459,16 @@ export class IssueHandler {
     // Get email subject
     const subject = this.getIssueEmailSubject(issue.title, org, name, label);
 
+    const issue_url =
+      issue.html_url || `https://github.com/${org}/${name}/issues/${number}`;
+
     // Send email update
     return new types.SendEmailAction(
       recipient,
       subject,
       opts.header,
       opts.body,
-      issue.html_url,
+      issue_url,
       "Open Issue"
     );
   }
@@ -467,7 +479,7 @@ export class IssueHandler {
   getRelevantLabel(
     org: string,
     name: string,
-    issue: types.Issue
+    issue: types.internal.Issue
   ): string | undefined {
     // Make sure we at least have configuration for this repository
     const repo_mapping = this.config.getRepoConfig(org, name);
@@ -524,7 +536,7 @@ export class IssueHandler {
   /**
    * Check if an issue is a feature request.
    */
-  isFeatureRequest(issue: types.Issue): boolean {
+  isFeatureRequest(issue: types.internal.Issue): boolean {
     return !!issue.title && issue.title.startsWith("FR");
   }
 
@@ -534,7 +546,7 @@ export class IssueHandler {
   async checkMatchesTemplate(
     org: string,
     name: string,
-    issue: types.Issue
+    issue: types.internal.Issue
   ): Promise<CheckMatchesTemplateResult> {
     const result = new CheckMatchesTemplateResult();
 
@@ -583,7 +595,7 @@ export class IssueHandler {
   parseIssueOptions(
     org: string,
     name: string,
-    issue: types.Issue
+    issue: types.internal.Issue
   ): types.TemplateOptions {
     let templatePath = this.config.getRepoTemplateConfig(org, name, "issue");
     if (!templatePath) {

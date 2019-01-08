@@ -18,9 +18,10 @@ import "mocha";
 import * as assert from "assert";
 import * as simple from "simple-mock";
 
-import * as github from "../github";
-import * as cron from "../cron";
 import * as config from "../config";
+import * as cron from "../cron";
+import * as github from "../github";
+import * as issues from "../issues";
 import * as types from "../types";
 
 // Bot configuration
@@ -32,6 +33,9 @@ const gh_client = new github.GithubClient("fake-token");
 
 // Cron handler
 const cron_handler = new cron.CronHandler(gh_client, bot_config);
+
+// Issue event handler
+const issue_handler = new issues.IssueHandler(gh_client, bot_config);
 
 const NOW_TIME = new Date();
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -49,6 +53,17 @@ const DEFAULT_CONFIG: types.IssueCleanupConfig = {
   stale_days: 3
 };
 
+const STALE_ISSUE: types.internal.Issue = {
+  number: 1,
+  state: "open",
+  title: "Some Issue",
+  body: "Body of my issue",
+  user: { login: "some-user" },
+  labels: [{ name: "stale" }],
+  created_at: EIGHT_DAYS_AGO,
+  updated_at: EIGHT_DAYS_AGO
+};
+
 describe("Stale issue handler", async () => {
   afterEach(() => {
     simple.restore();
@@ -59,6 +74,7 @@ describe("Stale issue handler", async () => {
       number: 1,
       state: "open",
       title: "Issue that needs info",
+      body: "foo bar",
       user: {
         login: "some-user"
       },
@@ -83,8 +99,8 @@ describe("Stale issue handler", async () => {
       });
 
     const actions = await cron_handler.handleStaleIssue(
-      "firebase",
-      "some-repo",
+      "samtstern",
+      "bottest",
       needsInfo,
       DEFAULT_CONFIG
     );
@@ -96,6 +112,7 @@ describe("Stale issue handler", async () => {
       number: 1,
       state: "open",
       title: "Issue that needs info",
+      body: "foo bar",
       user: {
         login: "some-user"
       },
@@ -120,16 +137,16 @@ describe("Stale issue handler", async () => {
       });
 
     const actions = await cron_handler.handleStaleIssue(
-      "firebase",
-      "some-repo",
+      "samtstern",
+      "bottest",
       needsInfo,
       DEFAULT_CONFIG
     );
     assert.deepEqual(
       actions[0],
       new types.GithubAddLabelAction(
-        "firebase",
-        "some-repo",
+        "samtstern",
+        "bottest",
         needsInfo.number,
         DEFAULT_CONFIG.label_stale
       )
@@ -141,6 +158,7 @@ describe("Stale issue handler", async () => {
       number: 1,
       state: "open",
       title: "Issue that is stale",
+      body: "foo bar",
       user: {
         login: "some-user"
       },
@@ -171,21 +189,21 @@ describe("Stale issue handler", async () => {
       });
 
     const actions = await cron_handler.handleStaleIssue(
-      "firebase",
-      "some-repo",
+      "samtstern",
+      "bottest",
       staleIssue,
       DEFAULT_CONFIG
     );
 
     assert.deepEqual(actions, [
       new types.GithubCommentAction(
-        "firebase",
-        "some-repo",
+        "samtstern",
+        "bottest",
         staleIssue.number,
         cron_handler.getCloseComment("some-user"),
         false
       ),
-      new types.GithubCloseAction("firebase", "some-repo", staleIssue.number)
+      new types.GithubCloseAction("samtstern", "bottest", staleIssue.number)
     ]);
   });
 
@@ -194,6 +212,7 @@ describe("Stale issue handler", async () => {
       number: 1,
       state: "open",
       title: "Issue that should be ignored",
+      body: "foo bar",
       user: {
         login: "some-user"
       },
@@ -207,8 +226,8 @@ describe("Stale issue handler", async () => {
     };
 
     const actions = await cron_handler.handleStaleIssue(
-      "firebase",
-      "some-repo",
+      "samtstern",
+      "bottest",
       toIgnore,
       DEFAULT_CONFIG
     );
@@ -217,10 +236,72 @@ describe("Stale issue handler", async () => {
   });
 
   it("should move a stale issue to needs-attention after an author comment", async () => {
-    assert.ok(false);
+    const repo: types.internal.Repository = {
+      owner: { login: "samtstern" },
+      name: "bottest"
+    };
+
+    const comment: types.internal.Comment = {
+      user: STALE_ISSUE.user,
+      body: "New comment by the author",
+      created_at: FOUR_DAYS_AGO,
+      updated_at: FOUR_DAYS_AGO
+    };
+
+    const actions = await issue_handler.onCommentCreated(
+      repo,
+      STALE_ISSUE,
+      comment
+    );
+
+    assert.deepEqual(actions, [
+      new types.GithubRemoveLabelAction(
+        repo.owner.login,
+        repo.name,
+        STALE_ISSUE.number,
+        "stale"
+      ),
+      new types.GithubAddLabelAction(
+        repo.owner.login,
+        repo.name,
+        STALE_ISSUE.number,
+        "needs-attention"
+      )
+    ]);
   });
 
   it("should move a stale issue to needs-info after a non-author comment", async () => {
-    assert.ok(false);
+    const repo: types.internal.Repository = {
+      owner: { login: "samtstern" },
+      name: "bottest"
+    };
+
+    const comment: types.internal.Comment = {
+      user: { login: "someone-else" },
+      body: "New comment by someone else",
+      created_at: FOUR_DAYS_AGO,
+      updated_at: FOUR_DAYS_AGO
+    };
+
+    const actions = await issue_handler.onCommentCreated(
+      repo,
+      STALE_ISSUE,
+      comment
+    );
+
+    assert.deepEqual(actions, [
+      new types.GithubRemoveLabelAction(
+        repo.owner.login,
+        repo.name,
+        STALE_ISSUE.number,
+        "stale"
+      ),
+      new types.GithubAddLabelAction(
+        repo.owner.login,
+        repo.name,
+        STALE_ISSUE.number,
+        "needs-info"
+      )
+    ]);
   });
 });
