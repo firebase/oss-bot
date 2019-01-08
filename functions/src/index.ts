@@ -25,6 +25,7 @@ import * as cron from "./cron";
 import * as config from "./config";
 import * as types from "./types";
 import * as log from "./log";
+import { exec } from "child_process";
 
 export { SaveOrganizationSnapshot, SaveRepoSnapshot } from "./snapshot";
 
@@ -76,7 +77,7 @@ const issue_handler = new issues.IssueHandler(gh_client, bot_config);
 const pr_handler = new pullrequests.PullRequestHandler(bot_config);
 
 // Handler for Cron jobs
-const cron_handler = new cron.CronHandler(gh_client);
+const cron_handler = new cron.CronHandler(gh_client, bot_config);
 
 /**
  * Function that responds to Github events (HTTP webhook).
@@ -166,8 +167,6 @@ export const githubWebhook = functions.https.onRequest(
       actions = [];
     }
 
-    // TODO(samstern): Maybe add an "execute" method to each action
-    // to clean this up?
     const promises: Promise<any>[] = [];
 
     const collapsibleComments = [];
@@ -178,54 +177,17 @@ export const githubWebhook = functions.https.onRequest(
         continue;
       }
 
-      log.logData({
-        event: "github_action",
-        type: action.type,
-        message: `Executing Github Action of type ${action.type}`
-      });
-
       if (action.type == types.ActionType.GITHUB_COMMENT) {
         const commentAction = action as types.GithubCommentAction;
 
+        // Special handling for collapsible comment actions at the end
         if (commentAction.collapse == true) {
           collapsibleComments.push(commentAction);
         } else {
-          promises.push(
-            gh_client.addComment(
-              commentAction.org,
-              commentAction.name,
-              commentAction.number,
-              commentAction.message
-            )
-          );
+          promises.push(executeAction(commentAction));
         }
-      }
-
-      if (action.type == types.ActionType.GITHUB_LABEL) {
-        const labelAction = action as types.GithubLabelAction;
-
-        promises.push(
-          gh_client.addLabel(
-            labelAction.org,
-            labelAction.name,
-            labelAction.number,
-            labelAction.label
-          )
-        );
-      }
-
-      if (action.type == types.ActionType.EMAIL_SEND) {
-        const emailAction = action as types.SendEmailAction;
-        promises.push(
-          email_client.sendStyledEmail(
-            emailAction.recipient,
-            emailAction.subject,
-            emailAction.header,
-            emailAction.body,
-            emailAction.link,
-            emailAction.action
-          )
-        );
+      } else {
+        promises.push(executeAction(action));
       }
     }
 
@@ -233,14 +195,7 @@ export const githubWebhook = functions.https.onRequest(
     if (collapsibleComments.length == 1) {
       // Only one comment, post it directly.
       const comment = collapsibleComments[0];
-      promises.push(
-        gh_client.addComment(
-          comment.org,
-          comment.name,
-          comment.number,
-          comment.message
-        )
-      );
+      promises.push(executeAction(comment));
     } else if (collapsibleComments.length > 1) {
       // More than one comment, combine them into bullets.
       // TODO: What if the comments are cross-repo or cross-issue?
@@ -251,11 +206,14 @@ export const githubWebhook = functions.https.onRequest(
 
       const firstComment = collapsibleComments[0];
       promises.push(
-        gh_client.addComment(
-          firstComment.org,
-          firstComment.name,
-          firstComment.number,
-          msg
+        executeAction(
+          new types.GithubCommentAction(
+            firstComment.org,
+            firstComment.name,
+            firstComment.number,
+            msg,
+            false
+          )
         )
       );
     }
@@ -276,27 +234,80 @@ export const githubWebhook = functions.https.onRequest(
  * Function that responds to pubsub events sent via an AppEngine crojob.
  */
 export const botCleanup = functions.pubsub
-  .topic("cleanup")
+  .topic("clean_stale")
   .onPublish(async event => {
     console.log("The cleanup job is running!");
-    if (1 + 1 == 2) {
-      console.log("Cleanup is currently disabled");
-      return;
+    const repos = bot_config.getAllRepos();
+    for (const repo of repos) {
+      const actions = await cron_handler.handleStaleIssues(repo.org, repo.name);
+
+      console.log(
+        `Taking ${actions.length} actions when cleaning up ${repo.name}`
+      );
+      const promises = actions.map(action => executeAction(action));
+      await Promise.all(promises);
     }
-
-    const that = this;
-    return bot_config.getAllRepos().map(function(repo) {
-      // Get config for the repo
-      const repo_config = that.bot_config.getRepoConfig(repo.org, repo.name);
-
-      // Get expiry from config
-      let expiry = PR_EXPIRY_MS;
-      if (repo_config.cleanup && repo_config.cleanup.pr) {
-        expiry = repo_config.cleanup.pr;
-      }
-
-      console.log(`Cleaning up: ${repo.org}/${repo.name}, expiry: ${expiry}`);
-
-      return cron_handler.handleCleanup(repo.org, repo.name, expiry);
-    });
   });
+
+function executeAction(action: types.Action): Promise<any> {
+  log.logData({
+    event: "github_action",
+    type: action.type,
+    message: `Executing Github Action of type ${action.type}`
+  });
+
+  if (action.type == types.ActionType.GITHUB_COMMENT) {
+    const commentAction = action as types.GithubCommentAction;
+    return gh_client.addComment(
+      commentAction.org,
+      commentAction.name,
+      commentAction.number,
+      commentAction.message
+    );
+  }
+
+  if (action.type == types.ActionType.GITHUB_ADD_LABEL) {
+    const addLabelAction = action as types.GithubAddLabelAction;
+
+    return gh_client.addLabel(
+      addLabelAction.org,
+      addLabelAction.name,
+      addLabelAction.number,
+      addLabelAction.label
+    );
+  }
+
+  if (action.type == types.ActionType.GITHUB_REMOVE_LABEL) {
+    const removeLabelAction = action as types.GithubRemoveLabelAction;
+
+    return gh_client.removeLabel(
+      removeLabelAction.org,
+      removeLabelAction.name,
+      removeLabelAction.number,
+      removeLabelAction.label
+    );
+  }
+
+  if (action.type == types.ActionType.GITHUB_CLOSE) {
+    const closeAction = action as types.GithubCloseAction;
+    return gh_client.closeIssue(
+      closeAction.org,
+      closeAction.name,
+      closeAction.number
+    );
+  }
+
+  if (action.type == types.ActionType.EMAIL_SEND) {
+    const emailAction = action as types.SendEmailAction;
+    return email_client.sendStyledEmail(
+      emailAction.recipient,
+      emailAction.subject,
+      emailAction.header,
+      emailAction.body,
+      emailAction.link,
+      emailAction.action
+    );
+  }
+
+  return Promise.reject(`Unrecognized action: ${JSON.stringify(action)}`);
+}

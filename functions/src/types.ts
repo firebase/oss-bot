@@ -1,6 +1,8 @@
 export enum ActionType {
   GITHUB_COMMENT = "GITHUB_COMMENT",
-  GITHUB_LABEL = "GITHUB_LABEL",
+  GITHUB_ADD_LABEL = "GITHUB_LABEL",
+  GITHUB_REMOVE_LABEL = "GITHUB_REMOVE_LABEL",
+  GITHUB_CLOSE = "GITHUB_CLOSE",
   EMAIL_SEND = "EMAIL_SEND"
 }
 
@@ -44,13 +46,29 @@ export class GithubCommentAction extends GithubIssueAction {
   }
 }
 
-export class GithubLabelAction extends GithubIssueAction {
+export class GithubAddLabelAction extends GithubIssueAction {
   label: string;
 
   constructor(org: string, name: string, number: number, label: string) {
-    super(ActionType.GITHUB_LABEL, org, name, number);
+    super(ActionType.GITHUB_ADD_LABEL, org, name, number);
 
     this.label = label;
+  }
+}
+
+export class GithubRemoveLabelAction extends GithubIssueAction {
+  label: string;
+
+  constructor(org: string, name: string, number: number, label: string) {
+    super(ActionType.GITHUB_REMOVE_LABEL, org, name, number);
+
+    this.label = label;
+  }
+}
+
+export class GithubCloseAction extends GithubIssueAction {
+  constructor(org: string, name: string, number: number) {
+    super(ActionType.GITHUB_CLOSE, org, name, number);
   }
 }
 
@@ -89,6 +107,44 @@ export class TemplateOptions {
     this.path = path;
     this.validate = validate;
   }
+}
+
+export interface Config {
+  [org: string]: OrgConfig;
+}
+
+export interface OrgConfig {
+  [repo: string]: RepoConfig;
+}
+
+export interface RepoConfig {
+  reports?: ReportConfig;
+  labels?: { [labelName: string]: LabelConfig };
+  templates?: { [templateName: string]: string };
+  cleanup?: CleanupConfig;
+}
+
+export interface ReportConfig {
+  email: string;
+}
+
+export interface LabelConfig {
+  regex: string;
+  email?: string;
+}
+
+export interface CleanupConfig {
+  pr?: number;
+  issue?: IssueCleanupConfig;
+}
+
+export interface IssueCleanupConfig {
+  label_needs_info: string;
+  label_needs_attention: string;
+  label_stale: string;
+  ignore_labels: string[];
+  needs_info_days: number;
+  stale_days: number;
 }
 
 export class User {

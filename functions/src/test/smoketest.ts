@@ -77,7 +77,10 @@ const issue_handler = new issues.IssueHandler(
 const pr_handler = new pullrequests.PullRequestHandler(bot_config);
 
 // Cron handler
-const cron_handler = new cron.CronHandler(new mocks.MockGithubClient("abc123"));
+const cron_handler = new cron.CronHandler(
+  new mocks.MockGithubClient("abc123"),
+  bot_config
+);
 
 // Standard repo
 const test_repo = new SimpleRepo({
@@ -236,7 +239,7 @@ describe("The OSS Robot", () => {
     assert.equal(actions.length, 1, "Should be one action");
 
     assertMatchingAction(actions, {
-      type: types.ActionType.GITHUB_LABEL,
+      type: types.ActionType.GITHUB_ADD_LABEL,
       label: "database"
     });
   });
@@ -327,7 +330,7 @@ describe("The OSS Robot", () => {
     });
 
     assertMatchingAction(actions, {
-      type: types.ActionType.GITHUB_LABEL,
+      type: types.ActionType.GITHUB_ADD_LABEL,
       label: "needs-triage"
     });
   });
@@ -403,7 +406,7 @@ describe("The OSS Robot", () => {
     const actions = await issue_handler.onNewIssue(test_repo, issue);
 
     assertMatchingAction(actions, {
-      type: types.ActionType.GITHUB_LABEL,
+      type: types.ActionType.GITHUB_ADD_LABEL,
       label: "auth"
     });
   });
@@ -469,11 +472,6 @@ describe("The OSS Robot", () => {
     );
 
     assert.equal(actions.length, 0, "Should take no action.");
-  });
-
-  it("should correctly clean up old pull requests", () => {
-    // TODO: Make this verify action stream
-    return cron_handler.handleCleanup("samtstern", "BotTest", 0);
   });
 
   it("should detect issue link in a PR", () => {

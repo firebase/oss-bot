@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import * as types from "./types";
 
 interface Repo {
   org: string;
@@ -24,9 +25,9 @@ interface Repo {
  * @param {object} config JSON config data.
  */
 export class BotConfig {
-  config: any;
+  config: types.Config;
 
-  constructor(config: any) {
+  constructor(config: types.Config) {
     this.config = config;
   }
 
@@ -51,7 +52,7 @@ export class BotConfig {
   /**
    * Get the config object for a specific repo.
    */
-  getRepoConfig(org: string, name: string) {
+  getRepoConfig(org: string, name: string): types.RepoConfig | undefined {
     const cleanOrg = this.sanitizeKey(org);
     const cleanName = this.sanitizeKey(name);
     if (this.config[cleanOrg] && this.config[cleanOrg][cleanName]) {
@@ -62,7 +63,11 @@ export class BotConfig {
   /**
    * Get the config object for a single label of a specific repo.
    */
-  getRepoLabelConfig(org: string, name: string, label: string) {
+  getRepoLabelConfig(
+    org: string,
+    name: string,
+    label: string
+  ): types.LabelConfig | undefined {
     const repoConfig = this.getRepoConfig(org, name);
 
     const cleanLabel = this.sanitizeKey(label);
@@ -74,7 +79,11 @@ export class BotConfig {
   /**
    * Get the templates configuration for a specific repo.
    */
-  getRepoTemplateConfig(org: string, name: string, template: string) {
+  getRepoTemplateConfig(
+    org: string,
+    name: string,
+    template: string
+  ): string | undefined {
     const repoConfig = this.getRepoConfig(org, name);
 
     const cleanTemplate = this.sanitizeKey(template);
@@ -90,11 +99,27 @@ export class BotConfig {
   /**
    * Get the config for weekly repo report emails.
    */
-  getRepoReportingConfig(org: string, name: string) {
+  getRepoReportingConfig(
+    org: string,
+    name: string
+  ): types.ReportConfig | undefined {
     const repoConfig = this.getRepoConfig(org, name);
 
     if (repoConfig && repoConfig.reports) {
       return repoConfig.reports;
+    }
+  }
+
+  /**
+   * Get the config for cleaning up stale issues on a repo.
+   */
+  getRepoCleanupConfig(
+    org: string,
+    name: string
+  ): types.CleanupConfig | undefined {
+    const repoConfig = this.getRepoConfig(org, name);
+    if (repoConfig && repoConfig.cleanup) {
+      return repoConfig.cleanup;
     }
   }
 
@@ -104,13 +129,9 @@ export class BotConfig {
   static getDefaultTemplateConfig(template: string) {
     if (template === "issue") {
       return "ISSUE_TEMPLATE.md";
-    }
-
-    if (template == "pull_request") {
+    } else {
       return "PULL_REQUEST_TEMPLATE.md";
     }
-
-    return undefined;
   }
 
   /**

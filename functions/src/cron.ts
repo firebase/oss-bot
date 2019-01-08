@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
+import { BotConfig } from "./config";
 import * as github from "./github";
+import * as types from "./types";
 
 // Message for closing stale issues
 const STALE_ISSUE_MSG =
   "It's been a while since anyone updated this pull request so I am going to close it. " +
   "Please @mention a repo owner if you think this is a mistake!";
+
+// Metadata the bot can leave in comments to mark its actions
+const EVT_MARK_STALE = "event: mark-stale";
+const EVT_CLOSE_STALE = "event: close-stale";
 
 /**
  * Create a new handler for cron-style tasks.
@@ -27,41 +33,158 @@ const STALE_ISSUE_MSG =
  */
 export class CronHandler {
   gh_client: github.GithubClient;
+  config: BotConfig;
 
-  constructor(gh_client: github.GithubClient) {
+  constructor(gh_client: github.GithubClient, config: BotConfig) {
     this.gh_client = gh_client;
+    this.config = config;
   }
 
-  /**
-   * Handle a cleanup cycle for a particular repo.
-   */
-  async handleCleanup(org: string, name: string, expiry: number) {
-    const oldPullRequests = await this.gh_client.getStalePullRequests(
-      org,
-      name,
-      expiry
-    );
-    const promises: Promise<any>[] = [];
+  async handleStaleIssues(org: string, name: string): Promise<types.Action[]> {
+    console.log(`Processing issues for ${org}/${name}`);
 
-    for (const pr of oldPullRequests) {
-      console.log("Expired PR: ", pr);
+    // Get the configuration for this repo
+    const cleanupConfig = this.config.getRepoCleanupConfig(org, name);
+    if (!cleanupConfig || !cleanupConfig.issue) {
+      console.log(`No stale issues config for ${org}/${name}`);
+      return [];
+    }
+    const issueConfig = cleanupConfig.issue;
 
-      // TODO: Move this to the "action" model
-      // Add a comment saying why we are closing this
-      const addComment = this.gh_client.addComment(
+    // Aggregate all the actions we need to perform
+    const actions: types.Action[] = [];
+
+    const needsInfoTime = issueConfig.needs_info_days * 24 * 60 * 60 * 1000;
+    const staleTime = issueConfig.stale_days * 24 * 60 * 60 * 1000;
+
+    const issues = await this.gh_client.getIssuesForRepo(org, name, "open");
+    for (const issue of issues) {
+      const number = issue.number;
+      const labelNames = issue.labels.map(label => label.name);
+
+      const stateNeedsInfo = labelNames.includes(issueConfig.label_needs_info);
+      const stateStale = labelNames.includes(issueConfig.label_stale);
+
+      // If an issue is not labeled with either the stale or needs-info labels
+      // then we don't need to do any cron processing on it.
+      if (!(stateNeedsInfo || stateStale)) {
+        console.log(`Issue ${name}#${number} does not need processing.`);
+        continue;
+      }
+
+      // We fetch the comments for the issue so we can determine when the last actions were taken.
+      // We manually sort the API response by timestamp (newest to oldest) because the API
+      // does not guarantee an order.
+      let comments = await this.gh_client.getCommentsForIssue(
         org,
         name,
-        pr.number,
-        STALE_ISSUE_MSG
+        number
       );
+      comments = comments.sort(compareTimestamps).reverse();
 
-      // Close the pull request
-      const closePr = this.gh_client.closeIssue(org, name, pr.number);
+      if (stateNeedsInfo) {
+        console.log(`Processing ${name}#${number} as needs-info`);
+        // The github webhook handler will automatically remove the needs-info label
+        // if the author comments, so we can assume inside the cronjob that this has
+        // not happened and just look at the date of the last comment.
+        //
+        // A comment by anyone in the last 7 days makes the issue non-stale.
+        const lastComment = comments[0];
+        const shouldMarkStale = timeAgo(lastComment) > needsInfoTime;
 
-      promises.push(addComment);
-      promises.push(closePr);
+        if (shouldMarkStale) {
+          // We add the 'stale' label and also add a comment. Note that
+          // if the issue was labeled 'needs-info' this label is not removed
+          // here.
+          const addStaleLabel = new types.GithubAddLabelAction(
+            org,
+            name,
+            number,
+            issueConfig.label_stale
+          );
+          const addStaleComment = new types.GithubCommentAction(
+            org,
+            name,
+            number,
+            this.getMarkStaleComment(
+              issue.user.login,
+              issueConfig.needs_info_days,
+              issueConfig.stale_days
+            ),
+            false
+          );
+          actions.push(addStaleLabel, addStaleComment);
+        }
+      }
+
+      if (stateStale) {
+        console.log(`Processing ${name}#${number} as stale`);
+
+        // When the issue was marked stale, the bot will have left a comment with certain metadata
+        const markStaleComment = comments.find(comment => {
+          return comment.body.includes(EVT_MARK_STALE);
+        });
+
+        if (!markStaleComment) {
+          console.warn(
+            `Issue ${name}/${number} is stale but no relevant comment was found.`
+          );
+        }
+
+        if (markStaleComment && timeAgo(markStaleComment) > staleTime) {
+          const addClosingComment = new types.GithubCommentAction(
+            org,
+            name,
+            number,
+            this.getCloseComment(issue.user.login),
+            false
+          );
+          const closeIssue = new types.GithubCloseAction(org, name, number);
+          actions.push(addClosingComment, closeIssue);
+        }
+      }
     }
 
-    return Promise.all(promises);
+    return actions;
+  }
+
+  private getMarkStaleComment(
+    author: string,
+    needsInfoDays: number,
+    staleDays: number
+  ): string {
+    return `<!-- ${EVT_MARK_STALE} -->
+Hey @${author}. We need more information to resolve this issue but there hasn't been an update in ${needsInfoDays} days. I'm marking the issue as stale and if there are no new updates in the next ${staleDays} days I will close it automatically.
+
+If you have more information that will help us get to the bottom of this, just add a comment!`;
+  }
+
+  private getCloseComment(author: string) {
+    return `<!-- ${EVT_CLOSE_STALE} -->
+Since there haven't been any recent updates here, I am going to close this issue.
+    
+@${author} if you're still experiencing this problem and want to continue the discussion just leave a comment here and we are happy to re-open this.`;
+  }
+}
+
+interface HasTimestamps {
+  updated_at: string;
+  created_at: string;
+}
+
+function timeAgo(obj: HasTimestamps): number {
+  return Date.now() - Date.parse(obj.created_at);
+}
+
+function compareTimestamps(a: HasTimestamps, b: HasTimestamps) {
+  const aTime = Date.parse(a.created_at);
+  const bTime = Date.parse(b.created_at);
+
+  if (aTime > bTime) {
+    return 1;
+  } else if (bTime > aTime) {
+    return -1;
+  } else {
+    return 0;
   }
 }
