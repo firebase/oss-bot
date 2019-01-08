@@ -57,12 +57,6 @@ export class CronHandler {
     const needsInfoTime = issueConfig.needs_info_days * 24 * 60 * 60 * 1000;
     const staleTime = issueConfig.stale_days * 24 * 60 * 60 * 1000;
 
-    // TODO: Get this from the database
-    const contributors = await this.gh_client.getCollaboratorsForRepo(
-      org,
-      name
-    );
-
     const issues = await this.gh_client.getIssuesForRepo(org, name, "open");
     for (const issue of issues) {
       const number = issue.number;
@@ -92,29 +86,16 @@ export class CronHandler {
         console.log(`Processing ${name}#${number} as needs-info`);
         // The github webhook handler will automatically remove the needs-info label
         // if the author comments, so we can assume inside the cronjob that this has
-        // not happened and just look at the date of the last Googler/Author comment.
-        const lastGooglerComment = comments.find(comment => {
-          return contributors.includes(comment.user.login);
-        });
-
-        const lastAuthorComment = comments.find(comment => {
-          return comment.user.login === issue.user.login;
-        });
-
-        // If a googler ever commented and the last time was 7 days ago, this is now
-        // a stale issue. If a googler never commented, it's stale if the
-        // last author comment is more than 7 days ago.
-        const shouldMarkStale =
-          (lastGooglerComment && timeAgo(lastGooglerComment) > needsInfoTime) ||
-          (lastAuthorComment && timeAgo(lastAuthorComment) > needsInfoTime);
+        // not happened and just look at the date of the last comment.
+        //
+        // A comment by anyone in the last 7 days makes the issue non-stale.
+        const lastComment = comments[0];
+        const shouldMarkStale = timeAgo(lastComment) > needsInfoTime;
 
         if (shouldMarkStale) {
-          const removeNeedsInfoLabel = new types.GithubRemoveLabelAction(
-            org,
-            name,
-            number,
-            issueConfig.label_needs_info
-          );
+          // We add the 'stale' label and also add a comment. Note that
+          // if the issue was labeled 'needs-info' this label is not removed
+          // here.
           const addStaleLabel = new types.GithubAddLabelAction(
             org,
             name,
@@ -132,7 +113,7 @@ export class CronHandler {
             ),
             false
           );
-          actions.push(removeNeedsInfoLabel, addStaleLabel, addStaleComment);
+          actions.push(addStaleLabel, addStaleComment);
         }
       }
 

@@ -109,36 +109,36 @@ export class TemplateOptions {
   }
 }
 
-export class Config {
+export interface Config {
   [org: string]: OrgConfig;
 }
 
-export class OrgConfig {
+export interface OrgConfig {
   [repo: string]: RepoConfig;
 }
 
-export class RepoConfig {
+export interface RepoConfig {
   reports?: ReportConfig;
   labels?: { [labelName: string]: LabelConfig };
   templates?: { [templateName: string]: string };
   cleanup?: CleanupConfig;
 }
 
-export class ReportConfig {
+export interface ReportConfig {
   email: string;
 }
 
-export class LabelConfig {
+export interface LabelConfig {
   regex: string;
   email?: string;
 }
 
-export class CleanupConfig {
+export interface CleanupConfig {
   pr?: number;
   issue?: IssueCleanupConfig;
 }
 
-export class IssueCleanupConfig {
+export interface IssueCleanupConfig {
   label_needs_info: string;
   label_needs_attention: string;
   label_stale: string;

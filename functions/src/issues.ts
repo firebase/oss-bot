@@ -378,8 +378,7 @@ export class IssueHandler {
           )
         );
 
-        // An author comment on a stale issue moves this to "needs attention" and a comment
-        // by anyone else moves this to "needs info".
+        // An author comment on a stale issue moves this to "needs attention".
         if (isAuthorComment) {
           actions.push(
             new types.GithubAddLabelAction(
@@ -387,15 +386,6 @@ export class IssueHandler {
               name,
               number,
               issueConfig.label_needs_attention
-            )
-          );
-        } else {
-          actions.push(
-            new types.GithubAddLabelAction(
-              org,
-              name,
-              number,
-              issueConfig.label_needs_info
             )
           );
         }
