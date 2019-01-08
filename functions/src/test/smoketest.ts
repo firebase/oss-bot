@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 import "mocha";
-import { expect } from "chai";
 
 import * as fs from "fs";
 import * as path from "path";
@@ -22,13 +21,12 @@ import * as assert from "assert";
 
 import * as issues from "../issues";
 import * as pullrequests from "../pullrequests";
-import * as cron from "../cron";
 import * as config from "../config";
 import * as types from "../types";
 
 import * as mocks from "./mocks";
 
-class SimpleIssue extends types.Issue {
+class SimpleIssue extends types.github.Issue {
   constructor(opts: any) {
     super();
 
@@ -37,7 +35,7 @@ class SimpleIssue extends types.Issue {
   }
 }
 
-class SimplePullRequest extends types.PullRequest {
+class SimplePullRequest extends types.github.PullRequest {
   constructor(opts: any) {
     super();
 
@@ -46,7 +44,7 @@ class SimplePullRequest extends types.PullRequest {
   }
 }
 
-class SimpleUser extends types.User {
+class SimpleUser extends types.github.User {
   constructor(opts: any) {
     super();
 
@@ -54,7 +52,7 @@ class SimpleUser extends types.User {
   }
 }
 
-class SimpleRepo extends types.Repository {
+class SimpleRepo extends types.github.Repository {
   constructor(opts: any) {
     super();
 
@@ -63,7 +61,7 @@ class SimpleRepo extends types.Repository {
   }
 }
 
-// Label mapping configuration
+// Bot configuration
 const config_json = require("./mock_data/config.json");
 const bot_config = new config.BotConfig(config_json);
 
@@ -75,12 +73,6 @@ const issue_handler = new issues.IssueHandler(
 
 // Issue event handler
 const pr_handler = new pullrequests.PullRequestHandler(bot_config);
-
-// Cron handler
-const cron_handler = new cron.CronHandler(
-  new mocks.MockGithubClient("abc123"),
-  bot_config
-);
 
 // Standard repo
 const test_repo = new SimpleRepo({
@@ -158,11 +150,11 @@ const issue_opened_js_sdk_messaging = require("./mock_data/issue_opened_js_sdk_5
 const comment_created_bot_test = require("./mock_data/comment_created_bot_test.json");
 
 // Fake WebhookEvent
-const whEvent = new types.WebhookEvent();
+const whEvent = new types.github.WebhookEvent();
 whEvent.action = "foo";
 
 // Fake Sender
-const sender = new types.Sender();
+const sender = new types.github.Sender();
 sender.login = "johndoe";
 
 function assertMatchingAction(actions: types.Action[], props: any): void {
@@ -424,8 +416,8 @@ describe("The OSS Robot", () => {
   });
 
   it("should correctly deal with upper/lower case labels", () => {
-    const issue = new types.Issue();
-    const dbLabel = new types.Label();
+    const issue = new types.github.Issue();
+    const dbLabel = new types.github.Label();
     dbLabel.name = "DatabaSe";
     issue.labels = [dbLabel];
 

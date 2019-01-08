@@ -22,7 +22,16 @@
         "issue": ".github/ISSUE_TEMPLATE.md"
       },
       "cleanup": {
-        "pr": 1000
+        "issue": {
+          "label_needs_info": "needs-info",
+          "label_needs_attention": "needs-attention",
+          "label_stale": "stale",
+          "ignore_labels": [
+            "feature-request"
+          ],
+          "needs_info_days": 7,
+          "stale_days": 3
+        }
       }
     }
   }
