@@ -129,9 +129,7 @@ export async function FetchRepoSnapshot(
   const path = RepoSnapshotPath(repo, date);
   const snap = await database.ref(path).once("value");
   const data = snap.val();
-  if (!data) {
-    return data;
-  }
+  return data;
 }
 
 export const SaveRepoSnapshot = functions
