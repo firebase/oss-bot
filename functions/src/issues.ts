@@ -319,7 +319,7 @@ export class IssueHandler {
 
     // Send a new issue email
     const action = this.getIssueUpdateEmailAction(repo, issue, {
-      header: `New Issue in label ${label}`,
+      header: `New Issue from ${issue.user.login} in label ${label}`,
       body: body_html,
       label: label
     });
