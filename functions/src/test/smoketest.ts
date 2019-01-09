@@ -31,6 +31,7 @@ class SimpleIssue extends types.github.Issue {
     super();
 
     this.title = opts.title;
+    this.user = opts.user;
     this.body = opts.body;
   }
 }
@@ -85,6 +86,9 @@ const test_repo = new SimpleRepo({
 // Issue with the template properly filled in
 const good_issue = new SimpleIssue({
   title: "A good issue",
+  user: {
+    login: "samtstern"
+  },
   body: fs
     .readFileSync(path.join(__dirname, "mock_data", "issue_template_filled.md"))
     .toString()
