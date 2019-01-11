@@ -50,6 +50,51 @@ export class BotConfig {
   }
 
   /**
+   * Determine the features that are enabled for a repo.
+   */
+  getRepoFeatures(org: string, name: string): types.FeatureConfig {
+    const features: types.FeatureConfig = {
+      custom_emails: false,
+      issue_labels: false,
+      issue_cleanup: false,
+      repo_reports: false
+    };
+
+    const config = this.getRepoConfig(org, name);
+    if (!config) {
+      return features;
+    }
+
+    // Emails are enabled if any label has an 'email' entry.
+    // Labels are enabled if any label has a 'regex' entry.
+    if (config.labels) {
+      const labels = config.labels;
+      for (const label in labels) {
+        const labelConfig = config.labels[label];
+        if (labelConfig.email) {
+          features.custom_emails = true;
+        }
+
+        if (labelConfig.regex) {
+          features.issue_labels = true;
+        }
+      }
+    }
+
+    // Issue cleanup is enabled if there is a configuration for it.
+    if (config.cleanup && config.cleanup.issue) {
+      features.issue_cleanup = true;
+    }
+
+    // Repo reports are enabled if an email is specified.
+    if (config.reports && config.reports.email) {
+      features.repo_reports = true;
+    }
+
+    return features;
+  }
+
+  /**
    * Get the config object for a specific repo.
    */
   getRepoConfig(org: string, name: string): types.RepoConfig | undefined {

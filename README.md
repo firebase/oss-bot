@@ -1,52 +1,167 @@
-# oss-bot
+# Firebase OSS Robot
 
 ## Introduction
 
-A robot to automate github issue/pull request management. This robot
-has the following features:
+A robot to make open source easy for Firebasers.  The robot has multiple
+distinct features which can be enabled individually.
 
-  * Ensure adherence to templates.
-  * Automatically add labels based on custom configuration.
-  * Automatically add 'feature-request' and 'needs-triage' labels to issues.
-  * Send customized email notifications based on labels, allowing more
-    granular subscriptions than Github provides.
+### Custom Emails
 
-Runs on Cloud Functions for Firebase using Github webhooks.
-
-## Deployment
-
-### Deploy Functions and Cronjob
-
-After completing all configuration below, run `make deploy-test` or
-`make deploy-prod` to build, test, ande deploy.
-
-### Customize Configuration
-
-Edit the `config/config.json` file to have configuration in the following form:
+In shared repos you may only want to receive email notifications for a subset
+of the events that are fired. The bot allows you to specify a specific email
+address for each label and then you will only receive emails for issues/PRs
+with that label:
 
 ```javascript
-{
-  "<ORG_NAME>": {
-    "<REPO_NAME>": {
-      "labels": {
-        "<LABEL_NAME>": {
-          "regex": "<ISSUE_BODY_REGEX>",
-          "email": "<LABEL_NOTIFICATION_EMAIL>"
-        }
-      },
-      "templates": {
-        "issue": "<ISSUE_TEMPLATE_LOCATION>"
-      },
-      "cleanup": {
-        "pr": PR_EXPIRY_MS
-      }
+// In this example, the engineers on the 'foo' team will get emails
+// about issues labeled 'foo' and the engineers on the 'bar' team
+// will get emails about issues labeled 'bar'
+"my-repo": {
+  "labels": {
+    "foo": {
+      "email":"foo-engineers@googlegroups.com"
+    },
+    "bar":{
+      "email":"bar-engineers@googlegroups.com"
     }
   }
 }
 ```
 
-If the `regex` matches the issue body (anywhere) then an email
-will be sent to the `email` address.
+### Issue Labeling
+
+The bot can automatically label incoming issues based on regex matching:
+
+```javascript
+"my-repo": {
+  "labels": {
+    "foo": {
+      "regex":"Component:[\\s]+?[Ff]oo",
+      "email": // ...
+    },
+  }
+}
+```
+
+In the example above, an issue that contains "Component: foo" or "Component: Foo" or
+any variation would automatically get the "foo" label.  When combined with the custom
+emails configuration above, this means the bot can auto-label and then auto-notify the Foo
+engineering team about new issues or issue events.
+
+If bot can't find a label for an issue, it will add the label `needs-triage` and then
+add a comment explaining to the developer that a human will come to help.
+ 
+### Template Matching
+
+If you use issue templates on your GitHub repo, the bot can enforce that new issues
+match the template.
+
+Issue templates are considered in "sections" where each section is a third-level header,
+denoted in markdown by `###`.  For example:
+
+```md
+### Are you in the right place?
+
+Are you using FooBar Engineering products?  If not, go away!
+
+### [REQUIRED] Describe your environment
+
+  * FooBar SDK Version: ____
+  * Operating System: ____
+
+### [REQUIRED] Describe your problem
+
+  * What are the steps to reproduce?
+  * What do the logs say?
+```
+
+The bot does checks at two levels:
+
+  * **Template Integrity** - did the developer filling out the template leave all the
+    headers in place?  If not, we can't easily parse the content.
+  * **Required Sections** - for any section marked with `[REQUIRED]` did the developer
+    make at least _some_ change to the content of the section?
+
+If the user violates either of the above checks, the bot will leave a comment
+telling them what they may have done wrong.
+
+If your issue template is located at `ISSUE_TEMPLATE.md` then the bot will
+know where to find it without any configuration. If you want to specify a different
+location for your template, add it to the config:
+
+```javascript
+"my-repo": {
+  // ...
+  "templates":{
+    "issue":".github/ISSUE_TEMPLATE.md"
+  }
+}
+```
+
+If your repo has multiple templates (like one for bugs and one for features) you must
+add a markdown comment to the template to let the robot know how to locate it:
+
+```md
+<!-- DO NOT DELETE 
+validate_template=true
+template_path=.github/ISSUE_TEMPLATE/bug.md
+-->
+
+### My first section
+...
+```
+
+### Stale Issue Cleanup
+
+The bot can help you clean up issues that have gone "stale", meaning that
+more information is needed but has not been provided.
+
+```
+TODO(samststern): Describe this system and its configuration, add an image.
+```
+
+### Repo Reports
+
+The bot can send you a weekly report of how healthy your repo is. To receive this
+report, just add a reporting config:
+
+```javascript
+"my-repo": {
+  // ...
+  "reports": {
+    "email": "foo-engineering@googlegroups.com"
+  }
+}
+```
+
+You will then receive a weekly email with:
+
+  * Change in open issues, stars, and forks.
+  * List of which issues were opened in the past week.
+  * List of which issues were closed in the past week.
+
+## Deployment
+
+### Deploy Functions, Configuration, and Cron Jobs
+
+After completing all configuration below, run `make deploy`.
+
+### Customize Configuration
+
+Edit the `functions/config/config.json` file to have configuration in the following form:
+
+```javascript
+{
+  "<ORG_NAME>": {
+    "<REPO_NAME>": {
+      // .. REPO CONFIGURATION ...
+    }
+  }
+}
+```
+
+See the feature sections above for the different properties that can be added to the
+repo configuration.
 
 ### Configure Secrets
 
@@ -92,34 +207,18 @@ In Github add a webhook with the following configuration:
     * Pull request
     * Issue comment
 
-## Tools
-
-Aside from the use as a bot, the `functions/` directory also contains a few operational tasks related to our Github presence.
-
-You can get a weekly snapshot of the organization by running:
-
-```
-npm run task:get-weekly-report
-```
-
-You can generate the HTML for a pretty report email by running:
-
-```
-npm run task:get-weekly-email
-```
-
 ## Development
 
 ### Test
 
-To run basic tests, use `make test-functions` which runs the mocha tests in `smoketest.ts`.
-These tests are mostly a sanity check, used to verify basic behavior without
+To run basic tests, use `make test-functions` which runs the mocha tests the `functions`
+directory. These tests are mostly a sanity check, used to verify basic behavior without
 needing an end-to-end deploy.
 
 ### Formatting
 
 Code is formatted using `prettier` so no bikeshedding allowed. Run
-`npm run build` before committing.
+`npm run build` in the `functions` directory before committing.
 
 ## Build Status
 

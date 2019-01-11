@@ -50,7 +50,7 @@ export class CronHandler {
     const issueConfig = cleanupConfig.issue;
 
     // Aggregate all the actions we need to perform
-    let actions: types.Action[] = [];
+    const actions: types.Action[] = [];
 
     const issues = await this.gh_client.getIssuesForRepo(org, name, "open");
     for (const issue of issues) {
@@ -60,7 +60,7 @@ export class CronHandler {
         issue,
         issueConfig
       );
-      actions = actions.concat(issueActions);
+      actions.push(...issueActions);
     }
 
     return actions;

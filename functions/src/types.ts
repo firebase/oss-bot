@@ -109,6 +109,13 @@ export class TemplateOptions {
   }
 }
 
+export interface FeatureConfig {
+  issue_labels: boolean;
+  custom_emails: boolean;
+  issue_cleanup: boolean;
+  repo_reports: boolean;
+}
+
 export interface Config {
   [org: string]: OrgConfig;
 }
@@ -134,7 +141,6 @@ export interface LabelConfig {
 }
 
 export interface CleanupConfig {
-  pr?: number;
   issue?: IssueCleanupConfig;
 }
 

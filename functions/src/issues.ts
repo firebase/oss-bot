@@ -78,6 +78,12 @@ class CheckMatchesTemplateResult {
   message: string;
 }
 
+interface CategorizeIssueResult {
+  found_label: boolean;
+  is_fr: boolean;
+  actions: types.Action[];
+}
+
 // Label for issues that confuse the bot
 const LABEL_NEEDS_TRIAGE = "needs-triage";
 
@@ -177,76 +183,30 @@ export class IssueHandler {
     issue: types.internal.Issue
   ): Promise<types.Action[]> {
     const actions: types.Action[] = [];
-
-    // Get basic issue information
     const org = repo.owner.login;
     const name = repo.name;
-    const number = issue.number;
 
-    // Check for FR
-    const isFR = this.isFeatureRequest(issue);
-
-    // Choose new label
-    let new_label;
-    if (isFR) {
-      console.log("Matched feature request template.");
-      new_label = LABEL_FR;
-    } else {
-      new_label = this.getRelevantLabel(org, name, issue) || LABEL_NEEDS_TRIAGE;
-    }
-
-    // Add the label
-    console.log(`Adding label: ${new_label}`);
-    const labelAction = new types.GithubAddLabelAction(
-      org,
-      name,
-      number,
-      new_label
+    const repoFeatures = this.config.getRepoFeatures(org, name);
+    console.log(
+      `onNewIssue: ${name} has features ${JSON.stringify(repoFeatures)}`
     );
-    actions.push(labelAction);
 
-    // Add a comment, if necessary
-    const foundLabel = new_label != LABEL_NEEDS_TRIAGE;
-    if (!foundLabel) {
-      console.log("Needs triage, adding friendly comment");
-      const commentAction = new types.GithubCommentAction(
-        org,
-        name,
-        number,
-        MSG_NEEDS_TRIAGE,
-        true
-      );
-      actions.push(commentAction);
-    } else {
-      console.log(`Does not need triage, label is ${new_label}`);
+    // Basic issue categorization, which involves adding labels
+    // and possibly a comment if the issue needs triage.
+    const categorization = this.categorizeNewIssue(repo, issue);
+    if (repoFeatures.issue_labels) {
+      actions.push(...categorization.actions);
     }
 
-    // Check if it matches the template
-    const checkTemplateRes = await this.checkMatchesTemplate(org, name, issue);
-    console.log(`Check template result: ${JSON.stringify(checkTemplateRes)}`);
-
-    // There are some situations where we don't want to nag about the template
-    //  1) This is a feature request
-    //  2) We were able to label with some something besides needs_triage
-    const skipTemplateComment = isFR || foundLabel;
-
-    if (skipTemplateComment) {
-      console.log("FR or labeled issue, ignoring template matching");
-    } else if (!checkTemplateRes.matches) {
-      // If it does not match, add the suggested comment and close the issue
-      const template_action = new types.GithubCommentAction(
-        org,
-        name,
-        number,
-        checkTemplateRes.message,
-        true
-      );
-
-      actions.push(template_action);
-
-      // TODO(samstern): Re-enable when we have further discussed closing behavior.
-      // const close = this.gh_client.closeIssue(org, name, number)
-    }
+    // Check if it matches the template. This feature is implicitly enabled by
+    // the template having "matchable" structure so there is no need to check
+    // the repo's configuration.
+    const templateActions = await this.checkNewIssueTemplate(
+      repo,
+      issue,
+      categorization
+    );
+    actions.push(...templateActions);
 
     // Return a list of actions to do
     return actions;
@@ -425,6 +385,105 @@ export class IssueHandler {
   }
 
   /**
+   * Check a new issue and determine how it should be labeled, adding an
+   * explanatory comment if necessary.
+   */
+  categorizeNewIssue(
+    repo: types.internal.Repository,
+    issue: types.internal.Issue
+  ): CategorizeIssueResult {
+    const actions: types.Action[] = [];
+    const org = repo.owner.login;
+    const name = repo.name;
+    const number = issue.number;
+
+    // Check for FR
+    const is_fr = this.isFeatureRequest(issue);
+
+    // Choose new label
+    let new_label;
+    if (is_fr) {
+      console.log("Matched feature request template.");
+      new_label = LABEL_FR;
+    } else {
+      new_label = this.getRelevantLabel(org, name, issue) || LABEL_NEEDS_TRIAGE;
+    }
+
+    // Add the label
+    console.log(`Adding label: ${new_label}`);
+    const labelAction = new types.GithubAddLabelAction(
+      org,
+      name,
+      number,
+      new_label
+    );
+    actions.push(labelAction);
+
+    // Add a comment, if necessary
+    const found_label = new_label !== LABEL_NEEDS_TRIAGE;
+    if (!found_label) {
+      console.log("Needs triage, adding friendly comment");
+      const commentAction = new types.GithubCommentAction(
+        org,
+        name,
+        number,
+        MSG_NEEDS_TRIAGE,
+        true
+      );
+      actions.push(commentAction);
+    } else {
+      console.log(`Does not need triage, label is ${new_label}`);
+    }
+
+    return {
+      found_label,
+      is_fr,
+      actions
+    };
+  }
+
+  /**
+   * Check a new issue against its template. Requires the result
+   * from {@link categorizeNewIssue}.
+   */
+  async checkNewIssueTemplate(
+    repo: types.internal.Repository,
+    issue: types.internal.Issue,
+    categorization: CategorizeIssueResult
+  ): Promise<types.Action[]> {
+    const actions: types.Action[] = [];
+    const org = repo.owner.login;
+    const name = repo.name;
+    const number = issue.number;
+
+    const checkTemplateRes = await this.checkMatchesTemplate(org, name, issue);
+    console.log(`Check template result: ${JSON.stringify(checkTemplateRes)}`);
+
+    // There are some situations where we don't want to nag about the template
+    //  1) This is a feature request
+    //  2) We were able to label with some something besides needs_triage
+    const skipTemplateComment =
+      categorization.is_fr || categorization.found_label;
+
+    if (skipTemplateComment) {
+      console.log("FR or labeled issue, ignoring template matching");
+    } else if (!checkTemplateRes.matches) {
+      // If it does not match, add the suggested comment and close the issue
+      const template_action = new types.GithubCommentAction(
+        org,
+        name,
+        number,
+        checkTemplateRes.message,
+        true
+      );
+
+      actions.push(template_action);
+    }
+
+    return actions;
+  }
+
+  /**
    * Send an email when an issue has been updated.
    */
   getIssueUpdateEmailAction(
@@ -436,6 +495,13 @@ export class IssueHandler {
     const org = repo.owner.login;
     const name = repo.name;
     const number = issue.number;
+
+    // Check if emails are enabled at all
+    const repoFeatures = this.config.getRepoFeatures(org, name);
+    if (!repoFeatures.custom_emails) {
+      console.log("Repo does not have the email feature enabled.");
+      return undefined;
+    }
 
     // See if this issue belongs to any team.
     const label = opts.label || this.getRelevantLabel(org, name, issue);
