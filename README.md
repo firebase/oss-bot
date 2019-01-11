@@ -116,6 +116,10 @@ template_path=.github/ISSUE_TEMPLATE/bug.md
 The bot can help you clean up issues that have gone "stale", meaning that
 more information is needed but has not been provided.
 
+The flow is described in this chart:
+
+<img src="docs/issues-flow.jpg" />
+
 ```
 TODO(samststern): Describe this system and its configuration, add an image.
 ```
