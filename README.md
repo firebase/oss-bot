@@ -120,8 +120,38 @@ The flow is described in this chart:
 
 <img src="docs/issues-flow.jpg" />
 
-```
-TODO(samststern): Describe this system and its configuration, add an image.
+The names of the labels and the length of certain time periods can
+be configured in your repo config:
+
+```javascript
+"my-repo": {
+  // ...
+  "cleanup": {
+    "issue": {
+      // Label manually applied for issues that need author attention
+      "label_needs_info": "Needs Info",
+
+      // Label to be applied for issues that need Googler attention
+      "label_needs_attention": "Needs Attention",
+ 
+      // Label to be applied for issues that don't have recent activity
+      "label_stale": "Stale",
+
+      // Label(s) that can be applied to issues to exempt them from the stale
+      // checker.
+      "ignore_labels": ["Feature Request", "Internal"]
+
+      // Time, in days, to stay in the needs_info state before becoming stale
+      // stale.  These issues transition from label_needs_author to label_stale.
+      "needs_info_days": 7,
+
+      // Time, in days, to close an issue after the warning message is posted
+      // if there is no recent activity.  These issues will transition from
+      // label_stale to closed.
+      "stale_days": 3
+    }
+  }
+}
 ```
 
 ### Repo Reports
