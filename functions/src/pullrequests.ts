@@ -98,6 +98,8 @@ export class PullRequestHandler {
     repo: types.github.Repository,
     pr: types.github.PullRequest
   ): Promise<types.Action[]> {
+    const actions: types.Action[] = [];
+
     // Get basic issue information
     const org = repo.owner.login;
     const name = repo.name;
@@ -105,7 +107,7 @@ export class PullRequestHandler {
 
     // Check for skip
     if (this.hasSkipTag(repo, pr)) {
-      return [];
+      return actions;
     }
 
     // Check to see if the pull request has an issue associated
@@ -117,15 +119,20 @@ export class PullRequestHandler {
     //   promises.push(addCommentPromise);
     // }
 
-    // Add a needs triage label
-    const labelAction = new types.GithubAddLabelAction(
-      org,
-      name,
-      number,
-      LABEL_NEEDS_TRIAGE
-    );
+    const features = this.config.getRepoFeatures(org, name);
+    if (features.issue_labels) {
+      // Add a needs triage label
+      const labelAction = new types.GithubAddLabelAction(
+        org,
+        name,
+        number,
+        LABEL_NEEDS_TRIAGE
+      );
 
-    return [labelAction];
+      actions.push(labelAction);
+    }
+
+    return actions;
   }
 
   async onPullRequestLabeled(
