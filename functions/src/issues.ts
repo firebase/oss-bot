@@ -19,6 +19,7 @@ import * as github from "./github";
 import * as template from "./template";
 import * as config from "./config";
 import * as types from "./types";
+import { Logging } from "@google-cloud/logging";
 
 export const MSG_FOLLOW_TEMPLATE =
   "This issue does not seem to follow the issue template. " +
@@ -624,15 +625,24 @@ export class IssueHandler {
       return result;
     }
 
-    // TODO(samstern): Should I catch inability to get the issue template
-    // and handle it here?
-    const data = await this.gh_client.getIssueTemplate(
-      org,
-      name,
-      templateOpts.path
-    );
-    const checker = new template.TemplateChecker("###", "[REQUIRED]", data);
+    // Try to get the issue template, but skip validation if we can't.
+    let data = undefined;
+    try {
+      data = await this.gh_client.getIssueTemplate(
+        org,
+        name,
+        templateOpts.path
+      );
+    } catch (e) {
+      console.warn(
+        `checkMatchesTemplate: failed to get issue template for ${org}/${name} at ${
+          templateOpts.path
+        }: ${JSON.stringify(e)}`
+      );
+      return result;
+    }
 
+    const checker = new template.TemplateChecker("###", "[REQUIRED]", data);
     const issueBody = issue.body;
 
     if (!checker.matchesTemplateSections(issueBody)) {
