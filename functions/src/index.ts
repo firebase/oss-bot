@@ -239,6 +239,16 @@ export const botCleanup = functions.pubsub
     console.log("The cleanup job is running!");
     const repos = bot_config.getAllRepos();
     for (const repo of repos) {
+      // If we're in the ossbot-test project we don't want to do any cron processing
+      // on prod repos.
+      // TODO: Make this less hardcoded
+      const isTestBot = process.env.GCLOUD_PROJECT === "ossbot-test";
+      const isTestRepo = repo.org === "samtstern" && repo.name === "bottest";
+      if (isTestBot && !isTestRepo) {
+        console.log(`Test bot, skipping ${repo.name}`);
+        continue;
+      }
+
       const actions = await cron_handler.handleStaleIssues(repo.org, repo.name);
 
       console.log(
