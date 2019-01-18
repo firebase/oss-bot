@@ -263,6 +263,7 @@ function executeAction(action: types.Action): Promise<any> {
   log.logData({
     event: "github_action",
     type: action.type,
+    action: action,
     message: `Executing Github Action of type ${action.type}`
   });
 

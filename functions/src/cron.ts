@@ -118,7 +118,11 @@ export class CronHandler {
     comments = comments.sort(util.compareTimestamps).reverse();
 
     if (stateNeedsInfo) {
-      console.log(`Processing ${name}#${number} as needs-info`);
+      console.log(
+        `Processing ${name}#${number} as needs-info, labels=${JSON.stringify(
+          labelNames
+        )}`
+      );
       // The github webhook handler will automatically remove the needs-info label
       // if the author comments, so we can assume inside the cronjob that this has
       // not happened and just look at the date of the last comment.
@@ -153,7 +157,11 @@ export class CronHandler {
     }
 
     if (stateStale) {
-      console.log(`Processing ${name}#${number} as stale`);
+      console.log(
+        `Processing ${name}#${number} as stale, labels=${JSON.stringify(
+          labelNames
+        )}`
+      );
 
       // When the issue was marked stale, the bot will have left a comment with certain metadata
       const markStaleComment = comments.find(comment => {
