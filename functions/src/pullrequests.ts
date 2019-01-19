@@ -119,18 +119,18 @@ export class PullRequestHandler {
     //   promises.push(addCommentPromise);
     // }
 
-    const features = this.config.getRepoFeatures(org, name);
-    if (features.issue_labels) {
-      // Add a needs triage label
-      const labelAction = new types.GithubAddLabelAction(
-        org,
-        name,
-        number,
-        LABEL_NEEDS_TRIAGE
-      );
+    // const features = this.config.getRepoFeatures(org, name);
+    // if (features.issue_labels) {
+    //   // Add a needs triage label
+    //   const labelAction = new types.GithubAddLabelAction(
+    //     org,
+    //     name,
+    //     number,
+    //     LABEL_NEEDS_TRIAGE
+    //   );
 
-      actions.push(labelAction);
-    }
+    //   actions.push(labelAction);
+    // }
 
     return actions;
   }
