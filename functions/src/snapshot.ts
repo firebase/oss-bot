@@ -3,8 +3,11 @@ import { database } from "./database";
 import * as github from "./github";
 import * as util from "./util";
 import { snapshot } from "./types";
+import * as config from "./config";
 
-const gh_client = new github.GithubClient(functions.config().github.token);
+const gh_client = new github.GithubClient(
+  config.getFunctionsConfig("github.token")
+);
 gh_client.auth();
 
 // Just #pubsubthings

@@ -25,7 +25,6 @@ import * as cron from "./cron";
 import * as config from "./config";
 import * as types from "./types";
 import * as log from "./log";
-import { exec } from "child_process";
 
 export { SaveOrganizationSnapshot, SaveRepoSnapshot } from "./snapshot";
 
@@ -46,7 +45,7 @@ export {
 } from "./metrics";
 
 // Config
-const config_json = functions.config().runtime.config;
+const config_json = config.getFunctionsConfig("runtime.config");
 const bot_config = new config.BotConfig(config_json);
 
 // Github events
@@ -61,13 +60,13 @@ const PR_EXPIRY_MS = 15 * 24 * 60 * 60 * 1000;
 
 // Github API client
 const gh_client: github.GithubClient = new github.GithubClient(
-  functions.config().github.token
+  config.getFunctionsConfig("github.token")
 );
 
 // Mailgun Email client
 const email_client: email.EmailClient = new email.EmailClient(
-  functions.config().mailgun.key,
-  functions.config().mailgun.domain
+  config.getFunctionsConfig("mailgun.key"),
+  config.getFunctionsConfig("mailgun.domain")
 );
 
 // Handler for Github issues

@@ -9,7 +9,7 @@ import * as email from "./email";
 import * as snap from "./snapshot";
 import * as util from "./util";
 import { snapshot, report } from "./types";
-import { BotConfig } from "./config";
+import { BotConfig, getFunctionsConfig } from "./config";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -28,20 +28,27 @@ interface IssueFilter {
   (issue: snapshot.Issue): boolean;
 }
 
+/**
+ * Function that filters repos.
+ */
+interface RepoFilter {
+  (repo: snapshot.Repo): boolean;
+}
+
 const snapshotsRef = database.ref("snapshots/github");
 
 const email_client = new email.EmailClient(
-  functions.config().mailgun.key,
-  functions.config().mailgun.domain
+  getFunctionsConfig("mailgun.key"),
+  getFunctionsConfig("mailgun.domain")
 );
 
 // Config
 // TODO: This should be a singleton
-const config_json = functions.config().runtime.config;
+const config_json = getFunctionsConfig("runtime.config");
 const bot_config = new BotConfig(config_json);
 
-const EMAIL_DEBUG = functions.config().email.debug === "true";
-const EMAIL_GROUP = functions.config().email.recipient;
+const EMAIL_DEBUG = getFunctionsConfig("email.debug") === "true";
+const EMAIL_GROUP = getFunctionsConfig("email.recipient");
 
 export async function GetWeeklyReport(org: string) {
   // Grab the most recent daily snapshot
@@ -50,22 +57,45 @@ export async function GetWeeklyReport(org: string) {
     .once("child_added");
   const recentEntry = (await recentEntrySnapshot.val()) as snapshot.Org;
 
-  // Compute interesting metrics
+  // Count repos
+  const totalPublicRepos = recentEntry.public_repos;
+  const publicReposInSnapshot = CountReposWithFilter(
+    recentEntry,
+    (repo: snapshot.Repo) => {
+      return !repo.private;
+    }
+  );
+
+  if (totalPublicRepos != publicReposInSnapshot) {
+    console.warn(
+      `API says ${totalPublicRepos} but there are ${publicReposInSnapshot} in snapshot.`
+    );
+  } else {
+    console.log(`Total public repos: ${totalPublicRepos}`);
+  }
+
+  // Repos with highest and lowest SAM scores
   const topSAMs = GetHighestSam(recentEntry);
   const bottomSAMs = GetLowestSam(recentEntry);
+
+  // Repos with most stars and most open issues
   const topStars = GetTopStars(recentEntry);
   const topIssues = GetTopIssues(recentEntry);
 
+  // Counting open PRs and Issues (total0)
   const totalOpenPullRequests = GetTotalOpenPullRequests(recentEntry);
   const totalOpenIssues = GetTotalOpenIssues(recentEntry);
+
+  // Issues with no comments at all
   const totalOpenIssuesWithNoComments = GetTotalOpenIssuesWithNoComments(
     recentEntry
   );
 
+  // Total stars for the org and total SAM score for the org
   const totalStars = GetTotalStars(recentEntry);
   const totalSAM = GetTotalSamScore(recentEntry);
 
-  const totalPublicRepos = recentEntry.public_repos;
+  // Issues per repo
   const averageIssuesPerRepo = Math.floor(totalOpenIssues / totalPublicRepos);
 
   return {
@@ -88,7 +118,7 @@ function GetTotalOpenIssues(snapshot: snapshot.Org) {
     return 0;
   }
 
-  return GetIssuesWithFilter(snapshot, (issue: snapshot.Issue) => {
+  return CountIssuesWithFilter(snapshot, (issue: snapshot.Issue) => {
     return !issue.pull_request;
   });
 }
@@ -129,7 +159,20 @@ function GetTotalSamScore(org: snapshot.Org) {
   return ComputeSAMScore(sumOfRepos);
 }
 
-function GetIssuesWithFilter(org: snapshot.Org, filter: IssueFilter) {
+function CountReposWithFilter(org: snapshot.Org, filter: RepoFilter): number {
+  let count = 0;
+  Object.keys(org.repos).forEach(repoKey => {
+    const repo = org.repos[repoKey];
+
+    if (filter(repo)) {
+      count++;
+    }
+  });
+
+  return count;
+}
+
+function CountIssuesWithFilter(org: snapshot.Org, filter: IssueFilter) {
   let matchingIssues = 0;
 
   Object.keys(org.repos).forEach(repoKey => {
@@ -161,7 +204,7 @@ function GetTotalOpenIssuesWithNoComments(snapshot: snapshot.Org) {
     return 0;
   }
 
-  return GetIssuesWithFilter(snapshot, (issue: snapshot.Issue) => {
+  return CountIssuesWithFilter(snapshot, (issue: snapshot.Issue) => {
     return !issue.pull_request && !issue.comments;
   });
 }
@@ -171,7 +214,7 @@ function GetTotalOpenPullRequests(snapshot: snapshot.Org) {
     return 0;
   }
 
-  return GetIssuesWithFilter(snapshot, (issue: snapshot.Issue) => {
+  return CountIssuesWithFilter(snapshot, (issue: snapshot.Issue) => {
     return issue.pull_request;
   });
 }

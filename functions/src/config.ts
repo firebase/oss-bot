@@ -14,10 +14,34 @@
  * limitations under the License.
  */
 import * as types from "./types";
+import * as functions from "firebase-functions";
 
 interface Repo {
   org: string;
   name: string;
+}
+
+export function getFunctionsConfig(key: string): any {
+  // Ex: github.token --> GITHUB_TOKEN
+  const asEnv = key.toUpperCase().replace(".", "_");
+  const envOverride = process.env[asEnv];
+  if (envOverride) {
+    console.log(`Config override: ${key}=${asEnv}=${envOverride}`);
+    return envOverride;
+  }
+
+  const parts = key.split(".");
+
+  let val = functions.config();
+  for (const part of parts) {
+    if (val === undefined) {
+      return undefined;
+    }
+
+    val = val[part];
+  }
+
+  return val;
 }
 
 /**

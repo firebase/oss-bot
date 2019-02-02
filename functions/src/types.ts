@@ -402,13 +402,14 @@ export namespace github {
  * in the RTDB.
  */
 export namespace snapshot {
+  export interface Map<T> {
+    [repo: string]: T;
+  }
+
   export interface Org {
     name: string;
     public_repos: number;
-
-    repos: {
-      [repo: string]: snapshot.Repo;
-    };
+    repos: Map<Repo>;
   }
 
   export interface Repo {
@@ -419,9 +420,7 @@ export namespace snapshot {
     stargazers_count: number;
     forks_count: number;
 
-    issues: {
-      [id: string]: Issue;
-    };
+    issues: Map<Issue>;
   }
 
   export interface Issue {

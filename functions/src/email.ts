@@ -21,14 +21,14 @@ const mailgun = require("mailgun-js");
  * @param {string} domain Mailgun sender domain.
  */
 export class EmailClient {
+  apiKey: string;
+  domain: string;
+
   sender: any;
 
-  constructor(key: string, domain: string) {
-    // Mailgun email sender
-    this.sender = mailgun({
-      apiKey: key,
-      domain: domain
-    });
+  constructor(apiKey: string, domain: string) {
+    this.apiKey = apiKey;
+    this.domain = domain;
   }
 
   /**
@@ -46,15 +46,17 @@ export class EmailClient {
 
     // Return a promise for the email
     return new Promise((resolve, reject) => {
-      this.sender.messages().send(data, (error: string, body: string) => {
-        if (error) {
-          console.log("Email Error: " + error);
-          reject(error);
-        } else {
-          console.log("Send Email Body: " + JSON.stringify(body));
-          resolve(body);
-        }
-      });
+      this.getSender()
+        .messages()
+        .send(data, (error: string, body: string) => {
+          if (error) {
+            console.log("Email Error: " + error);
+            reject(error);
+          } else {
+            console.log("Send Email Body: " + JSON.stringify(body));
+            resolve(body);
+          }
+        });
     });
   }
 
@@ -114,5 +116,17 @@ export class EmailClient {
       </div>`;
 
     return email_markup;
+  }
+
+  // Lazy initialize sender
+  getSender(): any {
+    if (!this.sender) {
+      this.sender = mailgun({
+        apiKey: this.apiKey,
+        domain: this.domain
+      });
+    }
+
+    return this.sender;
   }
 }
