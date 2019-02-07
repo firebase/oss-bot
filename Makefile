@@ -2,6 +2,7 @@ PROJECT ?= ossbot-test
 
 check-config:
 	echo "Project is $(PROJECT)"
+	./scripts/moveconfig.sh
 
 build-appengine:
 	cd appengine \
