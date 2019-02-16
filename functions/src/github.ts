@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 import * as util from "./util";
-import * as GithubApi from "@octokit/rest";
+import * as Octokit from "@octokit/rest";
+
+const OctokitRetry = require("@octokit/plugin-retry");
+const GithubApi = require("@octokit/rest").plugin(OctokitRetry);
 
 /**
  * Get a new client for interacting with Github.
@@ -22,7 +25,7 @@ import * as GithubApi from "@octokit/rest";
  */
 export class GithubClient {
   private token: string;
-  private api: GithubApi;
+  private api: Octokit;
 
   constructor(token: string) {
     // Github API token
@@ -30,7 +33,7 @@ export class GithubClient {
 
     // Underlying Github API client
     this.api = new GithubApi({
-      timeout: 5000
+      timeout: 10000
     });
   }
 
@@ -224,7 +227,7 @@ type IssueState = "open" | "closed" | "all";
  * Interface for a Github API call.
  */
 interface GithubFn<S, T> {
-  (args: S): Promise<GithubApi.Response<T>>;
+  (args: S): Promise<Octokit.Response<T>>;
 }
 
 /**

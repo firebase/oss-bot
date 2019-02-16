@@ -65,7 +65,7 @@ export async function GetOrganizationSnapshot(org: string) {
 
   // Fill in repos data
   const repos: { [s: string]: any } = {};
-  let reposData = await gh_client.getReposInOrg(org);
+  let reposData: any[] = await gh_client.getReposInOrg(org);
   reposData = scrubArray(reposData, ["owner", "organization", "url"]);
 
   for (const key in reposData) {

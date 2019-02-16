@@ -7,6 +7,7 @@
   "dependencies": {
     "@google-cloud/logging": "^4.1.1",
     "@google-cloud/pubsub": "^0.20.1",
+    "@octokit/plugin-retry": "^2.2.0",
     "@octokit/rest": "^16.1.0",
     "@types/chalk": "^0.4.31",
     "@types/mustache": "^0.8.29",
