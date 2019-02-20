@@ -175,6 +175,8 @@ export const SaveRepoSnapshot = functions
     util.startTimer("GetRepoSnapshot");
     const fullRepoData = await GetRepoSnapshot(org, repoName, baseRepoData);
     util.endTimer("GetRepoSnapshot");
+
+    console.log(`Saving repo snapshot to ${repoSnapRef.path}`);
     await repoSnapRef.set(fullRepoData);
 
     // Store non-date-specific repo metadata
@@ -186,38 +188,70 @@ export const SaveRepoSnapshot = functions
       .child(repoKey);
 
     // Store collaborators as a map of name --> true
-    const collabNames = await gh_client.getCollaboratorsForRepo(org, repoName);
-    const collabMap: { [s: string]: boolean } = {};
-    collabNames.forEach((name: string) => {
-      collabMap[name] = true;
-    });
+    try {
+      const collabNames = await gh_client.getCollaboratorsForRepo(
+        org,
+        repoName
+      );
+      const collabMap: { [s: string]: boolean } = {};
+      collabNames.forEach((name: string) => {
+        collabMap[name] = true;
+      });
 
-    await repoMetaRef.child("collaborators").set(collabMap);
+      await repoMetaRef.child("collaborators").set(collabMap);
+    } catch (e) {
+      console.warn(
+        `Failed to get collaborators for repo ${org}/${repoName}`,
+        e
+      );
+    }
   });
 
 export const SaveOrganizationSnapshot = functions
   .runWith(util.FUNCTION_OPTS)
   .pubsub.topic("cleanup")
   .onPublish(async event => {
-    // TODO: Make this a parameter
-    const org = "firebase";
+    // Build a list of all repos to snapshot, across orgs
+    const reposToSnapshot: OrgRepo[] = [];
 
-    const snapshot = await GetOrganizationSnapshot(org);
-    await database.ref(DateSnapshotPath(org, new Date())).set(snapshot);
+    // TODO: Get general-org statistics for all orgs, not just Firebase
 
-    const repos = Object.keys(snapshot.repos);
-    for (const repoKey of repos) {
-      util.delay(1.0);
+    // First, gather all the Firebase repos
+    const snapshot = await GetOrganizationSnapshot("firebase");
+    await database.ref(DateSnapshotPath("firebase", new Date())).set(snapshot);
+    const snapshotRepoKeys = Object.keys(snapshot.repos);
 
+    for (const repoKey of snapshotRepoKeys) {
       const repoName = snapshot.repos[repoKey].name;
-
-      // Fan out for each repo
-      const publisher = pubsubClient.topic("repo_snapshot").publisher();
-      const data = {
+      reposToSnapshot.push({
         org: "firebase",
         repo: repoName
-      };
-      console.log(JSON.stringify(data));
-      await publisher.publish(Buffer.from(JSON.stringify(data)));
+      });
+    }
+
+    // Next, add in some other special cases
+    // TODO: Infer this from config
+    reposToSnapshot.push({
+      org: "google",
+      repo: "exoplayer"
+    });
+
+    // Fan out for each repo via PubSubm, adding a 1s delay in
+    // between to avoid spamming the function.
+    for (const r of reposToSnapshot) {
+      util.delay(1.0);
+      await sendPubSub("repo_snapshot", r);
     }
   });
+
+interface OrgRepo {
+  org: string;
+  repo: string;
+}
+
+function sendPubSub(topic: string, data: any): Promise<any> {
+  const publisher = pubsubClient.topic(topic).publisher();
+
+  console.log(`PubSub(${topic}, ${JSON.stringify(data)}`);
+  return publisher.publish(Buffer.from(JSON.stringify(data)));
+}

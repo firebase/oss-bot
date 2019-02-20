@@ -436,8 +436,7 @@ export const GetRepoReport = functions
   .https.onRequest(async (req, res) => {
     // TODO: Allow passing in the 'start' date to get historical data.
 
-    // TODO: Make this a parameter
-    const org = "firebase";
+    const org = req.param("org") || "firebase";
     const repo = req.param("repo");
     if (repo === undefined) {
       res.status(500).send("Must specify 'repo' param");
