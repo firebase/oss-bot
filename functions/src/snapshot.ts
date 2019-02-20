@@ -45,12 +45,20 @@ function scrubObject(obj: any, fieldsToScrub: string[]) {
   return obj;
 }
 
-function DateSnapshotPath(date: Date) {
-  return `/snapshots/github/${util.DateSlug(date)}`;
+function OrgSnapshotPath(org: string) {
+  if (org === "firebase") {
+    return "/snapshots/github";
+  }
+
+  return `/snapshots/${org}`;
 }
 
-function RepoSnapshotPath(repo: string, date: Date) {
-  return `${DateSnapshotPath(date)}/repos/${repo}`;
+function DateSnapshotPath(org: string, date: Date) {
+  return `${OrgSnapshotPath(org)}/${util.DateSlug(date)}`;
+}
+
+function RepoSnapshotPath(org: string, repo: string, date: Date) {
+  return `${DateSnapshotPath(org, date)}/repos/${repo}`;
 }
 
 /**
@@ -126,10 +134,11 @@ export async function GetRepoSnapshot(
  * Get the snapshot for a repo on a specific Date.
  */
 export async function FetchRepoSnapshot(
+  org: string,
   repo: string,
   date: Date
 ): Promise<snapshot.Repo | undefined> {
-  const path = RepoSnapshotPath(repo, date);
+  const path = RepoSnapshotPath(org, repo, date);
   const snap = await database.ref(path).once("value");
   const data = snap.val();
   return data;
@@ -153,7 +162,7 @@ export const SaveRepoSnapshot = functions
     }
 
     console.log(`SaveRepoSnapshot(${org}/${repoName})`);
-    const orgRef = database.ref(DateSnapshotPath(new Date()));
+    const orgRef = database.ref(DateSnapshotPath(org, new Date()));
     const repoSnapRef = orgRef.child("repos").child(repoKey);
 
     // Get the "base" data that was retriebed during the org snapshot
@@ -190,8 +199,11 @@ export const SaveOrganizationSnapshot = functions
   .runWith(util.FUNCTION_OPTS)
   .pubsub.topic("cleanup")
   .onPublish(async event => {
-    const snapshot = await GetOrganizationSnapshot("firebase");
-    await database.ref(DateSnapshotPath(new Date())).set(snapshot);
+    // TODO: Make this a parameter
+    const org = "firebase";
+
+    const snapshot = await GetOrganizationSnapshot(org);
+    await database.ref(DateSnapshotPath(org, new Date())).set(snapshot);
 
     const repos = Object.keys(snapshot.repos);
     for (const repoKey of repos) {
