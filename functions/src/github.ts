@@ -181,6 +181,20 @@ export class GithubClient {
   }
 
   /**
+   * Gets information about a GitHub repo.
+   */
+  async getRepo(org: string, repo: string) {
+    this.auth();
+
+    const res = await this.api.repos.get({
+      owner: org,
+      repo
+    });
+
+    return res.data;
+  }
+
+  /**
    * List all the repos in a GitHub organization.
    */
   getReposInOrg(org: string) {

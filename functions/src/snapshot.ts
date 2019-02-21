@@ -109,7 +109,6 @@ export async function GetRepoSnapshot(
 ) {
   if (!repoData) {
     console.warn(`GetRepoSnapshot called with null data for ${owner}/${repo}`);
-    repoData = {};
   }
 
   repoData.closed_issues_count = 0;
@@ -176,9 +175,22 @@ export const SaveRepoSnapshot = functions
     const repoSnapRef = orgRef.child("repos").child(repoKey);
 
     // Get the "base" data that was retriebed during the org snapshot
-    const baseRepoData = (await repoSnapRef.once("value")).val();
+    let baseRepoData = (await repoSnapRef.once("value")).val();
     if (!baseRepoData) {
-      console.warn(`Couldn't get base repo data for ${org}/${repoName}.`);
+      console.log(
+        `Couldn't get base repo data for ${org}/${repoName}, getting from GitHub`
+      );
+
+      // Get the repo data from GitHub API directly
+      const repoData = await gh_client.getRepo(org, repoName);
+      const cleanRepoData = scrubObject(repoData, [
+        "owner",
+        "organization",
+        "url"
+      ]);
+
+      repoSnapRef.set(cleanRepoData);
+      baseRepoData = cleanRepoData;
     }
 
     // Store the repo snapshot under the proper path
