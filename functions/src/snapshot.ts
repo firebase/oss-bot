@@ -5,6 +5,11 @@ import * as util from "./util";
 import { snapshot } from "./types";
 import * as config from "./config";
 
+// Config
+// TODO: This should be a singleton
+const config_json = config.getFunctionsConfig("runtime.config");
+const bot_config = new config.BotConfig(config_json);
+
 const gh_client = new github.GithubClient(
   config.getFunctionsConfig("github.token")
 );
@@ -66,10 +71,15 @@ function RepoSnapshotPath(org: string, repo: string, date: Date) {
  *
  * Must be followed up by a job to snap each repo.
  */
-export async function GetOrganizationSnapshot(org: string) {
+export async function GetOrganizationSnapshot(org: string, deep: boolean) {
   // Get basic data about the org
   const orgRes = await gh_client.getOrg(org);
   const orgData = scrubObject(orgRes.data, ["owner", "organization", "url"]);
+
+  // For shallow snapshots, don't retrieve all of the repos
+  if (!deep) {
+    return orgData;
+  }
 
   // Fill in repos data
   const repos: { [s: string]: any } = {};
@@ -211,32 +221,55 @@ export const SaveOrganizationSnapshot = functions
   .runWith(util.FUNCTION_OPTS)
   .pubsub.topic("cleanup")
   .onPublish(async event => {
+    const configRepos = bot_config.getAllRepos();
+
+    // Gather all the unique orgs from the configured repos
+    const configOrgs: string[] = [];
+    for (const r of configRepos) {
+      if (configOrgs.indexOf(r.org) < 0 && r.org !== "samtstern") {
+        configOrgs.push(r.org);
+      }
+    }
+
+    // First snapshot the Fireabse org (deep snapshot)
+    const firebaseOrgSnap = await GetOrganizationSnapshot("firebase", true);
+    await database
+      .ref(DateSnapshotPath("firebase", new Date()))
+      .set(firebaseOrgSnap);
+
+    // Next take a shallow snapshot of all other orgs
+    for (const org of configOrgs) {
+      if (org !== "firebase") {
+        console.log(`Taking snapshot of org: ${org}`);
+        const orgSnap = await GetOrganizationSnapshot(org, false);
+        await database.ref(DateSnapshotPath(org, new Date())).set(orgSnap);
+      }
+    }
+
     // Build a list of all repos to snapshot, across orgs
     const reposToSnapshot: OrgRepo[] = [];
 
-    // TODO: Get general-org statistics for all orgs, not just Firebase
-
-    // First, gather all the Firebase repos
-    const snapshot = await GetOrganizationSnapshot("firebase");
-    await database.ref(DateSnapshotPath("firebase", new Date())).set(snapshot);
-    const snapshotRepoKeys = Object.keys(snapshot.repos);
-
-    for (const repoKey of snapshotRepoKeys) {
-      const repoName = snapshot.repos[repoKey].name;
+    // All Firebase orgs are automatically included
+    const firebaseRepoKeys = Object.keys(firebaseOrgSnap.repos);
+    for (const repoKey of firebaseRepoKeys) {
+      const repoName = firebaseOrgSnap.repos[repoKey].name;
       reposToSnapshot.push({
         org: "firebase",
         repo: repoName
       });
     }
 
-    // Next, add in some other special cases
-    // TODO: Infer this from config
-    reposToSnapshot.push({
-      org: "google",
-      repo: "exoplayer"
-    });
+    // Push in all non-Firebase repos that are present in the config
+    for (const r of configRepos) {
+      if (r.org !== "firebase") {
+        reposToSnapshot.push({
+          org: r.org,
+          repo: r.name
+        });
+      }
+    }
 
-    // Fan out for each repo via PubSubm, adding a 1s delay in
+    // Fan out for each repo via PubSub, adding a 1s delay in
     // between to avoid spamming the function.
     for (const r of reposToSnapshot) {
       util.delay(1.0);
