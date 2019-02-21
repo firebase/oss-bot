@@ -306,14 +306,14 @@ export function ComputeSAMScore(repo: SAMScoreable) {
   );
 }
 
-async function FetchClosestSnapshot(repo: string, date: Date) {
+async function FetchClosestSnapshot(org: string, repo: string, date: Date) {
   // Try to get a snapshot within 3 days of the requested date
   // (moving backwards iteratively).
   for (let i = 0; i < 2; i++) {
     const msOffset = DAY_MS * i;
     const offsetDate = new Date(date.getTime() - msOffset);
 
-    const snapshot = await snap.FetchRepoSnapshot(repo, offsetDate);
+    const snapshot = await snap.FetchRepoSnapshot(org, repo, offsetDate);
     if (snapshot) {
       return {
         date: offsetDate,
@@ -330,7 +330,10 @@ async function FetchClosestSnapshot(repo: string, date: Date) {
   };
 }
 
-export async function MakeRepoReport(repo: string): Promise<report.Repo> {
+export async function MakeRepoReport(
+  org: string,
+  repo: string
+): Promise<report.Repo> {
   // Get two snapshots
   const now = new Date();
 
@@ -339,11 +342,11 @@ export async function MakeRepoReport(repo: string): Promise<report.Repo> {
   const startDate = new Date(now.getTime() - DAY_MS);
   const endDate = new Date(startDate.getTime() - 7 * DAY_MS);
 
-  const after = await FetchClosestSnapshot(repo, startDate);
+  const after = await FetchClosestSnapshot(org, repo, startDate);
   const afterDate = after.date;
   const afterSnap = after.snapshot;
 
-  const before = await FetchClosestSnapshot(repo, endDate);
+  const before = await FetchClosestSnapshot(org, repo, endDate);
   const beforeDate = before.date;
   const beforeSnap = before.snapshot;
 
@@ -432,6 +435,8 @@ export const GetRepoReport = functions
   .runWith(util.FUNCTION_OPTS)
   .https.onRequest(async (req, res) => {
     // TODO: Allow passing in the 'start' date to get historical data.
+
+    const org = req.param("org") || "firebase";
     const repo = req.param("repo");
     if (repo === undefined) {
       res.status(500).send("Must specify 'repo' param");
@@ -439,7 +444,7 @@ export const GetRepoReport = functions
     }
 
     try {
-      const report = await MakeRepoReport(repo);
+      const report = await MakeRepoReport(org, repo);
       res.status(200).send(JSON.stringify(report));
     } catch (e) {
       res.status(500).send(e);
@@ -455,10 +460,11 @@ export const SaveWeeklyReport = functions
   .onPublish(async (message: functions.pubsub.Message) => {
     const now = new Date();
 
-    // Save report to the DB
+    // Save firebase report to the DB
     const report = await GetWeeklyReport("firebase");
     return database
-      .ref("reports/github")
+      .ref("reports")
+      .child("github")
       .child(util.DateSlug(now))
       .set(report);
   });
@@ -500,7 +506,7 @@ export const SendWeeklyRepoEmails = functions.pubsub
         reportConfig.email = EMAIL_GROUP;
       }
 
-      const emailText = await GetWeeklyRepoEmail(repo.name);
+      const emailText = await GetWeeklyRepoEmail(repo.org, repo.name);
       const dateString = format(new Date(), "MM/DD/YY");
       const subject = `${repo.name} Github Summary for ${dateString}`;
 
@@ -509,22 +515,28 @@ export const SendWeeklyRepoEmails = functions.pubsub
     }
   });
 
-export async function GetWeeklyRepoEmail(repo: string) {
-  const report = await MakeRepoReport(repo);
+export async function GetWeeklyRepoEmail(org: string, repo: string) {
+  const report = await MakeRepoReport(org, repo);
 
   const template = readFileSync(path.join(__dirname, "./repo-weekly.mustache"));
   return mustache.render(template.toString(), report);
 }
 
 export async function GetWeeklyEmail(org: string) {
+  // Originally the bot was designed only to scrape Firebase so the
+  // reports were stored just under reports/github. This is special-cased.
+  const reportsChild = org === "firebase" ? "github" : org;
+
   const reportSnapshot = await database
-    .ref("reports/github")
+    .ref("reports")
+    .child(reportsChild)
     .limitToLast(1)
     .once("child_added");
   const report = reportSnapshot.val();
 
   const previousReportSnapshot = await database
-    .ref("reports/github")
+    .ref("reports")
+    .child(reportsChild)
     .limitToLast(2)
     .once("child_added");
   const previousReport = previousReportSnapshot.val();
