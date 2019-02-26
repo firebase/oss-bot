@@ -43,9 +43,7 @@ const email_client = new email.EmailClient(
 );
 
 // Config
-// TODO: This should be a singleton
-const config_json = getFunctionsConfig("runtime.config");
-const bot_config = new BotConfig(config_json);
+const bot_config = BotConfig.getDefault();
 
 const EMAIL_DEBUG = getFunctionsConfig("email.debug") === "true";
 const EMAIL_GROUP = getFunctionsConfig("email.recipient");

@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as types from "./types";
 import * as functions from "firebase-functions";
+
+import * as encoding from "./shared/encoding";
+import * as types from "./types";
 
 interface Repo {
   org: string;
@@ -22,15 +24,16 @@ interface Repo {
 }
 
 export function getFunctionsConfig(key: string): any {
-  // Ex: github.token --> GITHUB_TOKEN
-  const asEnv = key.toUpperCase().replace(".", "_");
-  const envOverride = process.env[asEnv];
+  // Allow the environment to overrride anything else
+  const envKey = encoding.toEnvKey(key);
+  const envOverride = process.env[envKey];
   if (envOverride) {
-    console.log(`Config override: ${key}=${asEnv}=${envOverride}`);
+    console.log(`Config override: ${key}=${envKey}=${envOverride}`);
     return envOverride;
   }
 
-  const parts = key.split(".");
+  const encodedKey = encoding.encodeKey(key);
+  const parts = encodedKey.split(".");
 
   let val = functions.config();
   for (const part of parts) {
@@ -41,7 +44,7 @@ export function getFunctionsConfig(key: string): any {
     val = val[part];
   }
 
-  return val;
+  return encoding.deepDecodeObject(val);
 }
 
 /**
@@ -50,6 +53,10 @@ export function getFunctionsConfig(key: string): any {
  */
 export class BotConfig {
   config: types.Config;
+
+  static getDefault() {
+    return new BotConfig(getFunctionsConfig("runtime.config"));
+  }
 
   constructor(config: types.Config) {
     this.config = config;
@@ -122,8 +129,8 @@ export class BotConfig {
    * Get the config object for a specific repo.
    */
   getRepoConfig(org: string, name: string): types.RepoConfig | undefined {
-    const cleanOrg = this.sanitizeKey(org);
-    const cleanName = this.sanitizeKey(name);
+    const cleanOrg = encoding.sanitizeKey(org);
+    const cleanName = encoding.sanitizeKey(name);
     if (this.config[cleanOrg] && this.config[cleanOrg][cleanName]) {
       return this.config[cleanOrg][cleanName];
     }
@@ -139,7 +146,7 @@ export class BotConfig {
   ): types.LabelConfig | undefined {
     const repoConfig = this.getRepoConfig(org, name);
 
-    const cleanLabel = this.sanitizeKey(label);
+    const cleanLabel = encoding.sanitizeKey(label);
     if (repoConfig && repoConfig.labels && repoConfig.labels[cleanLabel]) {
       return repoConfig.labels[cleanLabel];
     }
@@ -155,7 +162,7 @@ export class BotConfig {
   ): string | undefined {
     const repoConfig = this.getRepoConfig(org, name);
 
-    const cleanTemplate = this.sanitizeKey(template);
+    const cleanTemplate = encoding.sanitizeKey(template);
     if (
       repoConfig &&
       repoConfig.templates &&
@@ -201,17 +208,5 @@ export class BotConfig {
     } else {
       return "PULL_REQUEST_TEMPLATE.md";
     }
-  }
-
-  /**
-   * Keys are sanitized before they are stored in config and therefore need
-   * to be sanitized when retrieved.
-   */
-  sanitizeKey(key: string): string {
-    let cleanKey = key;
-    cleanKey = cleanKey.toLowerCase();
-    cleanKey = cleanKey.trim();
-
-    return cleanKey;
   }
 }

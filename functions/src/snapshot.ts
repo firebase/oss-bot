@@ -6,9 +6,7 @@ import { snapshot } from "./types";
 import * as config from "./config";
 
 // Config
-// TODO: This should be a singleton
-const config_json = config.getFunctionsConfig("runtime.config");
-const bot_config = new config.BotConfig(config_json);
+const bot_config = config.BotConfig.getDefault();
 
 const gh_client = new github.GithubClient(
   config.getFunctionsConfig("github.token")
