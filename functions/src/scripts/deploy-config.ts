@@ -23,9 +23,12 @@ async function deployConfig(configFile: string, project: string) {
   });
 
   // Decode the config into a flat map of dot-separated values.
-  const currentConfig = encoding.toFlatConfig({
-    runtime: current
-  }, encoding.Direction.DECODE);
+  const currentConfig = encoding.toFlatConfig(
+    {
+      runtime: current
+    },
+    encoding.Direction.DECODE
+  );
 
   const keysRemoved = [];
   const keysAddedOrChanged = [];
