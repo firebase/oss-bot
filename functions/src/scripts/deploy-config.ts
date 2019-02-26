@@ -1,49 +1,12 @@
 import * as fs from "fs";
-import { type } from "os";
+import * as encoding from "../shared/encoding";
 
 const firebase = require("firebase-tools");
 
-type StringMap = { [s: string]: string };
-
-// Source: https://gist.github.com/penguinboy/762197
-function flattenObject(ob: any): any {
-  const toReturn: any = {};
-
-  for (const i in ob) {
-    if (!ob.hasOwnProperty(i)) {
-      continue;
-    }
-
-    if (typeof ob[i] == "object") {
-      const flatObject = flattenObject(ob[i]);
-      for (const x in flatObject) {
-        if (!flatObject.hasOwnProperty(x)) {
-          continue;
-        }
-
-        toReturn[i + "." + x] = flatObject[x];
-      }
-    } else {
-      toReturn[i] = ob[i];
-    }
-  }
-  return toReturn;
-}
-
-function toFlatMap(ob: any): StringMap {
-  const flattened = flattenObject(ob);
-  const result: StringMap = {};
-  for (const key in flattened) {
-    const cleanKey = key.toLowerCase();
-    const cleanVal = flattened[key];
-
-    result[cleanKey] = cleanVal;
-  }
-
-  return result;
-}
-
 async function deployConfig(configFile: string, project: string) {
+  console.log(`Deploying ${configFile} to ${project}.`);
+
+  // Read the local JSON file and then wrap it in { runtime: config: { ... } }
   const configFileString = fs.readFileSync(configFile).toString();
   const config = {
     runtime: {
@@ -51,17 +14,21 @@ async function deployConfig(configFile: string, project: string) {
     }
   };
 
-  const newConfig = toFlatMap(config);
+  // Encode the proposed config into a flat map of dot-separated values
+  const newConfig = encoding.toFlatConfig(config, encoding.Direction.ENCODE);
 
-  console.log(`Deploying ${configFile} to ${project}.`);
-
+  // Get the current runtime config from Firebase as a giant object
   const current = await firebase.functions.config.get("runtime", {
     project: project
   });
 
-  const currentConfig = toFlatMap({
-    runtime: current
-  });
+  // Decode the config into a flat map of dot-separated values.
+  const currentConfig = encoding.toFlatConfig(
+    {
+      runtime: current
+    },
+    encoding.Direction.DECODE
+  );
 
   const keysRemoved = [];
   const keysAddedOrChanged = [];
@@ -120,6 +87,10 @@ async function deployConfig(configFile: string, project: string) {
     project: project
   });
 }
+
+// =============================================
+//                   MAIN
+// =============================================
 
 // Validate command-line arguments
 if (process.argv.length < 4) {

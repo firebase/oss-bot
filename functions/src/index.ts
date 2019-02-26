@@ -45,8 +45,7 @@ export {
 } from "./metrics";
 
 // Config
-const config_json = config.getFunctionsConfig("runtime.config");
-const bot_config = new config.BotConfig(config_json);
+const bot_config = config.BotConfig.getDefault();
 
 // Github events
 enum GithubEvent {
