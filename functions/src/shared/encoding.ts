@@ -30,8 +30,8 @@ export function encodeKey(key: string): string {
 
   // Make sure we will be able to read the key back
   const decodeTest = decodeKey(encoded);
-  if (decodeTest !== encoded) {
-    throw `Cannot encode key: ${encoded} !== ${decodeTest}`;
+  if (decodeTest !== key) {
+    throw `Cannot encode key: ${key} !== ${decodeTest}`;
   }
 
   return encoded;
