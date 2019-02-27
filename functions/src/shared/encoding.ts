@@ -7,7 +7,8 @@ const ESCAPES: StringMap = {
 
 export enum Direction {
   ENCODE = "ENCODE",
-  DECODE = "DECODE"
+  DECODE = "DECODE",
+  NONE = "NONE"
 }
 
 /**

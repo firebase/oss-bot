@@ -27,31 +27,31 @@ async function deployConfig(configFile: string, project: string) {
     {
       runtime: current
     },
-    encoding.Direction.DECODE
+    encoding.Direction.NONE
   );
 
-  const keysRemoved = [];
-  const keysAddedOrChanged = [];
+  const keysRemoved: string[] = [];
+  const keysAddedOrChanged: string[] = [];
 
-  for (const key in newConfig) {
+  const newKeys = Object.keys(newConfig);
+  const currentKeys = Object.keys(currentConfig);
+  const allKeys = new Set([...newKeys, ...currentKeys]);
+
+  allKeys.forEach((key: string) => {
     const newVal = "" + newConfig[key];
     const currentVal = "" + currentConfig[key];
 
-    if (newVal === currentVal) {
-      continue;
-    }
-
-    if (newVal === "" && currentVal !== "") {
+    if (newKeys.indexOf(key) < 0 && currentKeys.indexOf(key) >= 0) {
       console.log(`REMOVED: ${key}`);
       console.log(`\tcurrent=${currentVal}`);
       keysRemoved.push(key);
-    } else {
+    } else if (newVal !== currentVal) {
       console.log(`CHANGED: ${key}`);
       console.log(`\tcurrent=${currentVal}`);
       console.log(`\tnew=${newVal}`);
       keysAddedOrChanged.push(key);
     }
-  }
+  });
 
   const args = [];
   if (keysRemoved.length > 0) {
