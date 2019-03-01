@@ -176,7 +176,7 @@ describe("Stale issue handler", async () => {
       },
       {
         body: cron_handler.getMarkStaleComment("some-user", 7, 3),
-        user: { login: "firebase-oss-bot" },
+        user: { login: "google-oss-bot" },
         created_at: FOUR_DAYS_AGO,
         updated_at: FOUR_DAYS_AGO
       }

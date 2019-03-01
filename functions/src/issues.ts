@@ -330,7 +330,7 @@ export class IssueHandler {
       repo.name
     );
 
-    const isBotComment = comment.user.login === "firebase-oss-bot";
+    const isBotComment = comment.user.login === "google-oss-bot";
     if (cleanupConfig && cleanupConfig.issue && !isBotComment) {
       const issueConfig = cleanupConfig.issue;
       const labelNames = issue.labels.map(label => label.name);
