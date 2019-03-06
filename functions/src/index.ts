@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import * as functions from "firebase-functions";
-import * as path from "path";
+import * as admin from "firebase-admin";
 
 // Local includes
 import * as github from "./github";
@@ -25,6 +25,8 @@ import * as cron from "./cron";
 import * as config from "./config";
 import * as types from "./types";
 import * as log from "./log";
+
+import { database } from "./database";
 
 export { SaveOrganizationSnapshot, SaveRepoSnapshot } from "./snapshot";
 
@@ -266,7 +268,18 @@ function executeAction(action: types.Action): Promise<any> {
     message: `Executing: ${action.toString()}}`
   });
 
-  // TODO: Log to the admin console
+  // Log the data to the admin log
+  if (types.GITHUB_ISSUE_ACTIONS.includes(action.type)) {
+    const ghAction = action as types.GithubIssueAction;
+    const ref = database
+      .ref("repo-log")
+      .child(ghAction.org)
+      .child(ghAction.name)
+      .push();
+
+    // TODO: Wait for this to finish?
+    ref.set(new types.ActionLog(ghAction));
+  }
 
   if (action.type == types.ActionType.GITHUB_COMMENT) {
     const commentAction = action as types.GithubCommentAction;

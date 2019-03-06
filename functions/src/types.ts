@@ -1,3 +1,8 @@
+export enum ActionService {
+  GITHUB = "GITHUB",
+  EMAIL = "EMAIL"
+}
+
 export enum ActionType {
   GITHUB_COMMENT = "GITHUB_COMMENT",
   GITHUB_ADD_LABEL = "GITHUB_LABEL",
@@ -5,6 +10,13 @@ export enum ActionType {
   GITHUB_CLOSE = "GITHUB_CLOSE",
   EMAIL_SEND = "EMAIL_SEND"
 }
+
+export const GITHUB_ISSUE_ACTIONS = [
+  ActionType.GITHUB_COMMENT,
+  ActionType.GITHUB_ADD_LABEL,
+  ActionType.GITHUB_REMOVE_LABEL,
+  ActionType.GITHUB_CLOSE
+];
 
 export class Action {
   type: ActionType;
@@ -22,7 +34,7 @@ export class GithubIssueAction extends Action {
   org: string;
   name: string;
   number: number;
-  debugInfo: string | undefined;
+  debugInfo: string;
 
   constructor(type: ActionType, org: string, name: string, number: number) {
     super(type);
@@ -30,11 +42,15 @@ export class GithubIssueAction extends Action {
     this.org = org;
     this.name = name;
     this.number = number;
-    this.debugInfo = undefined;
+    this.debugInfo = "";
+  }
+
+  details(): { [s: string]: any } {
+    return {};
   }
 
   toString() {
-    return `IssueAction(${this.type}, ${this.org}}/${this.name}#{${
+    return `IssueAction(${this.type}, ${this.org}/${this.name}#{${
       this.number
     })`;
   }
@@ -56,6 +72,12 @@ export class GithubCommentAction extends GithubIssueAction {
     this.message = message;
     this.collapse = collapse;
   }
+
+  details() {
+    return {
+      message: this.message
+    };
+  }
 }
 
 export class GithubAddLabelAction extends GithubIssueAction {
@@ -66,6 +88,12 @@ export class GithubAddLabelAction extends GithubIssueAction {
 
     this.label = label;
   }
+
+  details() {
+    return {
+      label: this.label
+    };
+  }
 }
 
 export class GithubRemoveLabelAction extends GithubIssueAction {
@@ -75,6 +103,12 @@ export class GithubRemoveLabelAction extends GithubIssueAction {
     super(ActionType.GITHUB_REMOVE_LABEL, org, name, number);
 
     this.label = label;
+  }
+
+  details() {
+    return {
+      label: this.label
+    };
   }
 }
 
@@ -117,6 +151,22 @@ export class SendEmailAction extends Action {
     }
 
     return `SendEmailAction(${this.recipient}, ${subjectPreview})`;
+  }
+}
+
+export class ActionLog {
+  event: string;
+  target: string;
+  details: { [s: string]: any };
+  reason: string;
+  time: number;
+
+  constructor(action: GithubIssueAction) {
+    this.event = action.type;
+    this.target = `issues/${action.number}`;
+    this.details = action.details();
+    this.reason = action.debugInfo;
+    this.time = Date.now();
   }
 }
 
