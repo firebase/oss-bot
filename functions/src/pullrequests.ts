@@ -15,6 +15,7 @@
  */
 
 import * as config from "./config";
+import * as log from "./log";
 import * as types from "./types";
 
 // Event: pull_request
@@ -82,8 +83,8 @@ export class PullRequestHandler {
       case PullRequestAction.REOPENED:
       /* falls through */
       default:
-        console.log("Unsupported pull request action: " + action);
-        console.log("Pull Request: " + pr.title);
+        log.debug("Unsupported pull request action: " + action);
+        log.debug("Pull Request: " + pr.title);
         break;
     }
 

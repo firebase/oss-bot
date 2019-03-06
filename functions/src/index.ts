@@ -86,9 +86,9 @@ export const githubWebhook = functions.https.onRequest(
     const event = request.get("X-Github-Event");
     const action = request.body.action;
 
-    // Get repo and sender
     const repo = request.body.repository;
     const sender = request.body.sender;
+    const issue = request.body.issue;
 
     // Confirm that there is some event
     if (!event) {
@@ -102,18 +102,18 @@ export const githubWebhook = functions.https.onRequest(
       );
       console.log(`Event: ${event}/${action}`);
       if (repo) {
-        console.log("Repository: " + repo.full_name);
+        console.log(`Repository: ${repo.full_name}`);
       }
       if (sender) {
-        console.log("Sender: " + sender.login);
+        console.log(`Sender: ${sender.login}`);
+      }
+      if (issue) {
+        console.log(`Issue: ${issue.number}`);
       }
       console.log(
         "===========================END============================="
       );
     }
-
-    // Handle the event appropriately
-    const issue = request.body.issue;
 
     let actions: types.Action[] = [];
 
@@ -171,7 +171,7 @@ export const githubWebhook = functions.https.onRequest(
 
     for (const action of actions) {
       if (action == undefined) {
-        console.warn("Got undefined action.");
+        log.warn("Got undefined action.");
         continue;
       }
 
@@ -205,6 +205,7 @@ export const githubWebhook = functions.https.onRequest(
       const firstComment = collapsibleComments[0];
       promises.push(
         executeAction(
+          // TODO: Collapse reasons
           new types.GithubCommentAction(
             firstComment.org,
             firstComment.name,
@@ -262,8 +263,10 @@ function executeAction(action: types.Action): Promise<any> {
     event: "github_action",
     type: action.type,
     action: action,
-    message: `Executing Github Action of type ${action.type}`
+    message: `Executing: ${action.toString()}}`
   });
+
+  // TODO: Log to the admin console
 
   if (action.type == types.ActionType.GITHUB_COMMENT) {
     const commentAction = action as types.GithubCommentAction;

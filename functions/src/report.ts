@@ -6,6 +6,7 @@ import * as mustache from "mustache";
 
 import { database } from "./database";
 import * as email from "./email";
+import * as log from "./log";
 import * as snap from "./snapshot";
 import * as util from "./util";
 import { snapshot, report } from "./types";
@@ -65,11 +66,11 @@ export async function GetWeeklyReport(org: string) {
   );
 
   if (totalPublicRepos != publicReposInSnapshot) {
-    console.warn(
+    log.warn(
       `API says ${totalPublicRepos} but there are ${publicReposInSnapshot} in snapshot.`
     );
   } else {
-    console.log(`Total public repos: ${totalPublicRepos}`);
+    log.debug(`Total public repos: ${totalPublicRepos}`);
   }
 
   // Repos with highest and lowest SAM scores
@@ -135,11 +136,11 @@ function GetTotalSamScore(org: snapshot.Org) {
       const repo = org.repos[repoKey];
 
       if (repo.open_issues_count == undefined) {
-        console.warn(`Repo ${repoKey} has null open issues count.`);
+        log.warn(`Repo ${repoKey} has null open issues count.`);
       }
 
       if (repo.closed_issues_count == undefined) {
-        console.warn(`Repo ${repoKey} has null closed issues count.`);
+        log.warn(`Repo ${repoKey} has null closed issues count.`);
       }
 
       return {
@@ -318,7 +319,7 @@ async function FetchClosestSnapshot(org: string, repo: string, date: Date) {
         snapshot
       };
     } else {
-      console.warn(`Could not get snapshot for ${repo} on ${date}`);
+      log.warn(`Could not get snapshot for ${repo} on ${date}`);
     }
   }
 
@@ -495,12 +496,12 @@ export const SendWeeklyRepoEmails = functions.pubsub
         repo.name
       );
       if (!reportConfig) {
-        console.log(`No reporting config for ${repo.name}`);
+        log.debug(`No reporting config for ${repo.name}`);
         continue;
       }
 
       if (EMAIL_DEBUG) {
-        console.warn(`Debug mode, redirecting emails for ${repo.name}`);
+        log.warn(`Debug mode, redirecting emails for ${repo.name}`);
         reportConfig.email = EMAIL_GROUP;
       }
 
@@ -508,7 +509,7 @@ export const SendWeeklyRepoEmails = functions.pubsub
       const dateString = format(new Date(), "MM/DD/YY");
       const subject = `${repo.name} Github Summary for ${dateString}`;
 
-      console.log(`Sending email for ${repo.name} to ${reportConfig.email}`);
+      log.debug(`Sending email for ${repo.name} to ${reportConfig.email}`);
       await email_client.sendEmail(reportConfig.email, subject, emailText);
     }
   });

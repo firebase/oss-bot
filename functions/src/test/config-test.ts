@@ -16,10 +16,18 @@
 import "mocha";
 
 import * as assert from "assert";
-
+import * as log from "../log";
 import * as encoding from "../shared/encoding";
 
 describe("Configuration", async () => {
+  before(() => {
+    log.setLogLevel(log.Level.WARN);
+  });
+
+  after(() => {
+    log.setLogLevel(log.Level.ALL);
+  });
+
   it("should properly encode and decode keys", async () => {
     const cases = [
       {

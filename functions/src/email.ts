@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import * as log from "./log";
+
 const mailgun = require("mailgun-js");
 
 /**
@@ -42,7 +44,7 @@ export class EmailClient {
       html: body
     };
 
-    console.log("Sending email: ", JSON.stringify(data));
+    log.debug("Sending email: ", JSON.stringify(data));
 
     // Return a promise for the email
     return new Promise((resolve, reject) => {
@@ -50,10 +52,10 @@ export class EmailClient {
         .messages()
         .send(data, (error: string, body: string) => {
           if (error) {
-            console.log("Email Error: " + error);
+            log.debug("Email Error: " + error);
             reject(error);
           } else {
-            console.log("Send Email Body: " + JSON.stringify(body));
+            log.debug("Send Email Body: " + JSON.stringify(body));
             resolve(body);
           }
         });

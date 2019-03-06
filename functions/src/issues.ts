@@ -19,7 +19,7 @@ import * as github from "./github";
 import * as template from "./template";
 import * as config from "./config";
 import * as types from "./types";
-import { Logging } from "@google-cloud/logging";
+import * as log from "./log";
 
 export const MSG_FOLLOW_TEMPLATE =
   "This issue does not seem to follow the issue template. " +
@@ -136,8 +136,8 @@ export class IssueHandler {
       case IssueAction.EDITED:
       /* falls through */
       default:
-        console.log("Unsupported issue action: " + action);
-        console.log("Issue: " + issue.title);
+        log.debug("Unsupported issue action: " + action);
+        log.debug("Issue: " + issue.title);
         break;
     }
 
@@ -164,9 +164,9 @@ export class IssueHandler {
       case CommentAction.DELETED:
       /* falls through */
       default:
-        console.log("Unsupported comment action: " + action);
-        console.log("Issue: " + issue.title);
-        console.log("Comment: " + comment.body);
+        log.debug("Unsupported comment action: " + action);
+        log.debug("Issue: " + issue.title);
+        log.debug("Comment: " + comment.body);
         break;
     }
 
@@ -188,7 +188,7 @@ export class IssueHandler {
     const name = repo.name;
 
     const repoFeatures = this.config.getRepoFeatures(org, name);
-    console.log(
+    log.debug(
       `onNewIssue: ${name} has features ${JSON.stringify(repoFeatures)}`
     );
 
@@ -221,7 +221,7 @@ export class IssueHandler {
     issue: types.internal.Issue
   ): types.Action[] {
     if (!issue.assignee) {
-      console.warn(
+      log.warn(
         `onIssueAssigned called for an issue with no assignee: ${repo.name}#${
           issue.number
         }`
@@ -302,7 +302,7 @@ export class IssueHandler {
   ): Promise<types.Action[]> {
     // Trick for testing
     if (comment.body == "eval") {
-      console.log("HANDLING SPECIAL COMMENT: eval");
+      log.debug("HANDLING SPECIAL COMMENT: eval");
       return await this.onNewIssue(repo, issue);
     }
 
@@ -404,14 +404,14 @@ export class IssueHandler {
     // Choose new label
     let new_label;
     if (is_fr) {
-      console.log("Matched feature request template.");
+      log.debug("Matched feature request template.");
       new_label = LABEL_FR;
     } else {
       new_label = this.getRelevantLabel(org, name, issue) || LABEL_NEEDS_TRIAGE;
     }
 
     // Add the label
-    console.log(`Adding label: ${new_label}`);
+    log.debug(`Adding label: ${new_label}`);
     const labelAction = new types.GithubAddLabelAction(
       org,
       name,
@@ -423,7 +423,7 @@ export class IssueHandler {
     // Add a comment, if necessary
     const found_label = new_label !== LABEL_NEEDS_TRIAGE;
     if (!found_label) {
-      console.log("Needs triage, adding friendly comment");
+      log.debug("Needs triage, adding friendly comment");
       const commentAction = new types.GithubCommentAction(
         org,
         name,
@@ -433,7 +433,7 @@ export class IssueHandler {
       );
       actions.push(commentAction);
     } else {
-      console.log(`Does not need triage, label is ${new_label}`);
+      log.debug(`Does not need triage, label is ${new_label}`);
     }
 
     return {
@@ -458,7 +458,7 @@ export class IssueHandler {
     const number = issue.number;
 
     const checkTemplateRes = await this.checkMatchesTemplate(org, name, issue);
-    console.log(`Check template result: ${JSON.stringify(checkTemplateRes)}`);
+    log.debug(`Check template result: ${JSON.stringify(checkTemplateRes)}`);
 
     // There are some situations where we don't want to nag about the template
     //  1) This is a feature request
@@ -467,7 +467,7 @@ export class IssueHandler {
       categorization.is_fr || categorization.found_label;
 
     if (skipTemplateComment) {
-      console.log("FR or labeled issue, ignoring template matching");
+      log.debug("FR or labeled issue, ignoring template matching");
     } else if (!checkTemplateRes.matches) {
       // If it does not match, add the suggested comment and close the issue
       const template_action = new types.GithubCommentAction(
@@ -500,14 +500,14 @@ export class IssueHandler {
     // Check if emails are enabled at all
     const repoFeatures = this.config.getRepoFeatures(org, name);
     if (!repoFeatures.custom_emails) {
-      console.log("Repo does not have the email feature enabled.");
+      log.debug("Repo does not have the email feature enabled.");
       return undefined;
     }
 
     // See if this issue belongs to any team.
     const label = opts.label || this.getRelevantLabel(org, name, issue);
     if (!label) {
-      console.log("Not a relevant label, no email needed.");
+      log.debug("Not a relevant label, no email needed.");
       return undefined;
     }
 
@@ -519,7 +519,7 @@ export class IssueHandler {
     }
 
     if (!recipient) {
-      console.log("Nobody to notify, no email needed.");
+      log.debug("Nobody to notify, no email needed.");
       return undefined;
     }
 
@@ -551,12 +551,12 @@ export class IssueHandler {
     // Make sure we at least have configuration for this repository
     const repo_mapping = this.config.getRepoConfig(org, name);
     if (!repo_mapping) {
-      console.log(`No config for ${org}/${name} in: `, this.config);
+      log.debug(`No config for ${org}/${name} in: `, this.config);
       return undefined;
     }
 
     // Get the labeling rules for this repo
-    console.log("Found config: ", repo_mapping);
+    log.debug("Found config: ", repo_mapping);
 
     // Iterate through issue labels, see if one of the existing ones works
     // TODO(samstern): Deal with needs_triage separately
@@ -572,15 +572,15 @@ export class IssueHandler {
     }
 
     // Try to match the issue body to a new label
-    console.log("No existing relevant label, trying regex");
-    console.log("Issue body: " + issue.body);
+    log.debug("No existing relevant label, trying regex");
+    log.debug("Issue body: " + issue.body);
 
     for (const label in repo_mapping.labels) {
       const labelInfo = repo_mapping.labels[label];
 
       // Some labels do not have a regex
       if (!labelInfo.regex) {
-        console.log(`Label ${label} does not have a regex.`);
+        log.debug(`Label ${label} does not have a regex.`);
         continue;
       }
 
@@ -588,15 +588,15 @@ export class IssueHandler {
 
       // If the regex matches, choose the label and email then break out
       if (regex.test(issue.body)) {
-        console.log("Matched label: " + label, JSON.stringify(labelInfo));
+        log.debug("Matched label: " + label, JSON.stringify(labelInfo));
         return label;
       } else {
-        console.log(`Did not match regex for ${label}: ${labelInfo.regex}`);
+        log.debug(`Did not match regex for ${label}: ${labelInfo.regex}`);
       }
     }
 
     // Return undefined if none found
-    console.log("No relevant label found");
+    log.debug("No relevant label found");
     return undefined;
   }
 
@@ -618,10 +618,10 @@ export class IssueHandler {
     const result = new CheckMatchesTemplateResult();
 
     const templateOpts = this.parseIssueOptions(org, name, issue);
-    console.log("Template options: ", templateOpts);
+    log.debug("Template options: ", templateOpts);
 
     if (!templateOpts.validate) {
-      console.log(`Template optons specify no verification.`);
+      log.debug(`Template optons specify no verification.`);
       return result;
     }
 
@@ -634,7 +634,7 @@ export class IssueHandler {
         templateOpts.path
       );
     } catch (e) {
-      console.warn(
+      log.warn(
         `checkMatchesTemplate: failed to get issue template for ${org}/${name} at ${
           templateOpts.path
         }: ${JSON.stringify(e)}`
@@ -646,7 +646,7 @@ export class IssueHandler {
     const issueBody = issue.body;
 
     if (!checker.matchesTemplateSections(issueBody)) {
-      console.log("checkMatchesTemplate: some sections missing");
+      log.debug("checkMatchesTemplate: some sections missing");
       result.matches = false;
       result.message = MSG_FOLLOW_TEMPLATE;
       return result;
@@ -654,7 +654,7 @@ export class IssueHandler {
 
     const missing = checker.getRequiredSectionsMissed(issueBody);
     if (missing.length > 0) {
-      console.log("checkMatchesTemplate: required sections incompconste");
+      log.debug("checkMatchesTemplate: required sections incompconste");
       result.matches = false;
       result.message = MSG_MISSING_INFO;
       return result;
@@ -675,7 +675,7 @@ export class IssueHandler {
   ): types.TemplateOptions {
     let templatePath = this.config.getRepoTemplateConfig(org, name, "issue");
     if (!templatePath) {
-      console.log(`No "issue" template specified for ${name}, using defaults.`);
+      log.debug(`No "issue" template specified for ${name}, using defaults.`);
       templatePath = config.BotConfig.getDefaultTemplateConfig("issue");
     }
 
@@ -689,15 +689,13 @@ export class IssueHandler {
     const path_match = body.match(path_re);
     if (path_match) {
       options.path = path_match[1];
-      console.log(`Issue ${issue.number} specified path=${options.path}`);
+      log.debug(`Issue ${issue.number} specified path=${options.path}`);
     }
 
     const validate_match = body.match(validate_re);
     if (validate_match) {
       options.validate = validate_match[1] == "true";
-      console.log(
-        `Issue ${issue.number} specified validate=${options.validate}`
-      );
+      log.debug(`Issue ${issue.number} specified validate=${options.validate}`);
     }
 
     return options;

@@ -21,6 +21,7 @@ import * as simple from "simple-mock";
 import * as config from "../config";
 import * as cron from "../cron";
 import * as github from "../github";
+import * as log from "../log";
 import * as issues from "../issues";
 import * as types from "../types";
 
@@ -65,7 +66,12 @@ const STALE_ISSUE: types.internal.Issue = {
 };
 
 describe("Stale issue handler", async () => {
+  beforeEach(() => {
+    log.setLogLevel(log.Level.WARN);
+  });
+
   afterEach(() => {
+    log.setLogLevel(log.Level.ALL);
     simple.restore();
   });
 

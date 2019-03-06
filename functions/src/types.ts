@@ -12,12 +12,17 @@ export class Action {
   constructor(type: ActionType) {
     this.type = type;
   }
+
+  toString() {
+    return `Action(${this.type})`;
+  }
 }
 
 export class GithubIssueAction extends Action {
   org: string;
   name: string;
   number: number;
+  debugInfo: string | undefined;
 
   constructor(type: ActionType, org: string, name: string, number: number) {
     super(type);
@@ -25,6 +30,13 @@ export class GithubIssueAction extends Action {
     this.org = org;
     this.name = name;
     this.number = number;
+    this.debugInfo = undefined;
+  }
+
+  toString() {
+    return `IssueAction(${this.type}, ${this.org}}/${this.name}#{${
+      this.number
+    })`;
   }
 }
 
@@ -96,6 +108,15 @@ export class SendEmailAction extends Action {
     this.body = body;
     this.link = link;
     this.action = action;
+  }
+
+  toString() {
+    let subjectPreview = this.subject;
+    if (subjectPreview.length > 20) {
+      subjectPreview = subjectPreview.substr(0, 17) + "...";
+    }
+
+    return `SendEmailAction(${this.recipient}, ${subjectPreview})`;
   }
 }
 

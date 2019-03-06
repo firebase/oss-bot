@@ -20,6 +20,43 @@ const METADATA = {
 const logging = new Logging();
 const log = logging.log(LOG_NAME);
 
+export enum Level {
+  ALL = 0,
+  DEBUG = 1,
+  WARN = 2,
+  ERROR = 3,
+  NONE = 4
+}
+
+let LOG_LEVEL = Level.ALL;
+export function setLogLevel(level: Level) {
+  LOG_LEVEL = level;
+}
+
+export function debug(message: any, ...args: any[]) {
+  if (LOG_LEVEL > Level.DEBUG) {
+    return;
+  }
+
+  if (args) {
+    console.log(message, ...args);
+  } else {
+    console.log(message);
+  }
+}
+
+export function warn(message: any, ...args: any) {
+  if (LOG_LEVEL > Level.WARN) {
+    return;
+  }
+
+  if (args) {
+    console.warn(message, ...args);
+  } else {
+    console.warn(message);
+  }
+}
+
 /**
  * Log JSON data.
  */

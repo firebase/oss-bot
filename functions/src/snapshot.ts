@@ -1,6 +1,7 @@
 import * as functions from "firebase-functions";
 import { database } from "./database";
 import * as github from "./github";
+import * as log from "./log";
 import * as util from "./util";
 import { snapshot } from "./types";
 import * as config from "./config";
@@ -106,7 +107,7 @@ export async function GetRepoSnapshot(
   repoData: any
 ) {
   if (!repoData) {
-    console.warn(`GetRepoSnapshot called with null data for ${owner}/${repo}`);
+    log.warn(`GetRepoSnapshot called with null data for ${owner}/${repo}`);
   }
 
   repoData.closed_issues_count = 0;
@@ -163,19 +164,17 @@ export const SaveRepoSnapshot = functions
     const repoKey = cleanRepoName(repoName);
 
     if (!(org && repoName)) {
-      console.log(
-        `PubSub message must include 'org' and 'repo': ${event.data}`
-      );
+      log.debug(`PubSub message must include 'org' and 'repo': ${event.data}`);
     }
 
-    console.log(`SaveRepoSnapshot(${org}/${repoName})`);
+    log.debug(`SaveRepoSnapshot(${org}/${repoName})`);
     const orgRef = database.ref(DateSnapshotPath(org, new Date()));
     const repoSnapRef = orgRef.child("repos").child(repoKey);
 
     // Get the "base" data that was retriebed during the org snapshot
     let baseRepoData = (await repoSnapRef.once("value")).val();
     if (!baseRepoData) {
-      console.log(
+      log.debug(
         `Couldn't get base repo data for ${org}/${repoName}, getting from GitHub`
       );
 
@@ -196,7 +195,7 @@ export const SaveRepoSnapshot = functions
     const fullRepoData = await GetRepoSnapshot(org, repoName, baseRepoData);
     util.endTimer("GetRepoSnapshot");
 
-    console.log(`Saving repo snapshot to ${repoSnapRef.path}`);
+    log.debug(`Saving repo snapshot to ${repoSnapRef.path}`);
     await repoSnapRef.set(fullRepoData);
 
     // Store non-date-specific repo metadata
@@ -220,10 +219,7 @@ export const SaveRepoSnapshot = functions
 
       await repoMetaRef.child("collaborators").set(collabMap);
     } catch (e) {
-      console.warn(
-        `Failed to get collaborators for repo ${org}/${repoName}`,
-        e
-      );
+      log.warn(`Failed to get collaborators for repo ${org}/${repoName}`, e);
     }
   });
 
@@ -250,7 +246,7 @@ export const SaveOrganizationSnapshot = functions
     // Next take a shallow snapshot of all other orgs
     for (const org of configOrgs) {
       if (org !== "firebase") {
-        console.log(`Taking snapshot of org: ${org}`);
+        log.debug(`Taking snapshot of org: ${org}`);
         const orgSnap = await GetOrganizationSnapshot(org, false);
         await database.ref(DateSnapshotPath(org, new Date())).set(orgSnap);
       }
@@ -295,6 +291,6 @@ interface OrgRepo {
 function sendPubSub(topic: string, data: any): Promise<any> {
   const publisher = pubsubClient.topic(topic).publisher();
 
-  console.log(`PubSub(${topic}, ${JSON.stringify(data)}`);
+  log.debug(`PubSub(${topic}, ${JSON.stringify(data)}`);
   return publisher.publish(Buffer.from(JSON.stringify(data)));
 }

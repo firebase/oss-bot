@@ -15,6 +15,7 @@
  */
 import * as functions from "firebase-functions";
 
+import * as log from "./log";
 import * as encoding from "./shared/encoding";
 import * as types from "./types";
 
@@ -28,7 +29,7 @@ export function getFunctionsConfig(key: string): any {
   const envKey = encoding.toEnvKey(key);
   const envOverride = process.env[envKey];
   if (envOverride) {
-    console.log(`Config override: ${key}=${envKey}=${envOverride}`);
+    log.debug(`Config override: ${key}=${envKey}=${envOverride}`);
     return envOverride;
   }
 

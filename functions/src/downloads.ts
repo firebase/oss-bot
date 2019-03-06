@@ -1,6 +1,8 @@
 import fetch from "node-fetch";
 import * as moment from "moment";
 
+import * as log from "./log";
+
 /**
  * GET request with a URL and some URL params.
  */
@@ -34,7 +36,7 @@ export class Npm {
     const dayKey = day.format("YYYY-MM-DD");
     const url = `https://api.npmjs.org/downloads/point/${dayKey}/${pkg}`;
 
-    console.log(`[npm] Fetching downloads for ${dayKey}.`);
+    log.debug(`[npm] Fetching downloads for ${dayKey}.`);
     return getJSON(url, {}).then((result: any) => {
       return result.downloads;
     });
@@ -88,7 +90,7 @@ export class Bintray {
     const resJson = await getJSON(baseUrl, params);
     const totals: any = {};
 
-    console.log(
+    log.debug(
       `[bintray] Fetching downloads for ${pkg} from ${start} to ${end}`
     );
 
