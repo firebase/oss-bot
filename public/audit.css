@@ -1,0 +1,27 @@
+body {
+  font-family: sans-serif;
+}
+
+td {
+  align-content: center;
+}
+
+#col-time {
+  width: 10%;
+}
+
+#col-event {
+  width: 10%;
+}
+
+#col-target {
+  width: 10%;
+}
+
+#col-details {
+  width: 35%;
+}
+
+#col-reason {
+  width: 35%;
+} 
