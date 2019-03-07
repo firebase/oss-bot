@@ -140,7 +140,8 @@ export class CronHandler {
           org,
           name,
           number,
-          issueConfig.label_stale
+          issueConfig.label_stale,
+          `Last comment was ${util.timeAgo(lastComment)} ago.`
         );
         const addStaleComment = new types.GithubCommentAction(
           org,
@@ -151,7 +152,8 @@ export class CronHandler {
             issueConfig.needs_info_days,
             issueConfig.stale_days
           ),
-          false
+          false,
+          `Marking as stale.`
         );
         actions.push(addStaleLabel, addStaleComment);
       }
@@ -181,9 +183,15 @@ export class CronHandler {
           name,
           number,
           this.getCloseComment(issue.user.login),
-          false
+          false,
+          `Closing issue for being stale.`
         );
-        const closeIssue = new types.GithubCloseAction(org, name, number);
+        const closeIssue = new types.GithubCloseAction(
+          org,
+          name,
+          number,
+          `Closing issue for being stale.`
+        );
         actions.push(addClosingComment, closeIssue);
       }
     }

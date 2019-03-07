@@ -200,20 +200,24 @@ export const githubWebhook = functions.https.onRequest(
       // More than one comment, combine them into bullets.
       // TODO: What if the comments are cross-repo or cross-issue?
       let msg = "I found a few problems with this issue:";
+      let reason = "";
       for (const comment of collapsibleComments) {
         msg += `\n  * ${comment.message}`;
+        if (comment.reason.length > 0) {
+          reason += `* ${comment.reason}\n`
+        }
       }
 
       const firstComment = collapsibleComments[0];
       promises.push(
         executeAction(
-          // TODO: Collapse reasons
           new types.GithubCommentAction(
             firstComment.org,
             firstComment.name,
             firstComment.number,
             msg,
-            false
+            false,
+            reason
           )
         )
       );

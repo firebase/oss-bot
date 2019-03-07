@@ -20,9 +20,11 @@ export const GITHUB_ISSUE_ACTIONS = [
 
 export class Action {
   type: ActionType;
+  reason: string;
 
   constructor(type: ActionType) {
     this.type = type;
+    this.reason = "";
   }
 
   toString() {
@@ -34,7 +36,6 @@ export class GithubIssueAction extends Action {
   org: string;
   name: string;
   number: number;
-  debugInfo: string;
 
   constructor(type: ActionType, org: string, name: string, number: number) {
     super(type);
@@ -42,7 +43,6 @@ export class GithubIssueAction extends Action {
     this.org = org;
     this.name = name;
     this.number = number;
-    this.debugInfo = "";
   }
 
   details(): { [s: string]: any } {
@@ -65,12 +65,17 @@ export class GithubCommentAction extends GithubIssueAction {
     name: string,
     number: number,
     message: string,
-    collapse: boolean
+    collapse: boolean,
+    reason?: string
   ) {
     super(ActionType.GITHUB_COMMENT, org, name, number);
 
     this.message = message;
     this.collapse = collapse;
+
+    if (reason) {
+      this.reason = reason;
+    }
   }
 
   details() {
@@ -83,10 +88,19 @@ export class GithubCommentAction extends GithubIssueAction {
 export class GithubAddLabelAction extends GithubIssueAction {
   label: string;
 
-  constructor(org: string, name: string, number: number, label: string) {
+  constructor(
+    org: string,
+    name: string,
+    number: number,
+    label: string,
+    reason?: string
+  ) {
     super(ActionType.GITHUB_ADD_LABEL, org, name, number);
 
     this.label = label;
+    if (reason) {
+      this.reason = reason;
+    }
   }
 
   details() {
@@ -99,10 +113,19 @@ export class GithubAddLabelAction extends GithubIssueAction {
 export class GithubRemoveLabelAction extends GithubIssueAction {
   label: string;
 
-  constructor(org: string, name: string, number: number, label: string) {
+  constructor(
+    org: string,
+    name: string,
+    number: number,
+    label: string,
+    reason?: string
+  ) {
     super(ActionType.GITHUB_REMOVE_LABEL, org, name, number);
 
     this.label = label;
+    if (reason) {
+      this.reason = reason;
+    }
   }
 
   details() {
@@ -113,8 +136,12 @@ export class GithubRemoveLabelAction extends GithubIssueAction {
 }
 
 export class GithubCloseAction extends GithubIssueAction {
-  constructor(org: string, name: string, number: number) {
+  constructor(org: string, name: string, number: number, reason?: string) {
     super(ActionType.GITHUB_CLOSE, org, name, number);
+
+    if (reason) {
+      this.reason = reason;
+    }
   }
 }
 
@@ -165,7 +192,7 @@ export class ActionLog {
     this.event = action.type;
     this.target = `issues/${action.number}`;
     this.details = action.details();
-    this.reason = action.debugInfo;
+    this.reason = action.reason;
     this.time = Date.now();
   }
 }

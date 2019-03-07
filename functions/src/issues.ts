@@ -347,7 +347,8 @@ export class IssueHandler {
             org,
             name,
             number,
-            issueConfig.label_stale
+            issueConfig.label_stale,
+            "Comments on stale issues remove the stale label."
           )
         );
 
@@ -357,7 +358,13 @@ export class IssueHandler {
           ? issueConfig.label_needs_attention
           : issueConfig.label_needs_info;
         actions.push(
-          new types.GithubAddLabelAction(org, name, number, labelToAdd)
+          new types.GithubAddLabelAction(
+            org,
+            name,
+            number,
+            labelToAdd,
+            "Author comments move stale -> needs_attention, other comments move stale -> needs_info"
+          )
         );
       }
 
@@ -368,7 +375,8 @@ export class IssueHandler {
             org,
             name,
             number,
-            issueConfig.label_needs_info
+            issueConfig.label_needs_info,
+            "Author comments move needs_info -> needs_attention"
           )
         );
         actions.push(
@@ -376,7 +384,8 @@ export class IssueHandler {
             org,
             name,
             number,
-            issueConfig.label_needs_attention
+            issueConfig.label_needs_attention,
+            "Author comments move needs_info -> needs_attention"
           )
         );
       }
@@ -403,11 +412,19 @@ export class IssueHandler {
 
     // Choose new label
     let new_label;
+    let new_label_reason;
     if (is_fr) {
       log.debug("Matched feature request template.");
       new_label = LABEL_FR;
+      new_label_reason = "Matched the template for a feature request";
     } else {
-      new_label = this.getRelevantLabel(org, name, issue) || LABEL_NEEDS_TRIAGE;
+      new_label = this.getRelevantLabel(org, name, issue);
+      if (new_label) {
+        new_label_reason = `Issue matched regex for ${new_label}`;
+      } else {
+        new_label = LABEL_NEEDS_TRIAGE;
+        new_label_reason = `Issue did not match any label regexes`;
+      }
     }
 
     // Add the label
@@ -416,7 +433,8 @@ export class IssueHandler {
       org,
       name,
       number,
-      new_label
+      new_label,
+      new_label_reason
     );
     actions.push(labelAction);
 
@@ -429,7 +447,8 @@ export class IssueHandler {
         name,
         number,
         MSG_NEEDS_TRIAGE,
-        true
+        true,
+        "Friendly comment added when an issue is labeled needs-triage"
       );
       actions.push(commentAction);
     } else {
@@ -475,7 +494,8 @@ export class IssueHandler {
         name,
         number,
         checkTemplateRes.message,
-        true
+        true,
+        "Issue did not match the issue template"
       );
 
       actions.push(template_action);
