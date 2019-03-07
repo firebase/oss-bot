@@ -204,7 +204,7 @@ export const githubWebhook = functions.https.onRequest(
       for (const comment of collapsibleComments) {
         msg += `\n  * ${comment.message}`;
         if (comment.reason.length > 0) {
-          reason += `* ${comment.reason}\n`
+          reason += `* ${comment.reason}\n`;
         }
       }
 

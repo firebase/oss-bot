@@ -1,13 +1,20 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>OSS Bot Audit</title>
 
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/purecss@1.0.0/build/pure-min.css"
+      integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w"
+      crossorigin="anonymous"
+    />
 
     <link rel="stylesheet" href="audit.css" />
 
@@ -17,30 +24,33 @@
     <script defer src="/__/firebase/init.js"></script>
 
     <script defer src="./audit.js"></script>
-</head>
+  </head>
 
-<body>
-    <table id="log-table" class="pure-table pure-table-bordered pure-table-striped">
+  <body>
+    <table
+      id="log-table"
+      class="pure-table pure-table-bordered pure-table-striped"
+    >
       <thead>
-          <tr>
-            <th id="col-time">Time</th>
-            <th id="col-event">Event</th>
-            <th id="col-target">Target</th>
-            <th id="col-details">Details</th>
-            <th id="col-reason">Reason</th>
-          </tr>
+        <tr>
+          <th id="col-time">Time</th>
+          <th id="col-event">Event</th>
+          <th id="col-target">Target</th>
+          <th id="col-details">Details</th>
+          <th id="col-reason">Reason</th>
+        </tr>
       </thead>
-      <tbody id="log-table-body">
-
-      </tbody>
+      <tbody id="log-table-body"></tbody>
     </table>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            console.log('All scripts loaded, initializing...');
-            firebase.auth().signInAnonymously().then(initialize);
-        });
+      document.addEventListener("DOMContentLoaded", function() {
+        console.log("All scripts loaded, initializing...");
+        firebase
+          .auth()
+          .signInAnonymously()
+          .then(initialize);
+      });
     </script>
-</body>
-
+  </body>
 </html>

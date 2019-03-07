@@ -1,14 +1,14 @@
-var COLOR_PINK = 'rgb(255, 99, 132)';
-var COLOR_GREEN = 'rgb(99, 255, 132)';
-var COLOR_BLUE = 'rgb(51, 153, 255)';
+var COLOR_PINK = "rgb(255, 99, 132)";
+var COLOR_GREEN = "rgb(99, 255, 132)";
+var COLOR_BLUE = "rgb(51, 153, 255)";
 
 var DOWNLOADS_AXIS = {
-  id: 'y-downloads',
-  type: 'linear',
-  position: 'left',
+  id: "y-downloads",
+  type: "linear",
+  position: "left",
   scaleLabel: {
     display: true,
-    labelString: 'Downloads'
+    labelString: "Downloads"
   },
   ticks: {
     beginAtZero: true
@@ -16,12 +16,12 @@ var DOWNLOADS_AXIS = {
 };
 
 var APPS_AXIS = {
-  id: 'y-apps',
-  type: 'linear',
-  position: 'left',
+  id: "y-apps",
+  type: "linear",
+  position: "left",
   scaleLabel: {
     display: true,
-    labelString: 'Apps'
+    labelString: "Apps"
   },
   ticks: {
     beginAtZero: true
@@ -29,12 +29,12 @@ var APPS_AXIS = {
 };
 
 var SAM_AXIS = {
-  id: 'y-sam',
-  type: 'linear',
-  position: 'right',
+  id: "y-sam",
+  type: "linear",
+  position: "right",
   scaleLabel: {
     display: true,
-    labelString: 'SAM'
+    labelString: "SAM"
   },
   ticks: {
     min: 0.0,
@@ -50,15 +50,15 @@ var SOURCE_CONFIGS = {
   bintray: {
     series: [
       {
-        key: 'downloads',
-        label: 'Downloads',
+        key: "downloads",
+        label: "Downloads",
         cumulative: false,
         color: COLOR_PINK,
         axis: DOWNLOADS_AXIS
       },
       {
-        key: 'sam',
-        label: 'SAM Score',
+        key: "sam",
+        label: "SAM Score",
         cumulative: false,
         color: COLOR_GREEN,
         axis: SAM_AXIS
@@ -68,15 +68,15 @@ var SOURCE_CONFIGS = {
   npm: {
     series: [
       {
-        key: 'downloads',
-        label: 'Downloads',
+        key: "downloads",
+        label: "Downloads",
         cumulative: false,
         color: COLOR_PINK,
         axis: DOWNLOADS_AXIS
       },
       {
-        key: 'sam',
-        label: 'SAM Score',
+        key: "sam",
+        label: "SAM Score",
         cumulative: false,
         color: COLOR_GREEN,
         axis: SAM_AXIS
@@ -86,22 +86,22 @@ var SOURCE_CONFIGS = {
   cocoapods: {
     series: [
       {
-        key: 'downloads',
-        label: 'Downloads',
+        key: "downloads",
+        label: "Downloads",
         cumulative: true,
         color: COLOR_PINK,
         axis: DOWNLOADS_AXIS
       },
       {
-        key: 'apps',
-        label: 'Apps',
+        key: "apps",
+        label: "Apps",
         cumulative: true,
         color: COLOR_BLUE,
         axis: APPS_AXIS
       },
       {
-        key: 'sam',
-        label: 'SAM Score',
+        key: "sam",
+        label: "SAM Score",
         cumulative: false,
         color: COLOR_GREEN,
         axis: SAM_AXIS
@@ -112,7 +112,7 @@ var SOURCE_CONFIGS = {
 
 function drawChart(ctx, title, labels, axes, dataSets) {
   var chart = new Chart(ctx, {
-    type: 'line',
+    type: "line",
     data: {
       labels: labels,
       datasets: dataSets
@@ -133,13 +133,13 @@ function drawChart(ctx, title, labels, axes, dataSets) {
 
 function makeMetricChart(id, ctx) {
   var db = firebase.database();
-  var baseDataRef = db.ref('metrics-data').child(id);
+  var baseDataRef = db.ref("metrics-data").child(id);
   var limit = 15;
 
   var getInfo = db
-    .ref('metrics')
+    .ref("metrics")
     .child(id)
-    .once('value')
+    .once("value")
     .then(function(snap) {
       return snap.val();
     });
@@ -168,7 +168,7 @@ function makeMetricChart(id, ctx) {
         var seriesPromise = baseDataRef
           .child(series.key)
           .limitToLast(limit)
-          .once('value')
+          .once("value")
           .then(function(snap) {
             var data = snap.val();
 
@@ -181,7 +181,7 @@ function makeMetricChart(id, ctx) {
             // Create a Chart.js based on the series config
             var dataSet = {
               label: series.label,
-              type: 'line',
+              type: "line",
               borderColor: series.color,
               fill: false,
               data: [],
@@ -223,10 +223,10 @@ function makeMetricChart(id, ctx) {
 }
 
 window.initializeCharts = function() {
-  this.document.querySelectorAll('.card').forEach(function(element) {
-    var chart = element.querySelector('canvas');
-    var repoId = element.getAttribute('data-repo');
+  this.document.querySelectorAll(".card").forEach(function(element) {
+    var chart = element.querySelector("canvas");
+    var repoId = element.getAttribute("data-repo");
 
-    makeMetricChart(repoId, chart.getContext('2d'));
+    makeMetricChart(repoId, chart.getContext("2d"));
   });
 };
