@@ -111,27 +111,7 @@ export class PullRequestHandler {
       return actions;
     }
 
-    // Check to see if the pull request has an issue associated
-    // TODO(samstern): Decide if we should re-enable checking for an issue link
-    // if (!this.hasIssueLink(repo, pr)) {
-    //   msg =
-    //     "I couldn"t find a link to an issue in your pull request. Please make sure this PR addresses an open issue.";
-    //   const addCommentPromise = this.gh_client.addComment(org, name, number, msg);
-    //   promises.push(addCommentPromise);
-    // }
-
-    // const features = this.config.getRepoFeatures(org, name);
-    // if (features.issue_labels) {
-    //   // Add a needs triage label
-    //   const labelAction = new types.GithubAddLabelAction(
-    //     org,
-    //     name,
-    //     number,
-    //     LABEL_NEEDS_TRIAGE
-    //   );
-
-    //   actions.push(labelAction);
-    // }
+    // Right now we are not doing anything on pull requests...
 
     return actions;
   }
@@ -140,7 +120,7 @@ export class PullRequestHandler {
     repo: types.github.Repository,
     pr: types.github.PullRequest
   ): Promise<types.Action[]> {
-    // TODO(samstern): Send a an email to the right peopl
+    // TODO(samstern): Send a an email to the right people
     return [];
   }
 

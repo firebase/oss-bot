@@ -378,38 +378,20 @@ export async function MakeRepoReport(
   const before_ids = Object.keys(beforeSnap.issues);
   const after_ids = Object.keys(afterSnap.issues);
 
-  // TODO: Should probably move this to Utils
-  function setDiff<T>(a: T[], b: T[]) {
-    return a.filter((x: T) => {
-      return b.indexOf(x) < 0;
-    });
-  }
-
-  // TODO: This could be moved out
-  function toChangedIssue(issue: snapshot.Issue): report.ChangedIssue {
-    return {
-      number: issue.number,
-      title: issue.title,
-      link: `https://github.com/firebase/${repo}/issues/${issue.number}`
-    };
-  }
-
   // Issues present in only the "before" snap are newly closed, issues present in only
   // the "after" snap are newly opened.
-  const closed_issues: report.ChangedIssue[] = setDiff(
-    before_ids,
-    after_ids
-  ).map(id => {
-    const issue = beforeSnap.issues[id];
-    return toChangedIssue(issue);
-  });
-  const opened_issues: report.ChangedIssue[] = setDiff(
-    after_ids,
-    before_ids
-  ).map(id => {
-    const issue = afterSnap.issues[id];
-    return toChangedIssue(issue);
-  });
+  const closed_issues: report.ChangedIssue[] = util
+    .setDiff(before_ids, after_ids)
+    .map(id => {
+      const issue = beforeSnap.issues[id];
+      return toChangedIssue(repo, issue);
+    });
+  const opened_issues: report.ChangedIssue[] = util
+    .setDiff(after_ids, before_ids)
+    .map(id => {
+      const issue = afterSnap.issues[id];
+      return toChangedIssue(repo, issue);
+    });
 
   return {
     name: repo,
@@ -574,4 +556,15 @@ export async function GetWeeklyEmail(org: string) {
 
   const template = readFileSync(path.join(__dirname, "./weekly.mustache"));
   return mustache.render(template.toString(), report);
+}
+
+function toChangedIssue(
+  repo: string,
+  issue: snapshot.Issue
+): report.ChangedIssue {
+  return {
+    number: issue.number,
+    title: issue.title,
+    link: `https://github.com/firebase/${repo}/issues/${issue.number}`
+  };
 }

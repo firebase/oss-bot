@@ -23,6 +23,12 @@ function getTime(): number {
   return new Date().getTime();
 }
 
+export function setDiff<T>(a: T[], b: T[]) {
+  return a.filter((x: T) => {
+    return b.indexOf(x) < 0;
+  });
+}
+
 export function startTimer(label: string) {
   timers[label] = getTime();
 }

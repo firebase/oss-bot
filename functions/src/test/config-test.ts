@@ -72,7 +72,7 @@ describe("Configuration", async () => {
     };
 
     assert.deepEqual(
-      encoding.toFlatConfig(deep, encoding.Direction.ENCODE),
+      encoding.flattenConfig(deep, encoding.Direction.ENCODE),
       flat
     );
   });

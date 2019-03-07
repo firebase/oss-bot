@@ -52,8 +52,7 @@ export function sanitizeKey(key: string) {
   return key.toLowerCase().trim();
 }
 
-// TODO: Rename this function
-export function toFlatConfig(ob: any, dir: Direction): StringMap {
+export function flattenConfig(ob: any, dir: Direction): StringMap {
   const flattened = flattenObject(ob);
   const result: StringMap = {};
   for (const key in flattened) {

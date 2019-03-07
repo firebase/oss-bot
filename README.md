@@ -174,6 +174,13 @@ You will then receive a weekly email with:
   * List of which issues were opened in the past week.
   * List of which issues were closed in the past week.
 
+## Monitoring
+
+The bot keeps a log of visible actions it takes on GitHub, which you can view on
+a per-repo basis:
+
+https://ossbot.computer/audit.html?org=ORG_NAME&repo=REPO_NAME
+
 ## Deployment
 
 ### Deploy Functions, Configuration, and Cron Jobs

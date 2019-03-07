@@ -15,7 +15,7 @@ async function deployConfig(configFile: string, project: string) {
   };
 
   // Encode the proposed config into a flat map of dot-separated values
-  const newConfig = encoding.toFlatConfig(config, encoding.Direction.ENCODE);
+  const newConfig = encoding.flattenConfig(config, encoding.Direction.ENCODE);
 
   // Get the current runtime config from Firebase as a giant object
   const current = await firebase.functions.config.get("runtime", {
@@ -23,7 +23,7 @@ async function deployConfig(configFile: string, project: string) {
   });
 
   // Decode the config into a flat map of dot-separated values.
-  const currentConfig = encoding.toFlatConfig(
+  const currentConfig = encoding.flattenConfig(
     {
       runtime: current
     },

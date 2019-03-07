@@ -162,7 +162,6 @@ export const githubWebhook = functions.https.onRequest(
         return;
     }
 
-    // TODO(samstern): Should not need this
     if (actions == undefined) {
       actions = [];
     }
