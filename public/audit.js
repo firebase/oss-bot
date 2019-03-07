@@ -1,3 +1,21 @@
+var app;
+
+var EntryPresenter = function(org, repo, data) {
+  this.org = org;
+  this.repo = repo;
+  this.data = data;
+};
+
+EntryPresenter.prototype.timeString = function() {
+  return new Date(this.data.time).toUTCString();
+};
+
+EntryPresenter.prototype.targetLink = function() {
+  return (
+    "https://github.com/" + this.org + "/" + this.repo + "/" + this.data.target
+  );
+};
+
 window.initialize = function() {
   var params = new URLSearchParams(window.location.search);
   if (!(params.has("repo") && params.has("org"))) {
@@ -9,6 +27,15 @@ window.initialize = function() {
   var repo = params.get("repo");
   console.log("org", org, "repo", repo);
 
+  app = new Vue({
+    el: "#app",
+    data: {
+      org: org,
+      repo: repo,
+      entries: []
+    }
+  });
+
   var db = firebase.database();
   var dataRef = db
     .ref("repo-log")
@@ -16,10 +43,9 @@ window.initialize = function() {
     .child(repo)
     .limitToLast(100);
 
-  var table = document.getElementById("log-table-body");
   dataRef.on("child_added", function(snap) {
     console.log(snap.val());
-    table.appendChild(entryToRow(snap.val()));
+    app.entries.push(new EntryPresenter(org, repo, snap.val()));
   });
 };
 

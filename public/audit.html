@@ -23,25 +23,43 @@
     <script defer src="/__/firebase/5.5.3/firebase-database.js"></script>
     <script defer src="/__/firebase/init.js"></script>
 
+    <!-- Bue development version, includes helpful console warnings -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
     <script defer src="./audit.js"></script>
   </head>
 
   <body>
-    <table
-      id="log-table"
-      class="pure-table pure-table-bordered pure-table-striped"
-    >
-      <thead>
-        <tr>
-          <th id="col-time">Time</th>
-          <th id="col-event">Event</th>
-          <th id="col-target">Target</th>
-          <th id="col-details">Details</th>
-          <th id="col-reason">Reason</th>
-        </tr>
-      </thead>
-      <tbody id="log-table-body"></tbody>
-    </table>
+    <div id="app">
+      <h3>OSS Bot audit log for {{org}}/{{repo}}</h3>
+      <table
+        id="log-table"
+        class="pure-table pure-table-bordered pure-table-striped"
+      >
+        <thead>
+          <tr>
+            <th id="col-time">Time</th>
+            <th id="col-event">Event</th>
+            <th id="col-target">Target</th>
+            <th id="col-details">Details</th>
+            <th id="col-reason">Reason</th>
+          </tr>
+        </thead>
+        <tbody id="log-table-body">
+          <tr v-for="entry in entries">
+            <td>{{entry.timeString()}}</td>
+            <td>{{entry.data.event}}</td>
+            <td>
+              <a :href="entry.targetLink()" target="_blank">{{entry.data.target}}</a>
+            </td>
+            <td>
+              <code>{{entry.data.details}}</code>
+            </td>
+            <td>{{entry.data.reason || "N/A"}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <script>
       document.addEventListener("DOMContentLoaded", function() {
