@@ -16,6 +16,20 @@ EntryPresenter.prototype.targetLink = function() {
   );
 };
 
+EntryPresenter.prototype.hasDetails = function() {
+  return this.data.details || this.data.details !== {};
+};
+
+EntryPresenter.prototype.detailsEntries = function () {
+  var result = [];
+  const that = this;
+  Object.keys(this.data.details).forEach(function(key) {
+    result.push([key, that.data.details[key]]);
+  });
+  return result;
+};
+
+
 window.initialize = function() {
   var params = new URLSearchParams(window.location.search);
   if (!(params.has("repo") && params.has("org"))) {
@@ -48,33 +62,3 @@ window.initialize = function() {
     app.entries.push(new EntryPresenter(org, repo, snap.val()));
   });
 };
-
-function entryToRow(data) {
-  var row = document.createElement("tr");
-  row.appendChild(itemToCell(new Date(data.time).toUTCString()));
-  row.appendChild(itemToCell(data.event));
-  row.appendChild(itemToCell(data.target));
-  row.appendChild(itemToCell(data.details, true, true));
-  row.appendChild(itemToCell(data.reason));
-
-  return row;
-}
-
-function itemToCell(val, stringify, pre) {
-  var cell = document.createElement("td");
-  var html = val;
-
-  if (!val || val === "") {
-    html = "N/A";
-  }
-
-  if (stringify) {
-    html = JSON.stringify(val, undefined, 2);
-  }
-
-  if (pre) {
-    html = "<code>" + html + "</code>";
-  }
-  cell.innerHTML = html;
-  return cell;
-}

@@ -31,7 +31,12 @@
 
   <body>
     <div id="app">
-      <h3>OSS Bot audit log for {{org}}/{{repo}}</h3>
+      <div class="header">
+        <div class="header-inner">
+          <span class="title">Audit Log</span>
+          <span class="repo">{{org}}/{{repo}}</span>
+        </div>
+      </div>
       <table
         id="log-table"
         class="pure-table pure-table-bordered pure-table-striped"
@@ -53,7 +58,14 @@
               <a :href="entry.targetLink()" target="_blank">{{entry.data.target}}</a>
             </td>
             <td>
-              <code>{{entry.data.details}}</code>
+              <table class="details-table pure-table" v-if="entry.hasDetails()">
+                <tbody>
+                  <tr v-for="detail in entry.detailsEntries()">
+                    <td class=key><code>{{detail[0]}}</code></td>
+                    <td class="value"><code>{{detail[1]}}</code></td>
+                  </tr>
+                </tbody>
+              </table>
             </td>
             <td>{{entry.data.reason || "N/A"}}</td>
           </tr>
