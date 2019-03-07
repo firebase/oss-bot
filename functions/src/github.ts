@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import * as log from "./log";
 import * as util from "./util";
 import * as Octokit from "@octokit/rest";
 
@@ -111,7 +112,7 @@ export class GithubClient {
   getIssueTemplate(org: string, name: string, file: string) {
     this.auth();
 
-    console.log(`GithubClient.getIssueTemplate: ${org}/${name}, file=${file}`);
+    log.debug(`GithubClient.getIssueTemplate: ${org}/${name}, file=${file}`);
     return this.getFileContent(org, name, file);
   }
 

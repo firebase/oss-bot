@@ -1,3 +1,8 @@
+export enum ActionService {
+  GITHUB = "GITHUB",
+  EMAIL = "EMAIL"
+}
+
 export enum ActionType {
   GITHUB_COMMENT = "GITHUB_COMMENT",
   GITHUB_ADD_LABEL = "GITHUB_LABEL",
@@ -6,11 +11,24 @@ export enum ActionType {
   EMAIL_SEND = "EMAIL_SEND"
 }
 
+export const GITHUB_ISSUE_ACTIONS = [
+  ActionType.GITHUB_COMMENT,
+  ActionType.GITHUB_ADD_LABEL,
+  ActionType.GITHUB_REMOVE_LABEL,
+  ActionType.GITHUB_CLOSE
+];
+
 export class Action {
   type: ActionType;
+  reason: string;
 
   constructor(type: ActionType) {
     this.type = type;
+    this.reason = "";
+  }
+
+  toString() {
+    return `Action(${this.type})`;
   }
 }
 
@@ -26,6 +44,16 @@ export class GithubIssueAction extends Action {
     this.name = name;
     this.number = number;
   }
+
+  details(): { [s: string]: any } {
+    return {};
+  }
+
+  toString() {
+    return `IssueAction(${this.type}, ${this.org}/${this.name}#{${
+      this.number
+    })`;
+  }
 }
 
 export class GithubCommentAction extends GithubIssueAction {
@@ -37,38 +65,83 @@ export class GithubCommentAction extends GithubIssueAction {
     name: string,
     number: number,
     message: string,
-    collapse: boolean
+    collapse: boolean,
+    reason?: string
   ) {
     super(ActionType.GITHUB_COMMENT, org, name, number);
 
     this.message = message;
     this.collapse = collapse;
+
+    if (reason) {
+      this.reason = reason;
+    }
+  }
+
+  details() {
+    return {
+      message: this.message
+    };
   }
 }
 
 export class GithubAddLabelAction extends GithubIssueAction {
   label: string;
 
-  constructor(org: string, name: string, number: number, label: string) {
+  constructor(
+    org: string,
+    name: string,
+    number: number,
+    label: string,
+    reason?: string
+  ) {
     super(ActionType.GITHUB_ADD_LABEL, org, name, number);
 
     this.label = label;
+    if (reason) {
+      this.reason = reason;
+    }
+  }
+
+  details() {
+    return {
+      label: this.label
+    };
   }
 }
 
 export class GithubRemoveLabelAction extends GithubIssueAction {
   label: string;
 
-  constructor(org: string, name: string, number: number, label: string) {
+  constructor(
+    org: string,
+    name: string,
+    number: number,
+    label: string,
+    reason?: string
+  ) {
     super(ActionType.GITHUB_REMOVE_LABEL, org, name, number);
 
     this.label = label;
+    if (reason) {
+      this.reason = reason;
+    }
+  }
+
+  details() {
+    return {
+      label: this.label
+    };
   }
 }
 
 export class GithubCloseAction extends GithubIssueAction {
-  constructor(org: string, name: string, number: number) {
+  constructor(org: string, name: string, number: number, reason?: string) {
     super(ActionType.GITHUB_CLOSE, org, name, number);
+
+    if (reason) {
+      this.reason = reason;
+    }
   }
 }
 
@@ -96,6 +169,31 @@ export class SendEmailAction extends Action {
     this.body = body;
     this.link = link;
     this.action = action;
+  }
+
+  toString() {
+    let subjectPreview = this.subject;
+    if (subjectPreview.length > 20) {
+      subjectPreview = subjectPreview.substr(0, 17) + "...";
+    }
+
+    return `SendEmailAction(${this.recipient}, ${subjectPreview})`;
+  }
+}
+
+export class ActionLog {
+  event: string;
+  target: string;
+  details: { [s: string]: any };
+  reason: string;
+  time: number;
+
+  constructor(action: GithubIssueAction) {
+    this.event = action.type;
+    this.target = `issues/${action.number}`;
+    this.details = action.details();
+    this.reason = action.reason;
+    this.time = Date.now();
   }
 }
 

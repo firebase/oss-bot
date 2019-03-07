@@ -1,5 +1,6 @@
 import { Bintray, Npm, Cocoapods } from "./downloads";
 import { ComputeSAMScore } from "./report";
+import * as log from "./log";
 import * as util from "./util";
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
@@ -21,7 +22,7 @@ async function getDatedSAM(
   const day = moment.utc([year, month, date]);
   const dayKey = day.format("YY-MM-DD");
 
-  console.log(`Getting SAM for ${repo} on ${dayKey}.`);
+  log.debug(`Getting SAM for ${repo} on ${dayKey}.`);
   const repoRef = admin
     .database()
     .ref()
@@ -29,7 +30,7 @@ async function getDatedSAM(
 
   const repoSnap = await repoRef.once("value");
   if (!(repoSnap && repoSnap.val())) {
-    console.warn(`No snapshot for ${repo} on ${dayKey}`);
+    log.warn(`No snapshot for ${repo} on ${dayKey}`);
     return 0;
   }
   return ComputeSAMScore(repoSnap.val());
@@ -104,7 +105,7 @@ async function storeDailyMetrics(
       .set(val);
   });
 
-  console.log(`${projectId} stats on ${dateKey}: ${JSON.stringify(stats)}`);
+  log.debug(`${projectId} stats on ${dateKey}: ${JSON.stringify(stats)}`);
   return stats;
 }
 
@@ -154,7 +155,7 @@ export const UpdateAllMetrics = functions.pubsub
     const publisher = pubsubClient.topic("update-metrics").publisher();
 
     Object.keys(val).forEach(async (projectId: string) => {
-      console.log(`Updating metrics for: ${projectId}`);
+      log.debug(`Updating metrics for: ${projectId}`);
 
       const dataBuffer = Buffer.from(JSON.stringify({ project: projectId }));
       await publisher.publish(dataBuffer);

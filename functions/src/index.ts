@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import * as functions from "firebase-functions";
-import * as path from "path";
+import * as admin from "firebase-admin";
 
 // Local includes
 import * as github from "./github";
@@ -25,6 +25,8 @@ import * as cron from "./cron";
 import * as config from "./config";
 import * as types from "./types";
 import * as log from "./log";
+
+import { database } from "./database";
 
 export { SaveOrganizationSnapshot, SaveRepoSnapshot } from "./snapshot";
 
@@ -86,9 +88,9 @@ export const githubWebhook = functions.https.onRequest(
     const event = request.get("X-Github-Event");
     const action = request.body.action;
 
-    // Get repo and sender
     const repo = request.body.repository;
     const sender = request.body.sender;
+    const issue = request.body.issue;
 
     // Confirm that there is some event
     if (!event) {
@@ -102,18 +104,18 @@ export const githubWebhook = functions.https.onRequest(
       );
       console.log(`Event: ${event}/${action}`);
       if (repo) {
-        console.log("Repository: " + repo.full_name);
+        console.log(`Repository: ${repo.full_name}`);
       }
       if (sender) {
-        console.log("Sender: " + sender.login);
+        console.log(`Sender: ${sender.login}`);
+      }
+      if (issue) {
+        console.log(`Issue: ${issue.number}`);
       }
       console.log(
         "===========================END============================="
       );
     }
-
-    // Handle the event appropriately
-    const issue = request.body.issue;
 
     let actions: types.Action[] = [];
 
@@ -171,7 +173,7 @@ export const githubWebhook = functions.https.onRequest(
 
     for (const action of actions) {
       if (action == undefined) {
-        console.warn("Got undefined action.");
+        log.warn("Got undefined action.");
         continue;
       }
 
@@ -198,8 +200,12 @@ export const githubWebhook = functions.https.onRequest(
       // More than one comment, combine them into bullets.
       // TODO: What if the comments are cross-repo or cross-issue?
       let msg = "I found a few problems with this issue:";
+      let reason = "";
       for (const comment of collapsibleComments) {
         msg += `\n  * ${comment.message}`;
+        if (comment.reason.length > 0) {
+          reason += `* ${comment.reason}\n`;
+        }
       }
 
       const firstComment = collapsibleComments[0];
@@ -210,7 +216,8 @@ export const githubWebhook = functions.https.onRequest(
             firstComment.name,
             firstComment.number,
             msg,
-            false
+            false,
+            reason
           )
         )
       );
@@ -262,8 +269,21 @@ function executeAction(action: types.Action): Promise<any> {
     event: "github_action",
     type: action.type,
     action: action,
-    message: `Executing Github Action of type ${action.type}`
+    message: `Executing: ${action.toString()}}`
   });
+
+  // Log the data to the admin log
+  if (types.GITHUB_ISSUE_ACTIONS.includes(action.type)) {
+    const ghAction = action as types.GithubIssueAction;
+    const ref = database
+      .ref("repo-log")
+      .child(ghAction.org)
+      .child(ghAction.name)
+      .push();
+
+    // TODO: Wait for this to finish?
+    ref.set(new types.ActionLog(ghAction));
+  }
 
   if (action.type == types.ActionType.GITHUB_COMMENT) {
     const commentAction = action as types.GithubCommentAction;

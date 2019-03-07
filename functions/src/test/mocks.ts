@@ -16,27 +16,28 @@
 import * as fs from "fs";
 import * as path from "path";
 
+import * as log from "../log";
 import * as config from "../config";
 import * as github from "../github";
 import * as email from "../email";
 
 export class MockGithubClient extends github.GithubClient {
   auth() {
-    console.log("mock: github.auth()");
+    log.debug("mock: github.auth()");
   }
 
   addLabel(org: string, name: string, number: number, label: string) {
-    console.log(`mock: github.addLabel(${org}, ${name}, ${number}, ${label})`);
+    log.debug(`mock: github.addLabel(${org}, ${name}, ${number}, ${label})`);
     return Promise.resolve(undefined);
   }
 
   addComment(org: string, name: string, number: number, body: string) {
-    console.log(`mock: github.addComment(${org}, ${name}, ${number}, ${body})`);
+    log.debug(`mock: github.addComment(${org}, ${name}, ${number}, ${body})`);
     return Promise.resolve(undefined);
   }
 
   getIssueTemplate(org: string, name: string, file: string) {
-    console.log(`mock: github.getIssueTemplate(${org}, ${name}, ${file})`);
+    log.debug(`mock: github.getIssueTemplate(${org}, ${name}, ${file})`);
 
     // Just use the file name of the path (ignore directories) and replace the
     // default with our designated empty file.
@@ -51,19 +52,19 @@ export class MockGithubClient extends github.GithubClient {
   }
 
   closeIssue(org: string, name: string, number: number) {
-    console.log(`mock: github.closeIssue(${org}, ${name}, ${number})`);
+    log.debug(`mock: github.closeIssue(${org}, ${name}, ${number})`);
     return Promise.resolve(undefined);
   }
 }
 
 export class MockEmailClient extends email.EmailClient {
   sendEmail(recipient: string, subject: string, body: string) {
-    console.log(`mock: email.sendEmail(${recipient}, ${subject}, ...)`);
+    log.debug(`mock: email.sendEmail(${recipient}, ${subject}, ...)`);
     return Promise.resolve(undefined);
   }
 
   getSmartMailMarkup(url: string, title: string) {
-    console.log(`mock: email.getSmartMailMarkup(${url}, ${title})`);
+    log.debug(`mock: email.getSmartMailMarkup(${url}, ${title})`);
     return "<div>MOCK</div>";
   }
 }

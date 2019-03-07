@@ -16,6 +16,7 @@
 
 import { BotConfig } from "./config";
 import * as github from "./github";
+import * as log from "./log";
 import * as util from "./util";
 import * as types from "./types";
 
@@ -39,12 +40,12 @@ export class CronHandler {
   }
 
   async handleStaleIssues(org: string, name: string): Promise<types.Action[]> {
-    console.log(`Processing issues for ${org}/${name}`);
+    log.debug(`Processing issues for ${org}/${name}`);
 
     // Get the configuration for this repo
     const cleanupConfig = this.config.getRepoCleanupConfig(org, name);
     if (!cleanupConfig || !cleanupConfig.issue) {
-      console.log(`No stale issues config for ${org}/${name}`);
+      log.debug(`No stale issues config for ${org}/${name}`);
       return [];
     }
     const issueConfig = cleanupConfig.issue;
@@ -86,7 +87,7 @@ export class CronHandler {
     // If an issue is not labeled with either the stale or needs-info labels
     // then we don't need to do any cron processing on it.
     if (!(stateNeedsInfo || stateStale)) {
-      console.log(
+      log.debug(
         `Issue ${name}#${number} does not need processing, labels=${JSON.stringify(
           labelNames
         )}.`
@@ -103,7 +104,7 @@ export class CronHandler {
     });
 
     if (hasIgnoredLabel) {
-      console.log(
+      log.debug(
         `Issue ${name}#${number} is ignored due to labels: ${JSON.stringify(
           labelNames
         )}`
@@ -118,7 +119,7 @@ export class CronHandler {
     comments = comments.sort(util.compareTimestamps).reverse();
 
     if (stateNeedsInfo) {
-      console.log(
+      log.debug(
         `Processing ${name}#${number} as needs-info, labels=${JSON.stringify(
           labelNames
         )}`
@@ -139,7 +140,8 @@ export class CronHandler {
           org,
           name,
           number,
-          issueConfig.label_stale
+          issueConfig.label_stale,
+          `Last comment was ${util.timeAgo(lastComment)} ago.`
         );
         const addStaleComment = new types.GithubCommentAction(
           org,
@@ -150,14 +152,15 @@ export class CronHandler {
             issueConfig.needs_info_days,
             issueConfig.stale_days
           ),
-          false
+          false,
+          `Marking as stale.`
         );
         actions.push(addStaleLabel, addStaleComment);
       }
     }
 
     if (stateStale) {
-      console.log(
+      log.debug(
         `Processing ${name}#${number} as stale, labels=${JSON.stringify(
           labelNames
         )}`
@@ -169,7 +172,7 @@ export class CronHandler {
       });
 
       if (!markStaleComment) {
-        console.warn(
+        log.warn(
           `Issue ${name}/${number} is stale but no relevant comment was found.`
         );
       }
@@ -180,9 +183,15 @@ export class CronHandler {
           name,
           number,
           this.getCloseComment(issue.user.login),
-          false
+          false,
+          `Closing issue for being stale.`
         );
-        const closeIssue = new types.GithubCloseAction(org, name, number);
+        const closeIssue = new types.GithubCloseAction(
+          org,
+          name,
+          number,
+          `Closing issue for being stale.`
+        );
         actions.push(addClosingComment, closeIssue);
       }
     }

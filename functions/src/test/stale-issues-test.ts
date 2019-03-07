@@ -21,8 +21,10 @@ import * as simple from "simple-mock";
 import * as config from "../config";
 import * as cron from "../cron";
 import * as github from "../github";
+import * as log from "../log";
 import * as issues from "../issues";
 import * as types from "../types";
+import * as util from "./test-util";
 
 // Bot configuration
 const config_json = require("./mock_data/config.json");
@@ -65,7 +67,12 @@ const STALE_ISSUE: types.internal.Issue = {
 };
 
 describe("Stale issue handler", async () => {
+  beforeEach(() => {
+    log.setLogLevel(log.Level.WARN);
+  });
+
   afterEach(() => {
+    log.setLogLevel(log.Level.ALL);
     simple.restore();
   });
 
@@ -142,7 +149,8 @@ describe("Stale issue handler", async () => {
       needsInfo,
       DEFAULT_CONFIG
     );
-    assert.deepEqual(
+
+    util.actionsEqual(
       actions[0],
       new types.GithubAddLabelAction(
         "samtstern",
@@ -195,7 +203,7 @@ describe("Stale issue handler", async () => {
       DEFAULT_CONFIG
     );
 
-    assert.deepEqual(actions, [
+    util.actionsListEqual(actions, [
       new types.GithubCommentAction(
         "samtstern",
         "bottest",
@@ -254,7 +262,7 @@ describe("Stale issue handler", async () => {
       comment
     );
 
-    assert.deepEqual(actions, [
+    util.actionsListEqual(actions, [
       new types.GithubRemoveLabelAction(
         repo.owner.login,
         repo.name,
@@ -289,7 +297,7 @@ describe("Stale issue handler", async () => {
       comment
     );
 
-    assert.deepEqual(actions, [
+    util.actionsListEqual(actions, [
       new types.GithubRemoveLabelAction(
         repo.owner.login,
         repo.name,

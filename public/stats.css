@@ -1,12 +1,12 @@
 body {
-    font-family: 'Open Sans', 'sans-serif'
+  font-family: "Open Sans", "sans-serif";
 }
 
 .card {
-    display: inline-block;
-    width: 600px;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: rgba(0,0,0,0.4) 0 0 2px;
-    margin: 8px;
+  display: inline-block;
+  width: 600px;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: rgba(0, 0, 0, 0.4) 0 0 2px;
+  margin: 8px;
 }

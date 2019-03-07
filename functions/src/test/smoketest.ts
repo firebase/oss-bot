@@ -19,11 +19,11 @@ import * as fs from "fs";
 import * as path from "path";
 import * as assert from "assert";
 
+import * as log from "../log";
 import * as issues from "../issues";
 import * as pullrequests from "../pullrequests";
 import * as config from "../config";
 import * as types from "../types";
-
 import * as mocks from "./mocks";
 
 class SimpleIssue extends types.github.Issue {
@@ -185,8 +185,6 @@ function actionMatches(action: types.Action, props: any): boolean {
     const key = entry[0];
     const val = entry[1];
 
-    console.log(`${key} --> ${val}`);
-
     if (props[key] && props[key] != val) {
       return false;
     }
@@ -196,9 +194,17 @@ function actionMatches(action: types.Action, props: any): boolean {
 }
 
 describe("The OSS Robot", () => {
+  before(() => {
+    log.setLogLevel(log.Level.WARN);
+  });
+
+  after(() => {
+    log.setLogLevel(log.Level.ALL);
+  });
+
   it("should have a valid production config", () => {
     if (process.env["CI"] == "true") {
-      console.log("On Travis, skipping config test.");
+      log.debug("On Travis, skipping config test.");
       return;
     }
 
@@ -207,7 +213,7 @@ describe("The OSS Robot", () => {
 
     for (const org in prod_config) {
       for (const repo in prod_config[org]) {
-        console.log(`Config for ${org}/${repo}`);
+        log.debug(`Config for ${org}/${repo}`);
         const repo_config = prod_config[org][repo];
 
         // Make sure each key in the repo config is valid
