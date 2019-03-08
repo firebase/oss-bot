@@ -32,6 +32,11 @@ EntryPresenter.prototype.hasDetails = function() {
 
 EntryPresenter.prototype.detailsEntries = function () {
   var result = [];
+
+  if (!this.data.details) {
+    return result;
+  }
+
   var that = this;
   Object.keys(this.data.details).forEach(function(key) {
     result.push([key, that.data.details[key]]);
