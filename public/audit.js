@@ -59,6 +59,6 @@ window.initialize = function() {
 
   dataRef.on("child_added", function(snap) {
     console.log(snap.val());
-    app.entries.push(new EntryPresenter(org, repo, snap.val()));
+    app.entries.unshift(new EntryPresenter(org, repo, snap.val()));
   });
 };

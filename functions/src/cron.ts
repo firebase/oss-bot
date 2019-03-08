@@ -130,7 +130,8 @@ export class CronHandler {
       //
       // A comment by anyone in the last 7 days makes the issue non-stale.
       const lastComment = comments[0];
-      const shouldMarkStale = util.timeAgo(lastComment) > needsInfoTime;
+      const lastCommentTime = util.timeAgo(lastComment);
+      const shouldMarkStale = lastCommentTime > needsInfoTime;
 
       if (shouldMarkStale) {
         // We add the 'stale' label and also add a comment. Note that
@@ -141,7 +142,7 @@ export class CronHandler {
           name,
           number,
           issueConfig.label_stale,
-          `Last comment was ${util.timeAgo(lastComment)} ago.`
+          `Last comment was ${lastCommentTime} ago.`
         );
         const addStaleComment = new types.GithubCommentAction(
           org,
@@ -153,7 +154,7 @@ export class CronHandler {
             issueConfig.stale_days
           ),
           false,
-          `Marking as stale.`
+          `Comment that goes alongside the stale label.`
         );
         actions.push(addStaleLabel, addStaleComment);
       }
@@ -184,7 +185,7 @@ export class CronHandler {
           number,
           this.getCloseComment(issue.user.login),
           false,
-          `Closing issue for being stale.`
+          `Comment after closing issue for being stale.`
         );
         const closeIssue = new types.GithubCloseAction(
           org,

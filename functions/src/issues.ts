@@ -348,7 +348,9 @@ export class IssueHandler {
             name,
             number,
             issueConfig.label_stale,
-            "Comments on stale issues remove the stale label."
+            `Comment by ${
+              comment.user.login
+            } on stale issues remove the stale state.`
           )
         );
 
@@ -357,26 +359,32 @@ export class IssueHandler {
         const labelToAdd = isAuthorComment
           ? issueConfig.label_needs_attention
           : issueConfig.label_needs_info;
+
+        const reason = isAuthorComment
+          ? `Comment by the author (${
+              issue.user.login
+            }) on a stale issue moves this to needs_attention`
+          : `Comment by a non-author (${
+              comment.user.login
+            }) on a stale issue moves this to needs_info`;
+
         actions.push(
-          new types.GithubAddLabelAction(
-            org,
-            name,
-            number,
-            labelToAdd,
-            "Author comments move stale -> needs_attention, other comments move stale -> needs_info"
-          )
+          new types.GithubAddLabelAction(org, name, number, labelToAdd, reason)
         );
       }
 
       if (isNeedsInfo && isAuthorComment) {
         // An author comment on a needs-info issue moves it to needs-attention.
+        const reason = `Comment by the author (${
+          issue.user.login
+        }) moves this from needs_info to needs_attention.`;
         actions.push(
           new types.GithubRemoveLabelAction(
             org,
             name,
             number,
             issueConfig.label_needs_info,
-            "Author comments move needs_info -> needs_attention"
+            reason
           )
         );
         actions.push(
@@ -385,7 +393,7 @@ export class IssueHandler {
             name,
             number,
             issueConfig.label_needs_attention,
-            "Author comments move needs_info -> needs_attention"
+            reason
           )
         );
       }
@@ -411,19 +419,22 @@ export class IssueHandler {
     const is_fr = this.isFeatureRequest(issue);
 
     // Choose new label
-    let new_label;
-    let new_label_reason;
+    let new_label: string;
+    let new_label_reason: string | undefined;
     if (is_fr) {
       log.debug("Matched feature request template.");
       new_label = LABEL_FR;
       new_label_reason = "Matched the template for a feature request";
     } else {
-      new_label = this.getRelevantLabel(org, name, issue);
-      if (new_label) {
-        new_label_reason = `Issue matched regex for ${new_label}`;
+      const labelResult = this.getRelevantLabel(org, name, issue);
+      if (!labelResult.error && labelResult.label) {
+        new_label = labelResult.label;
+        new_label_reason = `Issue matched regex for label "${new_label}" (${
+          labelResult.matchedRegex
+        })`;
       } else {
         new_label = LABEL_NEEDS_TRIAGE;
-        new_label_reason = `Issue did not match any label regexes`;
+        new_label_reason = "Issue did not match any label regexes";
       }
     }
 
@@ -489,6 +500,7 @@ export class IssueHandler {
       log.debug("FR or labeled issue, ignoring template matching");
     } else if (!checkTemplateRes.matches) {
       // If it does not match, add the suggested comment and close the issue
+      // TODO(samstern): BETTER REASON explain how it didn't match the template
       const template_action = new types.GithubCommentAction(
         org,
         name,
@@ -525,7 +537,11 @@ export class IssueHandler {
     }
 
     // See if this issue belongs to any team.
-    const label = opts.label || this.getRelevantLabel(org, name, issue);
+    let label: string | undefined = opts.label;
+    if (!label) {
+      const labelRes = this.getRelevantLabel(org, name, issue);
+      label = labelRes.label;
+    }
     if (!label) {
       log.debug("Not a relevant label, no email needed.");
       return undefined;
@@ -567,12 +583,15 @@ export class IssueHandler {
     org: string,
     name: string,
     issue: types.internal.Issue
-  ): string | undefined {
+  ): RelevantLabelResponse {
     // Make sure we at least have configuration for this repository
     const repo_mapping = this.config.getRepoConfig(org, name);
     if (!repo_mapping) {
       log.debug(`No config for ${org}/${name} in: `, this.config);
-      return undefined;
+
+      return {
+        error: "No config found"
+      };
     }
 
     // Get the labeling rules for this repo
@@ -587,7 +606,10 @@ export class IssueHandler {
     for (const key of issueLabelNames) {
       const label_mapping = this.config.getRepoLabelConfig(org, name, key);
       if (label_mapping) {
-        return key;
+        return {
+          label: key,
+          new: false
+        };
       }
     }
 
@@ -609,7 +631,11 @@ export class IssueHandler {
       // If the regex matches, choose the label and email then break out
       if (regex.test(issue.body)) {
         log.debug("Matched label: " + label, JSON.stringify(labelInfo));
-        return label;
+        return {
+          label,
+          new: true,
+          matchedRegex: regex.source
+        };
       } else {
         log.debug(`Did not match regex for ${label}: ${labelInfo.regex}`);
       }
@@ -617,7 +643,9 @@ export class IssueHandler {
 
     // Return undefined if none found
     log.debug("No relevant label found");
-    return undefined;
+    return {
+      label: undefined
+    };
   }
 
   /**
@@ -733,4 +761,12 @@ export class IssueHandler {
   ): string {
     return `[${org}/${name}][${label}] ${title}`;
   }
+}
+
+// TODO: Move or document
+interface RelevantLabelResponse {
+  label?: string;
+  new?: boolean;
+  matchedRegex?: string;
+  error?: string;
 }

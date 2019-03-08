@@ -341,8 +341,12 @@ describe("The OSS Robot", () => {
     const issue = issue_opened_bot_test_partial.issue;
 
     // Should match the auth issue
-    const label = issue_handler.getRelevantLabel("samtstern", "BotTest", issue);
-    assert.equal(label, "auth", "Label is auth.");
+    const labelRes = issue_handler.getRelevantLabel(
+      "samtstern",
+      "BotTest",
+      issue
+    );
+    assert.equal(labelRes.label, "auth", "Label is auth.");
 
     // Should fail the tempalte check for not filling out all sections
     return issue_handler.checkMatchesTemplate("foo", "bar", issue).then(res => {
@@ -415,14 +419,22 @@ describe("The OSS Robot", () => {
 
   it("should correctly label a real database issue", () => {
     const issue = issue_opened_js_sdk_db.issue;
-    const label = issue_handler.getRelevantLabel("samtstern", "BotTest", issue);
-    assert.ok(label == "database", "Is a database issue");
+    const labelRes = issue_handler.getRelevantLabel(
+      "samtstern",
+      "BotTest",
+      issue
+    );
+    assert.ok(labelRes.label == "database", "Is a database issue");
   });
 
   it("should correctly label a real messaging issue", () => {
     const issue = issue_opened_js_sdk_messaging.issue;
-    const label = issue_handler.getRelevantLabel("samtstern", "BotTest", issue);
-    assert.ok(label == "messaging", "Is a messaging issue");
+    const labelRes = issue_handler.getRelevantLabel(
+      "samtstern",
+      "BotTest",
+      issue
+    );
+    assert.ok(labelRes.label == "messaging", "Is a messaging issue");
   });
 
   it("should correctly deal with upper/lower case labels", () => {
@@ -431,12 +443,12 @@ describe("The OSS Robot", () => {
     dbLabel.name = "DatabaSe";
     issue.labels = [dbLabel];
 
-    const relevantLabel = issue_handler.getRelevantLabel(
+    const labelRes = issue_handler.getRelevantLabel(
       "samtstern",
       "BotTest",
       issue
     );
-    assert.equal(relevantLabel, dbLabel.name, "Is a database issue");
+    assert.equal(labelRes.label, dbLabel.name, "Is a database issue");
   });
 
   it("should respect template configs", () => {
