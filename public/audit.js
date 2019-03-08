@@ -1,13 +1,23 @@
-var app;
+var app; // Vue app
+var db;  // Firebase database
 
-var EntryPresenter = function(org, repo, data) {
+var org;   // GitHub org
+var repo;  // GitHub repo
+var key;   // Specific database key
+
+var EntryPresenter = function(org, repo, key, data) {
   this.org = org;
   this.repo = repo;
+  this.key = key;
   this.data = data;
 };
 
+EntryPresenter.prototype.selfLink = function() {
+  return '/audit.html?org=' + this.org + '&repo=' + this.repo + '&key=' + this.key;
+}
+
 EntryPresenter.prototype.timeString = function() {
-  return new Date(this.data.time).toUTCString();
+  return new Date(this.data.time).toLocaleString("en-US", { timeZone: "America/Los_Angeles" }) + " (Pacific)";
 };
 
 EntryPresenter.prototype.targetLink = function() {
@@ -22,7 +32,7 @@ EntryPresenter.prototype.hasDetails = function() {
 
 EntryPresenter.prototype.detailsEntries = function () {
   var result = [];
-  const that = this;
+  var that = this;
   Object.keys(this.data.details).forEach(function(key) {
     result.push([key, that.data.details[key]]);
   });
@@ -37,9 +47,9 @@ window.initialize = function() {
     return;
   }
 
-  var org = params.get("org");
-  var repo = params.get("repo");
-  console.log("org", org, "repo", repo);
+  org = params.get("org");
+  repo = params.get("repo");
+  key = params.get("key");
 
   app = new Vue({
     el: "#app",
@@ -50,15 +60,36 @@ window.initialize = function() {
     }
   });
 
-  var db = firebase.database();
+  db = firebase.database();
+
+  if (key && key !== "") {
+    loadSingleEntry(key);
+  } else {
+    loadRepoAudit();
+  }
+};
+
+function addSnapToEntries(snap) {
+  console.log(snap.val());
+  app.entries.unshift(new EntryPresenter(org, repo, snap.key, snap.val()));
+}
+
+function loadRepoAudit() {
   var dataRef = db
     .ref("repo-log")
     .child(org)
     .child(repo)
     .limitToLast(100);
 
-  dataRef.on("child_added", function(snap) {
-    console.log(snap.val());
-    app.entries.unshift(new EntryPresenter(org, repo, snap.val()));
-  });
-};
+  dataRef.on("child_added", addSnapToEntries);
+}
+
+function loadSingleEntry(key) {
+  var dataRef = db
+    .ref("repo-log")
+    .child(org)
+    .child(repo)
+    .child(key);
+
+  dataRef.once("value", addSnapToEntries);
+}

@@ -75,8 +75,23 @@ interface SendIssueUpdateEmailOpts {
 }
 
 class CheckMatchesTemplateResult {
-  matches = true;
+  skipped: boolean = false;
+  matches: boolean = true;
+
+  templatePath: string;
   message: string;
+  failure?: {
+    missingSections?: string[];
+    emptySections?: string[];
+    otherError?: string;
+  };
+}
+
+interface RelevantLabelResponse {
+  label?: string;
+  new?: boolean;
+  matchedRegex?: string;
+  error?: string;
 }
 
 interface CategorizeIssueResult {
@@ -487,8 +502,8 @@ export class IssueHandler {
     const name = repo.name;
     const number = issue.number;
 
-    const checkTemplateRes = await this.checkMatchesTemplate(org, name, issue);
-    log.debug(`Check template result: ${JSON.stringify(checkTemplateRes)}`);
+    const res = await this.checkMatchesTemplate(org, name, issue);
+    log.debug(`Check template result: ${JSON.stringify(res)}`);
 
     // There are some situations where we don't want to nag about the template
     //  1) This is a feature request
@@ -498,16 +513,29 @@ export class IssueHandler {
 
     if (skipTemplateComment) {
       log.debug("FR or labeled issue, ignoring template matching");
-    } else if (!checkTemplateRes.matches) {
+    } else if (!res.matches) {
       // If it does not match, add the suggested comment and close the issue
-      // TODO(samstern): BETTER REASON explain how it didn't match the template
+      let reason: string;
+      if (res.failure && res.failure.emptySections) {
+        reason = `Required sections of "${
+          res.templatePath
+        }" were left empty: ${JSON.stringify(res.failure.emptySections)}`;
+      } else if (res.failure && res.failure.missingSections) {
+        reason = `Sections of "${
+          res.templatePath
+        }" were missing: ${JSON.stringify(res.failure.missingSections)}`;
+      } else {
+        reason =
+          "There was an unknown error when trying to match the issue template";
+      }
+
       const template_action = new types.GithubCommentAction(
         org,
         name,
         number,
-        checkTemplateRes.message,
+        res.message,
         true,
-        "Issue did not match the issue template"
+        reason
       );
 
       actions.push(template_action);
@@ -664,12 +692,13 @@ export class IssueHandler {
     issue: types.internal.Issue
   ): Promise<CheckMatchesTemplateResult> {
     const result = new CheckMatchesTemplateResult();
-
     const templateOpts = this.parseIssueOptions(org, name, issue);
-    log.debug("Template options: ", templateOpts);
+    result.templatePath = templateOpts.path;
 
+    log.debug("Template options: ", templateOpts);
     if (!templateOpts.validate) {
       log.debug(`Template optons specify no verification.`);
+      result.skipped = true;
       return result;
     }
 
@@ -682,29 +711,39 @@ export class IssueHandler {
         templateOpts.path
       );
     } catch (e) {
-      log.warn(
-        `checkMatchesTemplate: failed to get issue template for ${org}/${name} at ${
-          templateOpts.path
-        }: ${JSON.stringify(e)}`
-      );
+      const err = `failed to get issue template for ${org}/${name} at ${
+        templateOpts.path
+      };`;
+      log.warn(`checkMatchesTemplate: ${err}: ${JSON.stringify(e)}`);
+
+      result.failure = {
+        otherError: err
+      };
       return result;
     }
 
     const checker = new template.TemplateChecker("###", "[REQUIRED]", data);
     const issueBody = issue.body;
 
-    if (!checker.matchesTemplateSections(issueBody)) {
+    const missingSections = checker.matchesTemplateSections(issueBody);
+    if (missingSections.length > 0) {
       log.debug("checkMatchesTemplate: some sections missing");
       result.matches = false;
       result.message = MSG_FOLLOW_TEMPLATE;
+      result.failure = {
+        missingSections
+      };
       return result;
     }
 
-    const missing = checker.getRequiredSectionsMissed(issueBody);
-    if (missing.length > 0) {
-      log.debug("checkMatchesTemplate: required sections incompconste");
+    const emptySections = checker.getRequiredSectionsEmpty(issueBody);
+    if (emptySections.length > 0) {
+      log.debug("checkMatchesTemplate: required sections incomplete");
       result.matches = false;
       result.message = MSG_MISSING_INFO;
+      result.failure = {
+        emptySections
+      };
       return result;
     }
 
@@ -761,12 +800,4 @@ export class IssueHandler {
   ): string {
     return `[${org}/${name}][${label}] ${title}`;
   }
-}
-
-// TODO: Move or document
-interface RelevantLabelResponse {
-  label?: string;
-  new?: boolean;
-  matchedRegex?: string;
-  error?: string;
 }

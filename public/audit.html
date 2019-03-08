@@ -43,6 +43,7 @@
       >
         <thead>
           <tr>
+            <th id="col-link">Link</th>
             <th id="col-time">Time</th>
             <th id="col-event">Event</th>
             <th id="col-target">Target</th>
@@ -52,6 +53,7 @@
         </thead>
         <tbody id="log-table-body">
           <tr v-for="entry in entries">
+            <td><a :href="entry.selfLink()">link</a></td>
             <td>{{entry.timeString()}}</td>
             <td>{{entry.data.event}}</td>
             <td>

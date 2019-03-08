@@ -70,42 +70,47 @@ export class TemplateChecker {
 
   /**
    * Determine if a string has the same sections as the template.
+   *
+   * Returns an array of sections that were present in the template
+   * but not in the issue.
    */
-  matchesTemplateSections(data: string) {
+  matchesTemplateSections(data: string): string[] {
     const otherSections = this.extractSections(data);
     const templateSections = this.extractSections(this.templateText);
 
+    const missingSections: string[] = [];
     for (const key in templateSections) {
       if (!otherSections[key]) {
-        return false;
+        missingSections.push(key);
       }
     }
 
-    return true;
+    return missingSections;
   }
 
   /**
    * Get the names of all sections that were not filled out (unmodified).
    */
-  getRequiredSectionsMissed(data: string) {
+  getRequiredSectionsEmpty(data: string): string[] {
     const otherSections = this.extractSections(data);
     const templateSections = this.extractSections(this.templateText);
 
-    const sectionsMissed = [];
+    const emptySections: string[] = [];
 
     for (const key in templateSections) {
       if (key.indexOf(this.requiredMarker) >= 0) {
-        // This section is required, compare contents
+        // For a required section, we want to make sure that the user
+        // made *some* modification to the section body.
         const templateText = templateSections[key].join("\n");
         const otherText = otherSections[key].join("\n");
 
         if (this.areStringsEqual(otherText, templateText)) {
-          sectionsMissed.push(key);
+          emptySections.push(key);
         }
       }
     }
 
-    return sectionsMissed;
+    return emptySections;
   }
 
   /**

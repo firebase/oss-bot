@@ -42,12 +42,16 @@ td {
   align-content: center;
 }
 
+#col-link {
+  width: 5%;
+}
+
 #col-time {
   width: 15%;
 }
 
 #col-event {
-  width: 15%;
+  width: 10%;
 }
 
 #col-target {
