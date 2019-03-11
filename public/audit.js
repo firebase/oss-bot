@@ -45,7 +45,7 @@ EntryPresenter.prototype.detailsEntries = function () {
 };
 
 
-window.initialize = function() {
+window.initializeApp = function() {
   var params = new URLSearchParams(window.location.search);
   if (!(params.has("repo") && params.has("org"))) {
     alert("Please supply both the 'repo' and 'org' query string params.");
@@ -64,9 +64,11 @@ window.initialize = function() {
       entries: []
     }
   });
+};
 
+
+window.initializeData = function() {
   db = firebase.database();
-
   if (key && key !== "") {
     loadSingleEntry(key);
   } else {

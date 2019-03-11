@@ -25,12 +25,11 @@
 
     <!-- Bue development version, includes helpful console warnings -->
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-
-    <script defer src="./audit.js"></script>
+    <script src="./audit.js"></script>
   </head>
 
   <body>
-    <div id="app">
+    <div id="app" v-cloak>
       <div class="header">
         <div class="header-inner">
           <span class="title">Audit Log</span>
@@ -76,12 +75,14 @@
     </div>
 
     <script>
+      initializeApp();
+      
       document.addEventListener("DOMContentLoaded", function() {
         console.log("All scripts loaded, initializing...");
         firebase
           .auth()
           .signInAnonymously()
-          .then(initialize);
+          .then(initializeData);
       });
     </script>
   </body>
