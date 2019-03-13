@@ -384,13 +384,13 @@ export async function MakeRepoReport(
     .setDiff(before_ids, after_ids)
     .map(id => {
       const issue = beforeSnap.issues[id];
-      return toChangedIssue(repo, issue);
+      return toChangedIssue(org, repo, issue);
     });
   const opened_issues: report.ChangedIssue[] = util
     .setDiff(after_ids, before_ids)
     .map(id => {
       const issue = afterSnap.issues[id];
-      return toChangedIssue(repo, issue);
+      return toChangedIssue(org, repo, issue);
     });
 
   return {
@@ -559,12 +559,13 @@ export async function GetWeeklyEmail(org: string) {
 }
 
 function toChangedIssue(
+  org: string,
   repo: string,
   issue: snapshot.Issue
 ): report.ChangedIssue {
   return {
     number: issue.number,
     title: issue.title,
-    link: `https://github.com/firebase/${repo}/issues/${issue.number}`
+    link: `https://github.com/${org}/${repo}/issues/${issue.number}`
   };
 }
