@@ -142,7 +142,7 @@ be configured in your repo config:
       "ignore_labels": ["Feature Request", "Internal"]
 
       // Time, in days, to stay in the needs_info state before becoming stale
-      // stale.  These issues transition from label_needs_author to label_stale.
+      // stale.  These issues transition from label_needs_info to label_stale.
       "needs_info_days": 7,
 
       // Time, in days, to close an issue after the warning message is posted
