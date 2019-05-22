@@ -290,7 +290,7 @@ describe("The OSS Robot", () => {
     return issue_handler
       .checkMatchesTemplate("foo", "bar", good_issue)
       .then((res: any) => {
-        assert.ok(res.matches, "Matches template.");
+        assert.ok(res.matches, `Matches template: ${JSON.stringify(res)}`);
       });
   });
 

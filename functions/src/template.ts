@@ -15,6 +15,36 @@
  */
 import * as diff from "diff";
 
+class TemplateContent {
+  sections: TemplateSection[];
+  index: { [name: string]: TemplateSection } = {};
+
+  constructor(sections: TemplateSection[]) {
+    this.sections = sections;
+    for (const section of sections) {
+      this.index[section.cleanName] = section;
+    }
+  }
+
+  get(cleanName: string): TemplateSection | undefined {
+    return this.index[cleanName];
+  }
+}
+
+class TemplateSection {
+  name: string;
+  cleanName: string;
+  required: boolean;
+  body: string[];
+
+  constructor(name: string, body: string[], checker: TemplateChecker) {
+    this.name = name;
+    this.body = body;
+    this.cleanName = checker.cleanSectionName(name);
+    this.required = this.name.indexOf(checker.requiredMarker) >= 0;
+  }
+}
+
 /**
  * An object that checks whether a given piece of text matches a template.
  * @param {string} sectionPrefix a prefix that identifies a line as a new section (trailing space assumed).
@@ -44,28 +74,31 @@ export class TemplateChecker {
   /**
    * Take a string and turn it into a map from section header to section content.
    */
-  extractSections(data: string) {
+  extractSections(data: string): TemplateContent {
     // Fix newlines
     data = data.replace(/\r\n/g, "\n");
 
     // Then split
     const lines = data.split("\n");
 
-    const sections: { [s: string]: string[] } = {};
-    let current_section;
+    const sections: TemplateSection[] = [];
+    let currentSection: TemplateSection | undefined = undefined;
 
     for (const line of lines) {
-      if (line.startsWith(this.sectionPrefix + " ")) {
+      if (line.startsWith(this.sectionPrefix)) {
         // New section
-        current_section = line;
-        sections[current_section] = [];
-      } else if (current_section) {
+        if (currentSection) {
+          sections.push(currentSection);
+        }
+
+        currentSection = new TemplateSection(line, [], this);
+      } else if (currentSection) {
         // Line in current section
-        sections[current_section].push(line);
+        currentSection.body.push(line);
       }
     }
 
-    return sections;
+    return new TemplateContent(sections);
   }
 
   /**
@@ -79,9 +112,9 @@ export class TemplateChecker {
     const templateSections = this.extractSections(this.templateText);
 
     const missingSections: string[] = [];
-    for (const key in templateSections) {
-      if (!otherSections[key]) {
-        missingSections.push(key);
+    for (const section of templateSections.sections) {
+      if (!otherSections.get(section.cleanName)) {
+        missingSections.push(section.name);
       }
     }
 
@@ -92,25 +125,46 @@ export class TemplateChecker {
    * Get the names of all sections that were not filled out (unmodified).
    */
   getRequiredSectionsEmpty(data: string): string[] {
-    const otherSections = this.extractSections(data);
-    const templateSections = this.extractSections(this.templateText);
-
+    const otherContent = this.extractSections(data);
+    const templateContent = this.extractSections(this.templateText);
     const emptySections: string[] = [];
 
-    for (const key in templateSections) {
-      if (key.indexOf(this.requiredMarker) >= 0) {
+    for (const section of templateContent.sections) {
+      if (section.required) {
         // For a required section, we want to make sure that the user
         // made *some* modification to the section body.
-        const templateText = templateSections[key].join("\n");
-        const otherText = otherSections[key].join("\n");
+        const otherSection = otherContent.get(section.cleanName);
+        if (!otherSection) {
+          emptySections.push(section.cleanName);
+          continue;
+        }
 
-        if (this.areStringsEqual(otherText, templateText)) {
-          emptySections.push(key);
+        const templateSectionBody = section.body.join("\n");
+        const otherSectionBody = otherSection.body.join("\n");
+
+        if (this.areStringsEqual(templateSectionBody, otherSectionBody)) {
+          emptySections.push(section.cleanName);
         }
       }
     }
 
     return emptySections;
+  }
+
+  cleanSectionName(name: string): string {
+    let result = "" + name;
+
+    result = result.replace(this.sectionPrefix, '');
+    
+    const markerIndex = result.indexOf(this.requiredMarker);
+    if (markerIndex >= 0) {
+      result = result.substring(markerIndex + this.requiredMarker.length);
+    }
+
+    result = result.trim();
+    result = result.toLocaleLowerCase();
+
+    return result;
   }
 
   /**
