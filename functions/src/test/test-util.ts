@@ -12,7 +12,7 @@ export function actionsEqual(a: types.Action, b: types.Action) {
 }
 
 export function actionsListEqual(a: types.Action[], b: types.Action[]) {
-  assert.equal(a.length, b.length);
+  assert.equal(a.length, b.length, "Action arrays have same length");
 
   for (let i = 0; i < a.length; i++) {
     actionsEqual(a[0], b[0]);

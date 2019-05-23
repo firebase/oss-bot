@@ -383,9 +383,23 @@ export class IssueHandler {
               comment.user.login
             }) on a stale issue moves this to needs_info`;
 
-        actions.push(
-          new types.GithubAddLabelAction(org, name, number, labelToAdd, reason)
-        );
+        if (isAuthorComment && !issueConfig.label_needs_attention) {
+          log.debug(
+            "Not adding 'needs-attention' label because it is not specified."
+          );
+        }
+
+        if (labelToAdd) {
+          actions.push(
+            new types.GithubAddLabelAction(
+              org,
+              name,
+              number,
+              labelToAdd,
+              reason
+            )
+          );
+        }
       }
 
       if (isNeedsInfo && isAuthorComment) {
@@ -402,15 +416,22 @@ export class IssueHandler {
             reason
           )
         );
-        actions.push(
-          new types.GithubAddLabelAction(
-            org,
-            name,
-            number,
-            issueConfig.label_needs_attention,
-            reason
-          )
-        );
+
+        if (issueConfig.label_needs_attention) {
+          actions.push(
+            new types.GithubAddLabelAction(
+              org,
+              name,
+              number,
+              issueConfig.label_needs_attention,
+              reason
+            )
+          );
+        } else {
+          log.debug(
+            "Config does not specifiy 'label_needs_attention' so not adding any label"
+          );
+        }
       }
     }
 

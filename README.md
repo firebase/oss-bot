@@ -128,24 +128,25 @@ be configured in your repo config:
   // ...
   "cleanup": {
     "issue": {
-      // Label manually applied for issues that need author attention
+      // [REQUIRED] Label manually applied for issues that need more information.
       "label_needs_info": "Needs Info",
 
-      // Label to be applied for issues that need Googler attention
+      // [OPTIONAL] Label to be applied for issues that need Googler attention.
+      // If unspecified, this state will not have a visible label.
       "label_needs_attention": "Needs Attention",
  
-      // Label to be applied for issues that don't have recent activity
+      // [REQUIRED] Label to be applied for issues that don't have recent activity
       "label_stale": "Stale",
 
-      // Label(s) that can be applied to issues to exempt them from the stale
+      // [OPTIONAL] Label(s) that can be applied to issues to exempt them from the stale
       // checker.
       "ignore_labels": ["Feature Request", "Internal"],
 
-      // Time, in days, to stay in the needs_info state before becoming stale
+      // [REAUIRED] Time, in days, to stay in the needs_info state before becoming stale
       // stale.  These issues transition from label_needs_info to label_stale.
       "needs_info_days": 7,
 
-      // Time, in days, to close an issue after the warning message is posted
+      // [REQUIRED] Time, in days, to close an issue after the warning message is posted
       // if there is no recent activity.  These issues will transition from
       // label_stale to closed.
       "stale_days": 3

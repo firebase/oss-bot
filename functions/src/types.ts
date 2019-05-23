@@ -244,7 +244,7 @@ export interface CleanupConfig {
 
 export interface IssueCleanupConfig {
   label_needs_info: string;
-  label_needs_attention: string;
+  label_needs_attention?: string;
   label_stale: string;
   ignore_labels?: string[];
   needs_info_days: number;
