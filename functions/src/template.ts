@@ -85,13 +85,10 @@ export class TemplateChecker {
     let currentSection: TemplateSection | undefined = undefined;
 
     for (const line of lines) {
-      if (line.startsWith(this.sectionPrefix)) {
+      if (line.startsWith(this.sectionPrefix + " ")) {
         // New section
-        if (currentSection) {
-          sections.push(currentSection);
-        }
-
         currentSection = new TemplateSection(line, [], this);
+        sections.push(currentSection);
       } else if (currentSection) {
         // Line in current section
         currentSection.body.push(line);
@@ -154,8 +151,8 @@ export class TemplateChecker {
   cleanSectionName(name: string): string {
     let result = "" + name;
 
-    result = result.replace(this.sectionPrefix, '');
-    
+    result = result.replace(this.sectionPrefix, "");
+
     const markerIndex = result.indexOf(this.requiredMarker);
     if (markerIndex >= 0) {
       result = result.substring(markerIndex + this.requiredMarker.length);
