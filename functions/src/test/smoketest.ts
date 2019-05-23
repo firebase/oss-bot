@@ -94,6 +94,19 @@ const good_issue = new SimpleIssue({
     .toString()
 });
 
+// Good issue with headers slightly modified
+const good_issue_no_required = new SimpleIssue({
+  title: "A good issue",
+  user: {
+    login: "samtstern"
+  },
+  body: fs
+    .readFileSync(
+      path.join(__dirname, "mock_data", "issue_template_filled_no_required.md")
+    )
+    .toString()
+});
+
 // Issue that is just the empty template
 const bad_issue = new SimpleIssue({
   body: fs
@@ -290,7 +303,15 @@ describe("The OSS Robot", () => {
     return issue_handler
       .checkMatchesTemplate("foo", "bar", good_issue)
       .then((res: any) => {
-        assert.ok(res.matches, "Matches template.");
+        assert.ok(res.matches, `Matches template: ${JSON.stringify(res)}`);
+      });
+  });
+
+  it("should not care if the section headers don't contain [REQUIRED], etc", () => {
+    return issue_handler
+      .checkMatchesTemplate("foo", "bar", good_issue_no_required)
+      .then((res: any) => {
+        assert.ok(res.matches, `Matches template: ${JSON.stringify(res)}`);
       });
   });
 

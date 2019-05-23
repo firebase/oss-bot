@@ -66,6 +66,17 @@ const STALE_ISSUE: types.internal.Issue = {
   updated_at: EIGHT_DAYS_AGO
 };
 
+const NEEDS_INFO_ISSUE: types.internal.Issue = {
+  number: 2,
+  state: "open",
+  title: "Some Issue",
+  body: "Body of my issue",
+  user: { login: "some-user" },
+  labels: [{ name: "needs-info" }],
+  created_at: FOUR_DAYS_AGO,
+  updated_at: FOUR_DAYS_AGO
+};
+
 describe("Stale issue handler", async () => {
   beforeEach(() => {
     log.setLogLevel(log.Level.WARN);
@@ -274,6 +285,36 @@ describe("Stale issue handler", async () => {
         repo.name,
         STALE_ISSUE.number,
         "needs-attention"
+      )
+    ]);
+  });
+
+  it("should not add needs-attention label if not specified", async () => {
+    // This repo does not have a label_needs_attention config
+    const repo: types.internal.Repository = {
+      owner: { login: "google" },
+      name: "exoplayer"
+    };
+
+    const comment: types.internal.Comment = {
+      user: NEEDS_INFO_ISSUE.user,
+      body: "New comment by the author",
+      created_at: JUST_NOW,
+      updated_at: JUST_NOW
+    };
+
+    const actions = await issue_handler.onCommentCreated(
+      repo,
+      NEEDS_INFO_ISSUE,
+      comment
+    );
+
+    util.actionsListEqual(actions, [
+      new types.GithubRemoveLabelAction(
+        repo.owner.login,
+        repo.name,
+        NEEDS_INFO_ISSUE.number,
+        "needs-info"
       )
     ]);
   });
