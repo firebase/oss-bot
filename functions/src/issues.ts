@@ -532,10 +532,17 @@ export class IssueHandler {
     const skipTemplateComment =
       categorization.is_fr || categorization.found_label;
 
+    const validationConfig = this.config.getRepoValidationConfig(
+      repo.owner.login,
+      repo.name
+    );
+
     if (skipTemplateComment) {
       log.debug("FR or labeled issue, ignoring template matching");
     } else if (!res.matches) {
-      // If it does not match, add the suggested comment and close the issue
+      // If it does not match:
+      //  * Add a comment explaining the probblems.
+      //  * If configured, add a label for template validation failure.
       let reason: string;
       if (res.failure && res.failure.emptySections) {
         reason = `Required sections of "${
@@ -558,8 +565,19 @@ export class IssueHandler {
         true,
         reason
       );
-
       actions.push(template_action);
+
+      if (validationConfig && validationConfig.validation_failed_label) {
+        const label = validationConfig.validation_failed_label;
+        const label_action = new types.GithubAddLabelAction(
+          repo.owner.login,
+          repo.name,
+          issue.number,
+          label,
+          "Template validation failed, adding specified label."
+        );
+        actions.push(label_action);
+      }
     }
 
     return actions;
@@ -723,6 +741,9 @@ export class IssueHandler {
       return result;
     }
 
+    const validationConfig = this.config.getRepoValidationConfig(org, name);
+    log.debug("Validation config: ", validationConfig);
+
     // Try to get the issue template, but skip validation if we can't.
     let data = undefined;
     try {
@@ -747,25 +768,53 @@ export class IssueHandler {
     const issueBody = issue.body;
 
     const missingSections = checker.matchesTemplateSections(issueBody);
-    if (missingSections.length > 0) {
-      log.debug("checkMatchesTemplate: some sections missing");
+    if (missingSections.invalid.length > 0) {
+      log.debug(
+        `checkMatchesTemplate: missing ${
+          missingSections.invalid.length
+        } sections from the template.`
+      );
       result.matches = false;
       result.message = MSG_FOLLOW_TEMPLATE;
       result.failure = {
-        missingSections
+        missingSections: missingSections.invalid
       };
       return result;
     }
 
     const emptySections = checker.getRequiredSectionsEmpty(issueBody);
-    if (emptySections.length > 0) {
-      log.debug("checkMatchesTemplate: required sections incomplete");
+
+    let maxEmptySections = 0;
+    if (validationConfig && validationConfig.required_section_validation) {
+      switch (validationConfig.required_section_validation) {
+        case "strict":
+          // Any empty required section is a violation
+          maxEmptySections = 0;
+          break;
+        case "relaxed":
+          // As long as you fill out one required section, it's ok
+          maxEmptySections = emptySections.all.length - 1;
+          break;
+        case "none":
+          maxEmptySections = emptySections.all.length;
+          break;
+      }
+    }
+
+    const numEmptySections = emptySections.invalid.length;
+    if (numEmptySections > maxEmptySections) {
+      log.debug(
+        `checkMatchesTemplate: ${numEmptySections} required sections are empty, which is greater than ${maxEmptySections}.`
+      );
       result.matches = false;
       result.message = MSG_MISSING_INFO;
       result.failure = {
-        emptySections
+        emptySections: emptySections.invalid
       };
-      return result;
+    } else if (numEmptySections > 0) {
+      log.debug(
+        `checkMatchesTemplate: ${numEmptySections} required sections are empty but max was ${maxEmptySections}.`
+      );
     }
 
     return result;
@@ -820,5 +869,13 @@ export class IssueHandler {
     label: string
   ): string {
     return `[${org}/${name}][${label}] ${title}`;
+  }
+
+  /**
+   * FOR TESTING ONLY!
+   * Sets a new configuration for the robot,
+   */
+  setConfig(config: config.BotConfig) {
+    this.config = config;
   }
 }

@@ -15,6 +15,11 @@
  */
 import * as diff from "diff";
 
+interface SectionValidationResult {
+  all: string[];
+  invalid: string[];
+}
+
 class TemplateContent {
   sections: TemplateSection[];
   index: { [name: string]: TemplateSection } = {};
@@ -104,7 +109,7 @@ export class TemplateChecker {
    * Returns an array of sections that were present in the template
    * but not in the issue.
    */
-  matchesTemplateSections(data: string): string[] {
+  matchesTemplateSections(data: string): SectionValidationResult {
     const otherSections = this.extractSections(data);
     const templateSections = this.extractSections(this.templateText);
 
@@ -115,37 +120,41 @@ export class TemplateChecker {
       }
     }
 
-    return missingSections;
+    const all = templateSections.sections.map(x => x.name);
+    const invalid = missingSections;
+    return { all, invalid };
   }
 
   /**
-   * Get the names of all sections that were not filled out (unmodified).
+   * Get the names of all required sections that were not filled out (unmodified).
    */
-  getRequiredSectionsEmpty(data: string): string[] {
+  getRequiredSectionsEmpty(data: string): SectionValidationResult {
     const otherContent = this.extractSections(data);
     const templateContent = this.extractSections(this.templateText);
     const emptySections: string[] = [];
 
-    for (const section of templateContent.sections) {
-      if (section.required) {
-        // For a required section, we want to make sure that the user
-        // made *some* modification to the section body.
-        const otherSection = otherContent.get(section.cleanName);
-        if (!otherSection) {
-          emptySections.push(section.cleanName);
-          continue;
-        }
+    const requiredSections = templateContent.sections.filter(x => x.required);
 
-        const templateSectionBody = section.body.join("\n");
-        const otherSectionBody = otherSection.body.join("\n");
+    for (const section of requiredSections) {
+      // For a required section, we want to make sure that the user
+      // made *some* modification to the section body.
+      const otherSection = otherContent.get(section.cleanName);
+      if (!otherSection) {
+        emptySections.push(section.cleanName);
+        continue;
+      }
 
-        if (this.areStringsEqual(templateSectionBody, otherSectionBody)) {
-          emptySections.push(section.cleanName);
-        }
+      const templateSectionBody = section.body.join("\n");
+      const otherSectionBody = otherSection.body.join("\n");
+
+      if (this.areStringsEqual(templateSectionBody, otherSectionBody)) {
+        emptySections.push(section.cleanName);
       }
     }
 
-    return emptySections;
+    const all = requiredSections.map(x => x.name);
+    const invalid = emptySections;
+    return { all, invalid };
   }
 
   cleanSectionName(name: string): string {
