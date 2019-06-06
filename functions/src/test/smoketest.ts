@@ -386,7 +386,11 @@ describe("The OSS Robot", () => {
             issue: ".github/ISSUE_TEMPLATE.md"
           },
           validation: {
-            validation_failed_label: "validation-failed"
+            templates: {
+              ".github/ISSUE_TEMPLATE.md": {
+                validation_failed_label: "validation-failed"
+              }
+            }
           }
         }
       }
@@ -418,7 +422,11 @@ describe("The OSS Robot", () => {
             issue: ".github/ISSUE_TEMPLATE.md"
           },
           validation: {
-            required_section_validation: "relaxed"
+            templates: {
+              ".github/ISSUE_TEMPLATE.md": {
+                required_section_validation: "relaxed"
+              }
+            }
           }
         }
       }
@@ -442,7 +450,11 @@ describe("The OSS Robot", () => {
             issue: ".github/ISSUE_TEMPLATE.md"
           },
           validation: {
-            required_section_validation: "strict"
+            templates: {
+              ".github/ISSUE_TEMPLATE.md": {
+                required_section_validation: "strict"
+              }
+            }
           }
         }
       }

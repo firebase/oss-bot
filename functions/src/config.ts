@@ -203,13 +203,14 @@ export class BotConfig {
   /**
    * Get the config for validating issues on a repo.
    */
-  getRepoValidationConfig(
+  getRepoTemplateValidationConfig(
     org: string,
-    name: string
-  ): types.ValidationConfig | undefined {
+    name: string,
+    templatePath: string
+  ): types.TemplateValidationConfig | undefined {
     const repoConfig = this.getRepoConfig(org, name);
     if (repoConfig && repoConfig.validation) {
-      return repoConfig.validation;
+      return repoConfig.validation.templates[templatePath];
     }
   }
 

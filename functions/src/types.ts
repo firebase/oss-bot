@@ -244,6 +244,10 @@ export interface CleanupConfig {
 }
 
 export interface ValidationConfig {
+  templates: { [path: string]: TemplateValidationConfig };
+}
+
+export interface TemplateValidationConfig {
   validation_failed_label?: string;
   required_section_validation?: "strict" | "relaxed" | "none";
 }

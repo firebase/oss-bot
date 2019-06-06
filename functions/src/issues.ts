@@ -532,9 +532,10 @@ export class IssueHandler {
     const skipTemplateComment =
       categorization.is_fr || categorization.found_label;
 
-    const validationConfig = this.config.getRepoValidationConfig(
+    const validationConfig = this.config.getRepoTemplateValidationConfig(
       repo.owner.login,
-      repo.name
+      repo.name,
+      res.templatePath
     );
 
     if (skipTemplateComment) {
@@ -732,7 +733,9 @@ export class IssueHandler {
   ): Promise<CheckMatchesTemplateResult> {
     const result = new CheckMatchesTemplateResult();
     const templateOpts = this.parseIssueOptions(org, name, issue);
-    result.templatePath = templateOpts.path;
+
+    const templatePath = templateOpts.path;
+    result.templatePath = templatePath;
 
     log.debug("Template options: ", templateOpts);
     if (!templateOpts.validate) {
@@ -741,7 +744,11 @@ export class IssueHandler {
       return result;
     }
 
-    const validationConfig = this.config.getRepoValidationConfig(org, name);
+    const validationConfig = this.config.getRepoTemplateValidationConfig(
+      org,
+      name,
+      templatePath
+    );
     log.debug("Validation config: ", validationConfig);
 
     // Try to get the issue template, but skip validation if we can't.
