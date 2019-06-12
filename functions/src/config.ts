@@ -201,6 +201,20 @@ export class BotConfig {
   }
 
   /**
+   * Get the config for validating issues on a repo.
+   */
+  getRepoTemplateValidationConfig(
+    org: string,
+    name: string,
+    templatePath: string
+  ): types.TemplateValidationConfig | undefined {
+    const repoConfig = this.getRepoConfig(org, name);
+    if (repoConfig && repoConfig.validation) {
+      return repoConfig.validation.templates[templatePath];
+    }
+  }
+
+  /**
    * Get the default template path for a type.
    */
   static getDefaultTemplateConfig(template: string) {

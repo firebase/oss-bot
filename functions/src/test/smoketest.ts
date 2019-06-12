@@ -25,6 +25,7 @@ import * as pullrequests from "../pullrequests";
 import * as config from "../config";
 import * as types from "../types";
 import * as mocks from "./mocks";
+import { exec } from "child_process";
 
 class SimpleIssue extends types.github.Issue {
   constructor(opts: any) {
@@ -108,7 +109,7 @@ const good_issue_no_required = new SimpleIssue({
 });
 
 // Issue that is just the empty template
-const bad_issue = new SimpleIssue({
+const empty_issue = new SimpleIssue({
   body: fs
     .readFileSync(path.join(__dirname, "mock_data", "issue_template_empty.md"))
     .toString()
@@ -142,7 +143,7 @@ const issue_with_opts_bad = new SimpleIssue({
 // Issue that is really a feature request
 const fr_issue = new SimpleIssue({
   title: "FR: I want to change the Firebase",
-  body: bad_issue.body
+  body: empty_issue.body
 });
 
 // Issue opened on the BotTest repo
@@ -173,6 +174,20 @@ whEvent.action = "foo";
 // Fake Sender
 const sender = new types.github.Sender();
 sender.login = "johndoe";
+
+function assertSameActions(actual: types.Action[], expected: any[]) {
+  assert.equal(
+    actual.length,
+    expected.length,
+    `Actions array has the same length (${actual.length}) as expected (${
+      expected.length
+    }): ${JSON.stringify(actual)}`
+  );
+
+  for (const e of expected) {
+    assertMatchingAction(actual, e);
+  }
+}
 
 function assertMatchingAction(actions: types.Action[], props: any): void {
   assert.ok(
@@ -213,6 +228,11 @@ describe("The OSS Robot", () => {
 
   after(() => {
     log.setLogLevel(log.Level.ALL);
+  });
+
+  afterEach(() => {
+    // Reset the standard config.
+    issue_handler.setConfig(bot_config);
   });
 
   it("should have a valid production config", () => {
@@ -317,7 +337,7 @@ describe("The OSS Robot", () => {
 
   it("should check a bad issue against the template", () => {
     return issue_handler
-      .checkMatchesTemplate("foo", "bar", bad_issue)
+      .checkMatchesTemplate("foo", "bar", empty_issue)
       .then((res: any) => {
         assert.ok(!res.matches, "Does not match template.");
       });
@@ -355,6 +375,101 @@ describe("The OSS Robot", () => {
     assertMatchingAction(actions, {
       type: types.ActionType.GITHUB_ADD_LABEL,
       label: "needs-triage"
+    });
+  });
+
+  it("should label failed validation issues, if specified", async () => {
+    const newConfig = new config.BotConfig({
+      samtstern: {
+        bottest: {
+          templates: {
+            issue: ".github/ISSUE_TEMPLATE.md"
+          },
+          validation: {
+            templates: {
+              ".github/ISSUE_TEMPLATE.md": {
+                validation_failed_label: "validation-failed"
+              }
+            }
+          }
+        }
+      }
+    });
+
+    issue_handler.setConfig(newConfig);
+
+    const actions = await issue_handler.handleIssueEvent(
+      issue_opened_bot_test_empty,
+      issues.IssueAction.OPENED,
+      issue_opened_bot_test_empty.issue,
+      test_repo,
+      sender
+    );
+
+    assertMatchingAction(actions, {
+      type: types.ActionType.GITHUB_ADD_LABEL,
+      label: "validation-failed"
+    });
+  });
+
+  it("should handle 'relaxed' required section validation", async () => {
+    // With a 'relaxed' config the bot should accept the issue because at least one required
+    // section was filled out.
+    const relaxedConfig = new config.BotConfig({
+      samtstern: {
+        bottest: {
+          templates: {
+            issue: ".github/ISSUE_TEMPLATE.md"
+          },
+          validation: {
+            templates: {
+              ".github/ISSUE_TEMPLATE.md": {
+                required_section_validation: "relaxed"
+              }
+            }
+          }
+        }
+      }
+    });
+
+    issue_handler.setConfig(relaxedConfig);
+    const relaxedActions = await issue_handler.handleIssueEvent(
+      issue_opened_bot_test_partial,
+      issues.IssueAction.OPENED,
+      issue_opened_bot_test_partial.issue,
+      test_repo,
+      sender
+    );
+    assertSameActions(relaxedActions, []);
+
+    // With a strict config, the bot should get angry about the exact same issue.
+    const strictConfig = new config.BotConfig({
+      samtstern: {
+        bottest: {
+          templates: {
+            issue: ".github/ISSUE_TEMPLATE.md"
+          },
+          validation: {
+            templates: {
+              ".github/ISSUE_TEMPLATE.md": {
+                required_section_validation: "strict"
+              }
+            }
+          }
+        }
+      }
+    });
+
+    issue_handler.setConfig(strictConfig);
+    const strictActions = await issue_handler.handleIssueEvent(
+      issue_opened_bot_test_partial,
+      issues.IssueAction.OPENED,
+      issue_opened_bot_test_partial.issue,
+      test_repo,
+      sender
+    );
+    assertMatchingAction(strictActions, {
+      type: types.ActionType.GITHUB_COMMENT
     });
   });
 
@@ -423,7 +538,7 @@ describe("The OSS Robot", () => {
   it("should correctly identify a feature request", () => {
     assert.ok(issue_handler.isFeatureRequest(fr_issue), "Is a feature request");
     assert.ok(
-      !issue_handler.isFeatureRequest(bad_issue),
+      !issue_handler.isFeatureRequest(empty_issue),
       "Is not a feature request"
     );
   });

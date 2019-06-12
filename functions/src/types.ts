@@ -227,6 +227,7 @@ export interface RepoConfig {
   labels?: { [labelName: string]: LabelConfig };
   templates?: { [templateName: string]: string };
   cleanup?: CleanupConfig;
+  validation?: ValidationConfig;
 }
 
 export interface ReportConfig {
@@ -240,6 +241,15 @@ export interface LabelConfig {
 
 export interface CleanupConfig {
   issue?: IssueCleanupConfig;
+}
+
+export interface ValidationConfig {
+  templates: { [path: string]: TemplateValidationConfig };
+}
+
+export interface TemplateValidationConfig {
+  validation_failed_label?: string;
+  required_section_validation?: "strict" | "relaxed" | "none";
 }
 
 export interface IssueCleanupConfig {
