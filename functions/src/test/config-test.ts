@@ -45,6 +45,14 @@ describe("Configuration", async () => {
       {
         original: "a: b",
         encoded: "a0col00spc0b"
+      },
+      {
+        original: "a  b",
+        encoded: "a0spc00spc0b"
+      },
+      {
+        original: ".github/foo.md",
+        encoded: "0dgh00sls0foo0dmd0"
       }
     ];
 

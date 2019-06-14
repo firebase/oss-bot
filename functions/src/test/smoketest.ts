@@ -241,7 +241,13 @@ describe("The OSS Robot", () => {
       return;
     }
 
-    const valid_keys = ["labels", "cleanup", "templates", "reports"];
+    const valid_keys = [
+      "labels",
+      "cleanup",
+      "templates",
+      "reports",
+      "validation"
+    ];
     const prod_config = require("../../config/config.json");
 
     for (const org in prod_config) {

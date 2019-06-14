@@ -2,7 +2,10 @@ type StringMap = { [s: string]: string };
 
 const ESCAPES: StringMap = {
   ":": "0col0",
-  " ": "0spc0"
+  " ": "0spc0",
+  "/": "0sls0",
+  ".github": "0dgh0",
+  ".md": "0dmd0"
 };
 
 export enum Direction {
@@ -15,7 +18,7 @@ export enum Direction {
  * Ex: github.token --> GITHUB_TOKEN
  */
 export function toEnvKey(key: string): string {
-  return key.toUpperCase().replace(".", "_");
+  return replaceAll(key.toUpperCase(), ".", "_");
 }
 
 export function encodeKey(key: string): string {
@@ -26,7 +29,7 @@ export function encodeKey(key: string): string {
 
   // Replace some bad characters with made up 'escapes'
   Object.keys(ESCAPES).forEach(char => {
-    encoded = encoded.replace(char, ESCAPES[char]);
+    encoded = replaceAll(encoded, char, ESCAPES[char]);
   });
 
   // Make sure we will be able to read the key back
@@ -42,7 +45,7 @@ export function decodeKey(key: string): string {
   let decoded = key;
 
   Object.keys(ESCAPES).forEach(char => {
-    decoded = decoded.replace(ESCAPES[char], char);
+    decoded = replaceAll(decoded, ESCAPES[char], char);
   });
 
   return decoded;
@@ -127,4 +130,13 @@ function flattenObject(ob: any): any {
     }
   }
   return toReturn;
+}
+
+function replaceAll(str: string, src: string, dst: string) {
+  let replaced = str;
+  while (replaced.indexOf(src) >= 0) {
+    replaced = replaced.replace(src, dst);
+  }
+
+  return replaced;
 }
