@@ -111,6 +111,27 @@ template_path=.github/ISSUE_TEMPLATE/bug.md
 ...
 ```
 
+#### Template validation
+
+You can configure how the required sections of an issue template are validated and whether/which label is added to the issue in case of a violation:
+
+```
+"validation": {
+  "templates": {
+    ".github/ISSUE_TEMPLATE/bug.md": {
+      "validation_failed_label": "need more info",
+      "required_section_validation": "relaxed"
+    },
+    ...
+  }
+}
+```
+There are three different levels of required section validation:
+
+- `strict`: Any empty required section is a violation
+- `relaxed`: As long as one required section is filled, it's ok
+- `none`: No validation of required sections
+
 ### Stale Issue Cleanup
 
 The bot can help you clean up issues that have gone "stale", meaning that
