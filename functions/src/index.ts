@@ -258,18 +258,76 @@ export const botCleanup = functions.pubsub
       console.log(
         `Taking ${actions.length} actions when cleaning up ${repo.name}`
       );
-      const promises = actions.map(action => executeAction(action));
-      await Promise.all(promises);
+
+      // Run each action in order but don't explode on failure.
+      for (let action of actions) {
+        try {
+          await executeAction(action);
+        } catch (e) {
+          console.warn(`Failed to execute action ${action.toString()}`, e);
+        }
+      }
+
+      return true;
     }
   });
 
-function executeAction(action: types.Action): Promise<any> {
+async function executeAction(action: types.Action): Promise<any> {
   log.logData({
     event: "github_action",
     type: action.type,
     action: action,
     message: `Executing: ${action.toString()}}`
   });
+
+  let actionPromise: Promise<any> | undefined;
+  if (action.type == types.ActionType.GITHUB_COMMENT) {
+    const commentAction = action as types.GithubCommentAction;
+    actionPromise = gh_client.addComment(
+      commentAction.org,
+      commentAction.name,
+      commentAction.number,
+      commentAction.message
+    );
+  } else if (action.type == types.ActionType.GITHUB_ADD_LABEL) {
+    const addLabelAction = action as types.GithubAddLabelAction;
+    actionPromise = gh_client.addLabel(
+      addLabelAction.org,
+      addLabelAction.name,
+      addLabelAction.number,
+      addLabelAction.label
+    );
+  } else if (action.type == types.ActionType.GITHUB_REMOVE_LABEL) {
+    const removeLabelAction = action as types.GithubRemoveLabelAction;
+    actionPromise = gh_client.removeLabel(
+      removeLabelAction.org,
+      removeLabelAction.name,
+      removeLabelAction.number,
+      removeLabelAction.label
+    );
+  } else if (action.type == types.ActionType.GITHUB_CLOSE) {
+    const closeAction = action as types.GithubCloseAction;
+    actionPromise = gh_client.closeIssue(
+      closeAction.org,
+      closeAction.name,
+      closeAction.number
+    );
+  } else if (action.type == types.ActionType.EMAIL_SEND) {
+    const emailAction = action as types.SendEmailAction;
+    actionPromise = email_client.sendStyledEmail(
+      emailAction.recipient,
+      emailAction.subject,
+      emailAction.header,
+      emailAction.body,
+      emailAction.link,
+      emailAction.action
+    );
+  } else {
+    return Promise.reject(`Unrecognized action: ${JSON.stringify(action)}`);
+  }
+
+  // Wait for the action to finish
+  await actionPromise;
 
   // Log the data to the admin log
   if (types.GITHUB_ISSUE_ACTIONS.includes(action.type)) {
@@ -280,62 +338,15 @@ function executeAction(action: types.Action): Promise<any> {
       .child(ghAction.name)
       .push();
 
-    // TODO: Wait for this to finish?
-    ref.set(new types.ActionLog(ghAction));
+    // Swallow errors that are only about the admin log.
+    try {
+      await ref.set(new types.ActionLog(ghAction));
+    } catch (e) {
+      console.warn("Failed to write admin log entry", e);
+    }
   }
 
-  if (action.type == types.ActionType.GITHUB_COMMENT) {
-    const commentAction = action as types.GithubCommentAction;
-    return gh_client.addComment(
-      commentAction.org,
-      commentAction.name,
-      commentAction.number,
-      commentAction.message
-    );
-  }
-
-  if (action.type == types.ActionType.GITHUB_ADD_LABEL) {
-    const addLabelAction = action as types.GithubAddLabelAction;
-
-    return gh_client.addLabel(
-      addLabelAction.org,
-      addLabelAction.name,
-      addLabelAction.number,
-      addLabelAction.label
-    );
-  }
-
-  if (action.type == types.ActionType.GITHUB_REMOVE_LABEL) {
-    const removeLabelAction = action as types.GithubRemoveLabelAction;
-
-    return gh_client.removeLabel(
-      removeLabelAction.org,
-      removeLabelAction.name,
-      removeLabelAction.number,
-      removeLabelAction.label
-    );
-  }
-
-  if (action.type == types.ActionType.GITHUB_CLOSE) {
-    const closeAction = action as types.GithubCloseAction;
-    return gh_client.closeIssue(
-      closeAction.org,
-      closeAction.name,
-      closeAction.number
-    );
-  }
-
-  if (action.type == types.ActionType.EMAIL_SEND) {
-    const emailAction = action as types.SendEmailAction;
-    return email_client.sendStyledEmail(
-      emailAction.recipient,
-      emailAction.subject,
-      emailAction.header,
-      emailAction.body,
-      emailAction.link,
-      emailAction.action
-    );
-  }
-
-  return Promise.reject(`Unrecognized action: ${JSON.stringify(action)}`);
+  // Return the original action promise, which should be complete at this point,
+  // in case someone wants to chain from it.
+  return actionPromise;
 }
