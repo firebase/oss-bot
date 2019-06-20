@@ -260,7 +260,7 @@ export const botCleanup = functions.pubsub
       );
 
       // Run each action in order but don't explode on failure.
-      for (let action of actions) {
+      for (const action of actions) {
         try {
           await executeAction(action);
         } catch (e) {
