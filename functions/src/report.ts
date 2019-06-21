@@ -453,8 +453,9 @@ export const SaveWeeklyReport = functions
 /**
  * PubSub function that sends the Github email based on the latest weekly report.
  */
-export const SendWeeklyEmail = functions.pubsub
-  .topic("send_weekly_email")
+export const SendWeeklyEmail = functions
+  .runWith(util.FUNCTION_OPTS)
+  .pubsub.topic("send_weekly_email")
   .onPublish(async event => {
     const emailText = await GetWeeklyEmail("firebase");
     const now = new Date();
@@ -468,8 +469,9 @@ export const SendWeeklyEmail = functions.pubsub
 /**
  * PubSub function that sends the Github email based on the latest weekly report.
  */
-export const SendWeeklyRepoEmails = functions.pubsub
-  .topic("send_weekly_repo_email")
+export const SendWeeklyRepoEmails = functions
+  .runWith(util.FUNCTION_OPTS)
+  .pubsub.topic("send_weekly_repo_email")
   .onPublish(async event => {
     const allRepos = bot_config.getAllRepos();
     for (const repo of allRepos) {

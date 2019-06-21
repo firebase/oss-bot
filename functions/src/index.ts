@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 import * as functions from "firebase-functions";
-import * as admin from "firebase-admin";
 
 // Local includes
 import * as github from "./github";
@@ -24,6 +23,7 @@ import * as pullrequests from "./pullrequests";
 import * as cron from "./cron";
 import * as config from "./config";
 import * as types from "./types";
+import * as util from "./util";
 import * as log from "./log";
 
 import { database } from "./database";
@@ -82,8 +82,9 @@ const cron_handler = new cron.CronHandler(gh_client, bot_config);
 /**
  * Function that responds to Github events (HTTP webhook).
  */
-export const githubWebhook = functions.https.onRequest(
-  async (request, response) => {
+export const githubWebhook = functions
+  .runWith(util.FUNCTION_OPTS)
+  .https.onRequest(async (request, response) => {
     // Get event and action;
     const event = request.get("X-Github-Event");
     const action = request.body.action;
@@ -231,14 +232,14 @@ export const githubWebhook = functions.https.onRequest(
       .catch(e => {
         response.send("Error!");
       });
-  }
-);
+  });
 
 /**
  * Function that responds to pubsub events sent via an AppEngine crojob.
  */
-export const botCleanup = functions.pubsub
-  .topic("clean_stale")
+export const botCleanup = functions
+  .runWith(util.FUNCTION_OPTS)
+  .pubsub.topic("clean_stale")
   .onPublish(async event => {
     console.log("The cleanup job is running!");
     const repos = bot_config.getAllRepos();

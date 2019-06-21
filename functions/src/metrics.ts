@@ -111,22 +111,25 @@ async function storeDailyMetrics(
 
 // TODO: The client should insert the ID directly into the RTDB
 //       and then this should run as a DB triggered function.
-export const BackfillMetrics = functions.https.onRequest(async (req, res) => {
-  // TODO: Create project inline
-  const projectId = req.param("project");
+export const BackfillMetrics = functions
+  .runWith(util.FUNCTION_OPTS)
+  .https.onRequest(async (req, res) => {
+    // TODO: Create project inline
+    const projectId = req.param("project");
 
-  try {
-    for (let i = 1; i <= 30; i++) {
-      await storeDailyMetrics(projectId, admin.database(), i);
+    try {
+      for (let i = 1; i <= 30; i++) {
+        await storeDailyMetrics(projectId, admin.database(), i);
+      }
+      res.status(200).send(`${projectId} --> done`);
+    } catch (e) {
+      res.status(500).send(`Failed to store ${projectId}: ${e}`);
     }
-    res.status(200).send(`${projectId} --> done`);
-  } catch (e) {
-    res.status(500).send(`Failed to store ${projectId}: ${e}`);
-  }
-});
+  });
 
-export const UpdateMetricsWebhook = functions.https.onRequest(
-  async (req, res) => {
+export const UpdateMetricsWebhook = functions
+  .runWith(util.FUNCTION_OPTS)
+  .https.onRequest(async (req, res) => {
     const projectId = req.param("project");
     try {
       await storeDailyMetrics(projectId, admin.database());
@@ -134,8 +137,7 @@ export const UpdateMetricsWebhook = functions.https.onRequest(
     } catch (e) {
       res.status(500).send("Failed: " + e);
     }
-  }
-);
+  });
 
 export const UpdateMetrics = functions
   .runWith(util.FUNCTION_OPTS)
@@ -145,8 +147,9 @@ export const UpdateMetrics = functions
     await storeDailyMetrics(projectId, admin.database());
   });
 
-export const UpdateAllMetrics = functions.pubsub
-  .topic("update-all-metrics")
+export const UpdateAllMetrics = functions
+  .runWith(util.FUNCTION_OPTS)
+  .pubsub.topic("update-all-metrics")
   .onPublish(async (message, context) => {
     const db = admin.database();
     const snap = await db.ref("metrics").once("value");
