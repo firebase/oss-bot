@@ -87,11 +87,6 @@ export class CronHandler {
     // If an issue is not labeled with either the stale or needs-info labels
     // then we don't need to do any cron processing on it.
     if (!(stateNeedsInfo || stateStale)) {
-      log.debug(
-        `Issue ${name}#${number} does not need processing, labels=${JSON.stringify(
-          labelNames
-        )}.`
-      );
       return actions;
     }
 

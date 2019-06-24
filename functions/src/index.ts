@@ -268,9 +268,9 @@ export const botCleanup = functions
           console.warn(`Failed to execute action ${action.toString()}`, e);
         }
       }
-
-      return true;
     }
+
+    return true;
   });
 
 async function executeAction(action: types.Action): Promise<any> {
