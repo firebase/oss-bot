@@ -31,7 +31,7 @@
             The SAM score for the repository is: <b>{{sam.after}}</b>.
           </mj-text>
           <mj-text font-size="12px">
-            That's a change of <b>{{sam.diff}}</b> this week. Remember, lower is better.
+            That's a change of <b>{{sam.diff}}</b> this week. Remember, lower is better. For more information see <a href="http://go/samscore">go/samscore</a>.
           </mj-text>
 
           <mj-text font-size="14px">

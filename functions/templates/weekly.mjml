@@ -72,7 +72,7 @@
             {{/topSAMs}}
           </mj-table>
           <mj-text color="#999" font-style="italic">
-            We calculate this category using the Suggested Action Metric (SAM). This is a formula which takes into account open issue #, issue age, and other factors to draw attention to repos which need extra love. Higher SAM is worse, lower is better. A SAM of less than 1 considered ideal.
+            We calculate this category using the Suggested Action Metric (SAM). Lower SAM score is better. For more information see <a href="http://go/samscore">go/samscore</a>.
           </mj-text>
         </mj-column>
       </mj-section>
