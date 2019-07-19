@@ -104,7 +104,7 @@ interface CategorizeIssueResult {
 const LABEL_NEEDS_TRIAGE = "needs-triage";
 
 // Label for feature requests
-const LABEL_FR = "feature-request";
+const LABEL_FR = "type: feature-request";
 
 /**
  * Construct a new issue handler.
