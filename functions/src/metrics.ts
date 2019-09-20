@@ -149,8 +149,8 @@ export const UpdateMetrics = functions
 
 export const UpdateAllMetrics = functions
   .runWith(util.FUNCTION_OPTS)
-  .pubsub.topic("update-all-metrics")
-  .onPublish(async (message, context) => {
+  .pubsub.schedule("every day 13:00")
+  .onRun(async () => {
     const db = admin.database();
     const snap = await db.ref("metrics").once("value");
     const val = snap.val();

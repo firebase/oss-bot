@@ -225,8 +225,8 @@ export const SaveRepoSnapshot = functions
 
 export const SaveOrganizationSnapshot = functions
   .runWith(util.FUNCTION_OPTS)
-  .pubsub.topic("cleanup")
-  .onPublish(async event => {
+  .pubsub.schedule("every day 12:00")
+  .onRun(async () => {
     const configRepos = bot_config.getAllRepos();
 
     // Gather all the unique orgs from the configured repos

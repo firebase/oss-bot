@@ -239,8 +239,8 @@ export const githubWebhook = functions
  */
 export const botCleanup = functions
   .runWith(util.FUNCTION_OPTS)
-  .pubsub.topic("clean_stale")
-  .onPublish(async event => {
+  .pubsub.schedule("every day 18:00")
+  .onRun(async () => {
     console.log("The cleanup job is running!");
     const repos = bot_config.getAllRepos();
     for (const repo of repos) {
