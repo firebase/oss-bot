@@ -4,17 +4,6 @@ check-config:
 	echo "Project is $(PROJECT)"
 	./scripts/moveconfig.sh
 
-build-appengine:
-	cd appengine \
-		&& npm install \
-		&& cd -
-
-deploy-appengine: build-appengine
-	gcloud config set project $(PROJECT)
-	cd appengine \
-		&& npm run deploy \
-        && cd -
-
 build-functions: functions/src/*.ts functions/src/test/*.ts
 	cd functions \
 		&& npm install \
@@ -38,4 +27,4 @@ deploy-functions-config:
 deploy-functions: test-functions
 	firebase --project=$(PROJECT) deploy --only functions
 
-deploy: check-config deploy-appengine deploy-functions-config deploy-functions deploy-hosting
+deploy: check-config deploy-functions-config deploy-functions deploy-hosting

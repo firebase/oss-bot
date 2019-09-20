@@ -437,8 +437,8 @@ export const GetRepoReport = functions
  */
 export const SaveWeeklyReport = functions
   .runWith(util.FUNCTION_OPTS)
-  .pubsub.topic("save_weekly_report")
-  .onPublish(async (message: functions.pubsub.Message) => {
+  .pubsub.schedule("every wednesday 09:00")
+  .onRun(async () => {
     const now = new Date();
 
     // Save firebase report to the DB
@@ -455,8 +455,8 @@ export const SaveWeeklyReport = functions
  */
 export const SendWeeklyEmail = functions
   .runWith(util.FUNCTION_OPTS)
-  .pubsub.topic("send_weekly_email")
-  .onPublish(async event => {
+  .pubsub.schedule("every wednesday 09:30")
+  .onRun(async () => {
     const emailText = await GetWeeklyEmail("firebase");
     const now = new Date();
 
@@ -471,8 +471,8 @@ export const SendWeeklyEmail = functions
  */
 export const SendWeeklyRepoEmails = functions
   .runWith(util.FUNCTION_OPTS)
-  .pubsub.topic("send_weekly_repo_email")
-  .onPublish(async event => {
+  .pubsub.schedule("every wednesday 10:00")
+  .onRun(async () => {
     const allRepos = bot_config.getAllRepos();
     for (const repo of allRepos) {
       const reportConfig = bot_config.getRepoReportingConfig(

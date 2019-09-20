@@ -6,13 +6,17 @@ async function asyncSpawn(proc: ChildProcess): Promise<string> {
   let full_data = "";
   let full_error = "";
   return new Promise<string>((resolve, reject) => {
-    proc.stdout.on("data", (data: string) => {
-      full_data += data;
-    });
+    if (proc.stdout) {
+      proc.stdout.on("data", (data: string) => {
+        full_data += data;
+      });
+    }
 
-    proc.stderr.on("error", (error: string) => {
-      full_error += error;
-    });
+    if (proc.stderr) {
+      proc.stderr.on("error", (error: string) => {
+        full_error += error;
+      });
+    }
 
     proc.on("close", (code: number) => {
       if (code == 0) {
