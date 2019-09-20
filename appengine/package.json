@@ -4,7 +4,7 @@
   "description": "AppEngine companion app for ossbot",
   "main": "app.js",
   "engines": {
-    "node": "8.x.x"
+    "node": "10.x.x"
   },
   "scripts": {
     "deploy": "gcloud app deploy --quiet app.yaml cron.yaml",
@@ -13,7 +13,6 @@
   "author": "Google, Inc.",
   "license": "Apache-2.0",
   "dependencies": {
-    "@google-cloud/pubsub": "^0.19.0",
     "express": "^4.16.3"
   }
 }
