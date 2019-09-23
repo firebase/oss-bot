@@ -39,18 +39,71 @@ export class CronHandler {
     this.config = config;
   }
 
-  async handleStaleIssues(org: string, name: string): Promise<types.Action[]> {
+  async processIssues(org: string, name: string) {
     log.debug(`Processing issues for ${org}/${name}`);
 
     // Get the configuration for this repo
     const cleanupConfig = this.config.getRepoCleanupConfig(org, name);
     if (!cleanupConfig || !cleanupConfig.issue) {
-      log.debug(`No stale issues config for ${org}/${name}`);
+      log.debug(`No issue cleanup config for ${org}/${name}`);
       return [];
     }
     const issueConfig = cleanupConfig.issue;
 
-    // Aggregate all the actions we need to perform
+    const lockActions = await this.handleClosedIssues(org, name, issueConfig);
+    const staleActions = await this.handleStaleIssues(org, name, issueConfig);
+
+    return [...lockActions, ...staleActions];
+  }
+
+  async handleClosedIssues(
+    org: string,
+    name: string,
+    issueConfig: types.IssueCleanupConfig
+  ): Promise<types.Action[]> {
+    if (!issueConfig.lock_days) {
+      log.debug(`No issue locking config for ${org}/${name}`);
+      return [];
+    }
+
+    const lockDays = issueConfig.lock_days;
+    const lockMillis = lockDays * 24 * 60 * 60 * 1000;
+
+    const actions: types.Action[] = [];
+
+    const issues = await this.gh_client.getIssuesForRepo(org, name, "closed");
+    for (const issue of issues) {
+      if (issue.closed_at === null) {
+        log.warn(
+          `Closed issue ${org}/${name}/${issue.number} has no closed_at.`
+        );
+        continue;
+      }
+
+      const closedAtStr = "" + issue.closed_at;
+      const closedAtMs = new Date(closedAtStr).getTime();
+      const nowMs = new Date().getTime();
+
+      if (nowMs - closedAtMs > lockMillis) {
+        actions.push(
+          new types.GithubLockAction(
+            org,
+            name,
+            issue.number,
+            `Issue was closed at ${closedAtStr} which is more than ${lockDays} ago`
+          )
+        );
+      }
+    }
+
+    return actions;
+  }
+
+  async handleStaleIssues(
+    org: string,
+    name: string,
+    issueConfig: types.IssueCleanupConfig
+  ): Promise<types.Action[]> {
     const actions: types.Action[] = [];
 
     const issues = await this.gh_client.getIssuesForRepo(org, name, "open");

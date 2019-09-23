@@ -254,7 +254,7 @@ export const botCleanup = functions
         continue;
       }
 
-      const actions = await cron_handler.handleStaleIssues(repo.org, repo.name);
+      const actions = await cron_handler.processIssues(repo.org, repo.name);
 
       console.log(
         `Taking ${actions.length} actions when cleaning up ${repo.name}`
@@ -312,6 +312,13 @@ async function executeAction(action: types.Action): Promise<any> {
       closeAction.org,
       closeAction.name,
       closeAction.number
+    );
+  } else if (action.type == types.ActionType.GITHUB_LOCK) {
+    const lockAction = action as types.GithubLockAction;
+    actionPromise = gh_client.lockIssue(
+      lockAction.org,
+      lockAction.name,
+      lockAction.number
     );
   } else if (action.type == types.ActionType.EMAIL_SEND) {
     const emailAction = action as types.SendEmailAction;
