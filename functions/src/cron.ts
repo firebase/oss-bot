@@ -73,7 +73,7 @@ export class CronHandler {
 
     const issues = await this.gh_client.getIssuesForRepo(org, name, "closed");
     for (const issue of issues) {
-      if (issue.closed_at === null) {
+      if (!issue.closed_at) {
         log.warn(
           `Closed issue ${org}/${name}/${issue.number} has no closed_at.`
         );
