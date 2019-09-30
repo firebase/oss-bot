@@ -45,6 +45,12 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const JUST_NOW = new Date(NOW_TIME.getTime() - 1000).toISOString();
 const FOUR_DAYS_AGO = new Date(NOW_TIME.getTime() - 4 * DAY_MS).toISOString();
 const EIGHT_DAYS_AGO = new Date(NOW_TIME.getTime() - 8 * DAY_MS).toISOString();
+const THREE_MONTHS_AGO = new Date(
+  NOW_TIME.getTime() - 90 * DAY_MS
+).toISOString();
+const FOUR_MONTHS_AGO = new Date(
+  NOW_TIME.getTime() - 120 * DAY_MS
+).toISOString();
 
 const DEFAULT_CONFIG: types.IssueCleanupConfig = {
   label_needs_info: "needs-info",
@@ -54,6 +60,9 @@ const DEFAULT_CONFIG: types.IssueCleanupConfig = {
   needs_info_days: 7,
   stale_days: 3
 };
+
+const LOCKING_CONFIG = Object.assign({}, DEFAULT_CONFIG);
+LOCKING_CONFIG.lock_days = 60;
 
 const STALE_ISSUE: types.internal.Issue = {
   number: 1,
@@ -75,6 +84,30 @@ const NEEDS_INFO_ISSUE: types.internal.Issue = {
   labels: [{ name: "needs-info" }],
   created_at: FOUR_DAYS_AGO,
   updated_at: FOUR_DAYS_AGO
+};
+
+const NEW_CLOSED_ISSUE: types.internal.Issue = {
+  number: 3,
+  state: "closed",
+  title: "Some Issue",
+  body: "Body of my issue",
+  user: { login: "some-user" },
+  labels: [],
+  created_at: EIGHT_DAYS_AGO,
+  updated_at: EIGHT_DAYS_AGO,
+  closed_at: FOUR_DAYS_AGO
+};
+
+const OLD_CLOSED_ISSUE: types.internal.Issue = {
+  number: 4,
+  state: "closed",
+  title: "Some Issue",
+  body: "Body of my issue",
+  user: { login: "some-user" },
+  labels: [],
+  created_at: FOUR_MONTHS_AGO,
+  updated_at: FOUR_MONTHS_AGO,
+  closed_at: THREE_MONTHS_AGO
 };
 
 describe("Stale issue handler", async () => {
@@ -352,5 +385,43 @@ describe("Stale issue handler", async () => {
         "needs-info"
       )
     ]);
+  });
+
+  it("should lock a very old closed issue", async () => {
+    const repo: types.internal.Repository = {
+      owner: { login: "samtstern" },
+      name: "bottest"
+    };
+
+    const actions = await cron_handler.handleClosedIssue(
+      repo.owner.login,
+      repo.name,
+      OLD_CLOSED_ISSUE,
+      LOCKING_CONFIG
+    );
+
+    util.actionsListEqual(actions, [
+      new types.GithubLockAction(
+        repo.owner.login,
+        repo.name,
+        OLD_CLOSED_ISSUE.number
+      )
+    ]);
+  });
+
+  it("should not lock a newly closed issue", async () => {
+    const repo: types.internal.Repository = {
+      owner: { login: "samtstern" },
+      name: "bottest"
+    };
+
+    const actions = await cron_handler.handleClosedIssue(
+      repo.owner.login,
+      repo.name,
+      NEW_CLOSED_ISSUE,
+      LOCKING_CONFIG
+    );
+
+    util.actionsListEqual(actions, []);
   });
 });

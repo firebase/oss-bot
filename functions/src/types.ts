@@ -609,6 +609,7 @@ export namespace internal {
     labels: Label[];
     created_at: string;
     updated_at: string;
+    closed_at?: string | null;
 
     assignee?: User;
     html_url?: string;
