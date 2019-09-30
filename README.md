@@ -170,11 +170,19 @@ be configured in your repo config:
       // [REQUIRED] Time, in days, to close an issue after the warning message is posted
       // if there is no recent activity.  These issues will transition from
       // label_stale to closed.
-      "stale_days": 3
+      "stale_days": 3,
+
+      // [OPTIONAL] Time, in days, to lock an issue after it has been closed.
+      "lock_days": 60
     }
   }
 }
 ```
+
+### Old Issue Locking
+
+The bot can lock issues that have been closed for a while to prevent new discussion. 
+To enable this, add the `lock_days` key to your "stale issue config" (see above).
 
 ### Repo Reports
 

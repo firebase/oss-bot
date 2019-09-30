@@ -8,6 +8,7 @@ export enum ActionType {
   GITHUB_ADD_LABEL = "GITHUB_LABEL",
   GITHUB_REMOVE_LABEL = "GITHUB_REMOVE_LABEL",
   GITHUB_CLOSE = "GITHUB_CLOSE",
+  GITHUB_LOCK = "GITHUB_LOCK",
   EMAIL_SEND = "EMAIL_SEND"
 }
 
@@ -145,6 +146,16 @@ export class GithubCloseAction extends GithubIssueAction {
   }
 }
 
+export class GithubLockAction extends GithubIssueAction {
+  constructor(org: string, name: string, number: number, reason?: string) {
+    super(ActionType.GITHUB_LOCK, org, name, number);
+
+    if (reason) {
+      this.reason = reason;
+    }
+  }
+}
+
 export class SendEmailAction extends Action {
   recipient: string;
   subject: string;
@@ -259,6 +270,7 @@ export interface IssueCleanupConfig {
   ignore_labels?: string[];
   needs_info_days: number;
   stale_days: number;
+  lock_days?: number;
 }
 
 export namespace github {
@@ -597,6 +609,7 @@ export namespace internal {
     labels: Label[];
     created_at: string;
     updated_at: string;
+    closed_at?: string | null;
 
     assignee?: User;
     html_url?: string;

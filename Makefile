@@ -22,7 +22,9 @@ deploy-hosting: deploy-metrics-config
 	firebase --project=$(PROJECT) deploy --only hosting
 
 deploy-functions-config:
-	functions/node_modules/.bin/ts-node functions/src/scripts/deploy-config.ts functions/config/config.json $(PROJECT)	
+	cd functions \
+		&& ./node_modules/.bin/ts-node src/scripts/deploy-config.ts config/config.json $(PROJECT)	\
+		&& cd -
 
 deploy-functions: test-functions
 	firebase --project=$(PROJECT) deploy --only functions

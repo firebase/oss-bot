@@ -234,6 +234,19 @@ export class GithubClient {
       return collabs.map(c => c.login);
     });
   }
+
+  /**
+   * Lock a GitHub issue.
+   */
+  lockIssue(owner: string, repo: string, number: number) {
+    this.auth();
+
+    return this.api.issues.lock({
+      owner,
+      repo,
+      number
+    });
+  }
 }
 
 type IssueState = "open" | "closed" | "all";
