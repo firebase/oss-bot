@@ -72,7 +72,8 @@ const STALE_ISSUE: types.internal.Issue = {
   user: { login: "some-user" },
   labels: [{ name: "stale" }],
   created_at: EIGHT_DAYS_AGO,
-  updated_at: EIGHT_DAYS_AGO
+  updated_at: EIGHT_DAYS_AGO,
+  locked: false
 };
 
 const NEEDS_INFO_ISSUE: types.internal.Issue = {
@@ -83,7 +84,8 @@ const NEEDS_INFO_ISSUE: types.internal.Issue = {
   user: { login: "some-user" },
   labels: [{ name: "needs-info" }],
   created_at: FOUR_DAYS_AGO,
-  updated_at: FOUR_DAYS_AGO
+  updated_at: FOUR_DAYS_AGO,
+  locked: false
 };
 
 const NEW_CLOSED_ISSUE: types.internal.Issue = {
@@ -95,7 +97,8 @@ const NEW_CLOSED_ISSUE: types.internal.Issue = {
   labels: [],
   created_at: EIGHT_DAYS_AGO,
   updated_at: EIGHT_DAYS_AGO,
-  closed_at: FOUR_DAYS_AGO
+  closed_at: FOUR_DAYS_AGO,
+  locked: false
 };
 
 const OLD_CLOSED_ISSUE: types.internal.Issue = {
@@ -107,7 +110,8 @@ const OLD_CLOSED_ISSUE: types.internal.Issue = {
   labels: [],
   created_at: FOUR_MONTHS_AGO,
   updated_at: FOUR_MONTHS_AGO,
-  closed_at: THREE_MONTHS_AGO
+  closed_at: THREE_MONTHS_AGO,
+  locked: false
 };
 
 describe("Stale issue handler", async () => {
@@ -131,7 +135,8 @@ describe("Stale issue handler", async () => {
       },
       labels: [{ name: "needs-info" }],
       created_at: JUST_NOW,
-      updated_at: JUST_NOW
+      updated_at: JUST_NOW,
+      locked: false
     };
 
     const issueComments: types.internal.Comment[] = [
@@ -169,7 +174,8 @@ describe("Stale issue handler", async () => {
       },
       labels: [{ name: "needs-info" }],
       created_at: EIGHT_DAYS_AGO,
-      updated_at: EIGHT_DAYS_AGO
+      updated_at: EIGHT_DAYS_AGO,
+      locked: false
     };
 
     const issueComments: types.internal.Comment[] = [
@@ -216,7 +222,8 @@ describe("Stale issue handler", async () => {
       },
       labels: [{ name: "stale" }],
       created_at: FOUR_DAYS_AGO,
-      updated_at: FOUR_DAYS_AGO
+      updated_at: FOUR_DAYS_AGO,
+      locked: false
     };
 
     const issueComments: types.internal.Comment[] = [
@@ -274,7 +281,8 @@ describe("Stale issue handler", async () => {
         { name: "stale" }
       ],
       created_at: EIGHT_DAYS_AGO,
-      updated_at: EIGHT_DAYS_AGO
+      updated_at: EIGHT_DAYS_AGO,
+      locked: false
     };
 
     const actions = await cron_handler.handleStaleIssue(

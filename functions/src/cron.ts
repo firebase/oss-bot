@@ -77,6 +77,15 @@ export class CronHandler {
         issueConfig
       );
       actions.push(...issueActions);
+
+      if (actions.length >= 100) {
+        console.warn(
+          `Found >100 (${
+            actions.length
+          } issues to perform when checking closed issues for ${org}/${name}, will do the rest tomorrow.`
+        );
+        return actions;
+      }
     }
 
     return actions;
@@ -89,10 +98,15 @@ export class CronHandler {
     issueConfig: types.IssueCleanupConfig
   ): Promise<types.Action[]> {
     const actions: types.Action[] = [];
-    const nowMs = new Date().getTime();
+
+    // Skip already-locked issues
+    if (issue.locked) {
+      return actions;
+    }
 
     // We have already verified before calling this function that lock_days is defined, but
     // we default to MAX_NUMBER (aka never lock) just in case.
+    const nowMs = new Date().getTime();
     const lockDays = issueConfig.lock_days || Number.MAX_VALUE;
     const lockMillis = lockDays * 24 * 60 * 60 * 1000;
 

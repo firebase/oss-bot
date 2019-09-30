@@ -611,6 +611,7 @@ export namespace internal {
     updated_at: string;
     closed_at?: string | null;
 
+    locked: boolean;
     assignee?: User;
     html_url?: string;
   }
