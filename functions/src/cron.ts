@@ -72,7 +72,11 @@ export class CronHandler {
     const actions: types.Action[] = [];
 
     const issues = await this.gh_client.getIssuesForRepo(org, name, "closed");
+    const nowMs = new Date().getTime();
+
     for (const issue of issues) {
+      // This is a "this should never happen" case but the GitHub API
+      // is not type-safe enough to ignore the possibility.
       if (!issue.closed_at) {
         log.warn(
           `Closed issue ${org}/${name}/${issue.number} has no closed_at.`
@@ -82,7 +86,6 @@ export class CronHandler {
 
       const closedAtStr = "" + issue.closed_at;
       const closedAtMs = new Date(closedAtStr).getTime();
-      const nowMs = new Date().getTime();
 
       if (nowMs - closedAtMs > lockMillis) {
         actions.push(
