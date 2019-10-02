@@ -16,7 +16,8 @@ export const GITHUB_ISSUE_ACTIONS = [
   ActionType.GITHUB_COMMENT,
   ActionType.GITHUB_ADD_LABEL,
   ActionType.GITHUB_REMOVE_LABEL,
-  ActionType.GITHUB_CLOSE
+  ActionType.GITHUB_CLOSE,
+  ActionType.GITHUB_LOCK,
 ];
 
 export class Action {
