@@ -17,7 +17,7 @@
     "firebase-admin": "^8.6.0",
     "firebase-functions": "^3.2.0",
     "mailgun-js": "^0.22.0",
-    "marked": "^0.5.2",
+    "marked": "^0.6.1",
     "moment": "^2.22.2",
     "mustache": "^2.3.0",
     "node-fetch": "^2.2.0"
