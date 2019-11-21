@@ -105,7 +105,7 @@ export async function GetRepoSnapshot(
   owner: string,
   repo: string,
   repoData: any
-) {
+): Promise<{ repoData: any; issueData: any }> {
   if (!repoData) {
     log.warn(`GetRepoSnapshot called with null data for ${owner}/${repo}`);
   }
@@ -114,11 +114,28 @@ export async function GetRepoSnapshot(
   repoData.closed_pull_requests_count = 0;
 
   const keyed_issues: { [s: string]: any } = {};
-  let issuesData = await gh_client.getIssuesForRepo(owner, repo);
+  let issues = await gh_client.getIssuesForRepo(owner, repo);
+  issues = scrubArray(issues, ["organization", "url"]);
 
-  issuesData = scrubArray(issuesData, ["organization", "url"]);
+  // We're going to keep a copy of all issues for a given repo
+  // TODO(samstern): Create a type for this
+  const issueData: { [s: string]: any } = {};
+  for (const issue of issues) {
+    issueData[`id_${issue.number}`] = {
+      state: issue.state,
+      locked: issue.locked,
+      pull_request: !!issue.pull_request,
+      comments: issue.comments,
+      user: {
+        login: issue.user.login
+      },
+      updated_at: issue.updated_at,
+      created_at: issue.created_at
+    };
+  }
 
-  issuesData.forEach((issue: any) => {
+  // TODO(samstern): Modification inside the loop like this is no fun.
+  issues.forEach((issue: any) => {
     issue.user = scrubObject(issue.user, ["url"]);
     issue.pull_request = !!issue.pull_request;
 
@@ -135,7 +152,7 @@ export async function GetRepoSnapshot(
 
   repoData.issues = keyed_issues;
 
-  return repoData;
+  return { repoData, issueData };
 }
 
 /**
@@ -192,11 +209,22 @@ export const SaveRepoSnapshot = functions
 
     // Store the repo snapshot under the proper path
     util.startTimer("GetRepoSnapshot");
-    const fullRepoData = await GetRepoSnapshot(org, repoName, baseRepoData);
+    const { repoData, issueData } = await GetRepoSnapshot(
+      org,
+      repoName,
+      baseRepoData
+    );
     util.endTimer("GetRepoSnapshot");
 
     log.debug(`Saving repo snapshot to ${repoSnapRef.path}`);
-    await repoSnapRef.set(fullRepoData);
+    await repoSnapRef.set(repoData);
+
+    const repoIssueRef = database
+      .ref("issues")
+      .child(org)
+      .child(repoKey);
+    log.debug(`Saving issue snapshot to ${repoIssueRef.path}`);
+    await repoIssueRef.set(issueData);
 
     // Store non-date-specific repo metadata
     // TODO: This should probably be broken out into a function like GetRepoSnapshot
