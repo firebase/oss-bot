@@ -31,6 +31,7 @@ import { database } from "./database";
 export { SaveOrganizationSnapshot, SaveRepoSnapshot } from "./snapshot";
 
 export {
+  CalculateExperimentalScore,
   GetRepoReport,
   GetWeeklyReport,
   SaveWeeklyReport,

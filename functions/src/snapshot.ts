@@ -223,8 +223,13 @@ export const SaveRepoSnapshot = functions
       .ref("issues")
       .child(org)
       .child(repoKey);
+
     log.debug(`Saving issue snapshot to ${repoIssueRef.path}`);
-    await repoIssueRef.set(issueData);
+    try {
+      await repoIssueRef.set(issueData);
+    } catch (e) {
+      log.warn(`Failed to save snapshot of issues for ${org}/${repoKey}: ${e}`);
+    }
 
     // Store non-date-specific repo metadata
     // TODO: This should probably be broken out into a function like GetRepoSnapshot

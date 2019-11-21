@@ -50,6 +50,7 @@
     "test": "mocha",
     "debug": "mocha --debug-brk",
     "fmt": "prettier --write src/**/*.ts src/**.ts",
+    "format": "npm run fmt",
     "build": "npm run fmt && npm run build-ts && npm run tslint && npm run build-mjml",
     "dev": "tsc --watch",
     "build-ts": "tsc",

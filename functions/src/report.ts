@@ -11,6 +11,7 @@ import * as snap from "./snapshot";
 import * as util from "./util";
 import { snapshot, report } from "./types";
 import { BotConfig, getFunctionsConfig } from "./config";
+import { now } from "moment";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -408,6 +409,73 @@ export async function MakeRepoReport(
     closed_issues
   };
 }
+
+// TODO(samstern): Move these to a utility somewhere
+function filterProps(arr: any[], props: { [prop: string]: any }) {
+  let result = arr;
+
+  Object.keys(props).forEach((prop: string) => {
+    result = result.filter((x: any) => x[prop] === props[prop]);
+  });
+
+  return result;
+}
+
+/**
+ * HTTP function for experimenting with a new SAM score.
+ */
+export const CalculateExperimentalScore = functions
+  .runWith(util.FUNCTION_OPTS)
+  .https.onRequest(async (req, res) => {
+    // TODO: Allow passing in the 'start' date to get historical data.
+
+    const org = req.param("org") || "firebase";
+    const repo = req.param("repo");
+    if (repo === undefined) {
+      res.status(500).send("Must specify 'repo' param");
+      return;
+    }
+
+    const issuesSnap = await database
+      .ref("issues")
+      .child(org)
+      .child(repo)
+      .once("value");
+    const issueObj = issuesSnap.val();
+
+    // TODO: Filter for last 3 months
+    const nowMs = new Date().getTime();
+    const cutoffMs = nowMs - 30 * 24 * 60 * 60 * 1000; // 30 days ago
+
+    const allIssues = Object.values(issueObj);
+    const recentIssues = allIssues.filter((issue: any) => {
+      const created = new Date(issue.created_at);
+      return created.getTime() > cutoffMs;
+    });
+
+    // TODO: Get some type information with these issues
+
+    const prs = filterProps(allIssues, { pull_request: true });
+    const issues = filterProps(allIssues, { pull_request: false });
+
+    res.json({
+      issues: {
+        total: issues.length,
+        open: filterProps(allIssues, { state: "open" }).length,
+        closed: filterProps(allIssues, { state: "closed" }).length
+      },
+      prs: {
+        total: prs.length,
+        open: filterProps(allIssues, { state: "open" }).length,
+        closed: filterProps(allIssues, { state: "closed" }).length
+      },
+      recent_issues: {
+        open: filterProps(recentIssues, { state: "open" }).length,
+        closed: filterProps(recentIssues, { state: "closed" }).length,
+        total: recentIssues.length
+      }
+    });
+  });
 
 /**
  * HTTP Function to get a JSON report on a repo.
