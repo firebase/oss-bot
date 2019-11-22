@@ -410,24 +410,27 @@ export async function MakeRepoReport(
   };
 }
 
-function getStateCounts(issues: Array<snapshot.Issue>): IssueStateCounts {
+/**
+ * TODO(samstern): Move all this stuff somewhere.
+ */
+
+function getStateCounts(issues: Array<snapshot.Issue>): IssueStats {
   const [openIss, closedIss] = util.split(issues, IssueFilters.isOpen);
 
   const open = openIss.length;
   const closed = closedIss.length;
-  const percent_closed = Math.floor((closed / (closed + open)) * 100)
+  const percent_closed = Math.floor((closed / (closed + open)) * 100);
   const sam_score = util.samScore(open, closed);
 
   return {
     open,
     closed,
     percent_closed,
-    sam_score,
+    sam_score
   };
 }
 
-// TODO: Move this somewhere
-interface IssueStateCounts {
+interface IssueStats {
   open: number;
   closed: number;
   percent_closed?: number;
@@ -435,9 +438,8 @@ interface IssueStateCounts {
 }
 
 const IssueFilters = {
-
-  isOpen:  (x: snapshot.Issue) => {
-    return x.state === "open"
+  isOpen: (x: snapshot.Issue) => {
+    return x.state === "open";
   },
 
   isPullRequest: (x: snapshot.Issue) => {
@@ -455,8 +457,7 @@ const IssueFilters = {
   isInternal: (c: snapshot.Map<boolean>) => (x: snapshot.Issue) => {
     return c[x.user.login];
   }
-
-}
+};
 
 /**
  * HTTP function for experimenting with a new SAM score.
@@ -497,35 +498,45 @@ export const RepoIssueStatistics = functions
       IssueFilters.isInternal(contributors)
     );
 
-    // These are the issues we care about:
+    // external_bugs are the issues we care about:
     //  * Issue or PR
     //  * Not filed by a Googler
     //  * Not a feature request
-    const [external_frs, external_bugs] = util.split(external, IssueFilters.isFeatureRequest);
+    const [external_frs, external_bugs] = util.split(
+      external,
+      IssueFilters.isFeatureRequest
+    );
 
-    const [prs, issues] = util.split(issuesAndPrs, x => x.pull_request);
-    const [feature_requests, bugs] = util.split(issues, IssueFilters.isFeatureRequest);
-    const [internal_prs, external_prs] = util.split(prs, IssueFilters.isInternal(contributors));
+    const [prs, issues] = util.split(issuesAndPrs, IssueFilters.isPullRequest);
+    const [feature_requests, bugs] = util.split(
+      issues,
+      IssueFilters.isFeatureRequest
+    );
+
+    const [internal_prs, external_prs] = util.split(
+      prs,
+      IssueFilters.isInternal(contributors)
+    );
 
     const counts = {
       combined: {
         all: getStateCounts(issuesAndPrs),
         internal: getStateCounts(internal),
-        external: getStateCounts(external),
+        external: getStateCounts(external)
       },
 
       issues: {
         all: getStateCounts(issues),
         feature_requests: getStateCounts(feature_requests),
         bugs: getStateCounts(bugs),
-        external_bugs: getStateCounts(external_bugs),
+        external_bugs: getStateCounts(external_bugs)
       },
 
       prs: {
         all: getStateCounts(prs),
         internal: getStateCounts(internal_prs),
-        external: getStateCounts(external_prs),
-      },
+        external: getStateCounts(external_prs)
+      }
     };
 
     res.json(counts);
