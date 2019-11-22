@@ -11,6 +11,7 @@ import * as snap from "./snapshot";
 import * as util from "./util";
 import { snapshot, report } from "./types";
 import { BotConfig, getFunctionsConfig } from "./config";
+import { issue } from "firebase-functions/lib/providers/crashlytics";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -409,19 +410,19 @@ export async function MakeRepoReport(
   };
 }
 
-function scoreStateCounts(x: IssueStateCounts) {
-  return util.samScore(x.open, x.closed);
-}
-
 function getStateCounts(issues: Array<snapshot.Issue>): IssueStateCounts {
-  const open = issues.filter(x => x.state === "open").length;
-  const closed = issues.filter(x => x.state === "closed").length;
-  const pct = closed / (closed + open);
+  const [openIss, closedIss] = util.split(issues, IssueFilters.isOpen);
+
+  const open = openIss.length;
+  const closed = closedIss.length;
+  const percent_closed = Math.floor((closed / (closed + open)) * 100)
+  const sam_score = util.samScore(open, closed);
 
   return {
     open,
     closed,
-    pct
+    percent_closed,
+    sam_score,
   };
 }
 
@@ -429,7 +430,32 @@ function getStateCounts(issues: Array<snapshot.Issue>): IssueStateCounts {
 interface IssueStateCounts {
   open: number;
   closed: number;
-  pct: number;
+  percent_closed?: number;
+  sam_score?: number;
+}
+
+const IssueFilters = {
+
+  isOpen:  (x: snapshot.Issue) => {
+    return x.state === "open"
+  },
+
+  isPullRequest: (x: snapshot.Issue) => {
+    return x.pull_request;
+  },
+
+  isFeatureRequest: (x: snapshot.Issue) => {
+    if (!x.labels) {
+      return false;
+    }
+
+    return x.labels.indexOf("type: feature request") >= 0;
+  },
+
+  isInternal: (c: snapshot.Map<boolean>) => (x: snapshot.Issue) => {
+    return c[x.user.login];
+  }
+
 }
 
 /**
@@ -452,76 +478,57 @@ export const RepoIssueStatistics = functions
       .once("value");
     const issueObj = issuesSnap.val() as snapshot.Map<snapshot.Issue>;
 
+    const contributorsSnap = await database
+      .ref("repo-metadata")
+      .child(org)
+      .child(repo)
+      .child("collaborators")
+      .once("value");
+    const contributors = contributorsSnap.val() as snapshot.Map<boolean>;
+
     // All issues and prs sorted by age
     const issuesAndPrs = Object.values(issueObj).sort((x, y) => {
       return util.timeAgo(x) - util.timeAgo(y);
     });
 
+    // Split into filed-by-googlers and not.
+    const [internal, external] = util.split(
+      issuesAndPrs,
+      IssueFilters.isInternal(contributors)
+    );
+
+    // These are the issues we care about:
+    //  * Issue or PR
+    //  * Not filed by a Googler
+    //  * Not a feature request
+    const [external_frs, external_bugs] = util.split(external, IssueFilters.isFeatureRequest);
+
     const [prs, issues] = util.split(issuesAndPrs, x => x.pull_request);
-
-    const recentDaysCutoff = 90;
-    const recentIssues = issues.filter(issue => {
-      const daysAgo = util.timeAgo(issue) / DAY_MS;
-      return daysAgo < recentDaysCutoff;
-    });
-
-    const openIssues = issues.filter(x => x.state === "open");
-    const openIssueAges = openIssues.map(x => {
-      return Math.floor(util.timeAgo(x) / DAY_MS);
-    });
-
-    // TODO: stats about issue creation rate?
-    const issue_stats = {
-      oldest_open_days: openIssueAges[openIssueAges.length - 1],
-      median_open_days: openIssueAges[Math.floor(openIssueAges.length / 2)]
-    };
-
-    const weighted = {
-      open: 0,
-      closed: 0,
-      pct: 0.0
-    };
-    for (const i of issues) {
-      const daysAgo = util.timeAgo(i) / DAY_MS;
-      const yearsAgo = daysAgo / 365;
-
-      // A scale that goes 0.33 to inf as an issue ages
-      const weight = Math.max(yearsAgo, 0.5);
-      if (i.state === "open") {
-        weighted.open += weight;
-      } else {
-        weighted.closed += weight;
-      }
-    }
-    weighted.pct = weighted.closed / (weighted.open + weighted.closed);
-
-    const [frs, nonFrs] = util.split(issues, i => {
-      if (!i.labels) {
-        return false;
-      }
-
-      return i.labels.indexOf("type: feature request") >= 0;
-    });
+    const [feature_requests, bugs] = util.split(issues, IssueFilters.isFeatureRequest);
+    const [internal_prs, external_prs] = util.split(prs, IssueFilters.isInternal(contributors));
 
     const counts = {
-      issues: getStateCounts(issues),
-      prs: getStateCounts(prs),
-      frs: getStateCounts(frs),
-      nonFrs: getStateCounts(nonFrs),
-      recent_issues: getStateCounts(recentIssues)
+      combined: {
+        all: getStateCounts(issuesAndPrs),
+        internal: getStateCounts(internal),
+        external: getStateCounts(external),
+      },
+
+      issues: {
+        all: getStateCounts(issues),
+        feature_requests: getStateCounts(feature_requests),
+        bugs: getStateCounts(bugs),
+        external_bugs: getStateCounts(external_bugs),
+      },
+
+      prs: {
+        all: getStateCounts(prs),
+        internal: getStateCounts(internal_prs),
+        external: getStateCounts(external_prs),
+      },
     };
 
-    const sam = scoreStateCounts(counts.issues);
-    const non_frs_sam = scoreStateCounts(counts.nonFrs);
-    const weighted_sam = scoreStateCounts(weighted);
-
-    const scores = {
-      sam,
-      non_frs_sam,
-      weighted_sam
-    };
-
-    res.json({ open_issue_stats: issue_stats, counts, scores });
+    res.json(counts);
   });
 
 /**

@@ -57,7 +57,8 @@ export function samScore(open: number, closed: number): number {
     return 0;
   }
 
-  return (open / (open + closed)) * Math.log(Math.E + open + closed);
+  const score = (open / (open + closed)) * Math.log(Math.E + open + closed);
+  return Math.round(score * 1000) / 1000;
 }
 
 export function timeAgo(obj: types.internal.Timestamped): number {
