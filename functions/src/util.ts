@@ -52,8 +52,23 @@ export function endTimer(label: string) {
   delete timers[label];
 }
 
+export function samScore(open: number, closed: number): number {
+  if (open === 0) {
+    return 0;
+  }
+
+  return (open / (open + closed)) * Math.log(Math.E + open + closed);
+}
+
 export function timeAgo(obj: types.internal.Timestamped): number {
   return Date.now() - Date.parse(obj.created_at);
+}
+
+export function split<T>(arr: T[], fn: (arg: T) => boolean) {
+  const yes = arr.filter(fn);
+  const no = arr.filter(x => !fn(x));
+
+  return [yes, no];
 }
 
 export function compareTimestamps(

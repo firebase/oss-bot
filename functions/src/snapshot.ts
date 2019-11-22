@@ -105,7 +105,7 @@ export async function GetRepoSnapshot(
   owner: string,
   repo: string,
   repoData: any
-): Promise<{ repoData: any; issueData: any }> {
+): Promise<{ repoData: any; issueData: snapshot.Map<snapshot.Issue> }> {
   if (!repoData) {
     log.warn(`GetRepoSnapshot called with null data for ${owner}/${repo}`);
   }
@@ -118,10 +118,11 @@ export async function GetRepoSnapshot(
   issues = scrubArray(issues, ["organization", "url"]);
 
   // We're going to keep a copy of all issues for a given repo
-  // TODO(samstern): Create a type for this
-  const issueData: { [s: string]: any } = {};
+  const issueData: snapshot.Map<snapshot.Issue> = {};
   for (const issue of issues) {
     issueData[`id_${issue.number}`] = {
+      number: issue.number,
+      title: issue.title,
       state: issue.state,
       locked: issue.locked,
       pull_request: !!issue.pull_request,
@@ -129,6 +130,7 @@ export async function GetRepoSnapshot(
       user: {
         login: issue.user.login
       },
+      labels: issue.labels.map(l => l.name),
       updated_at: issue.updated_at,
       created_at: issue.created_at
     };

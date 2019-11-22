@@ -545,10 +545,18 @@ export namespace snapshot {
   }
 
   export interface Issue {
-    number: number;
     title: string;
+    number: number;
     comments: number;
     pull_request: boolean;
+    state: string;
+    locked: boolean;
+    user: {
+      login: string;
+    };
+    labels?: string[];
+    updated_at: string;
+    created_at: string;
   }
 }
 

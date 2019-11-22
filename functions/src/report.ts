@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, closestIndexTo } from "date-fns";
 import { readFileSync } from "fs";
 import * as functions from "firebase-functions";
 import * as path from "path";
@@ -11,7 +11,6 @@ import * as snap from "./snapshot";
 import * as util from "./util";
 import { snapshot, report } from "./types";
 import { BotConfig, getFunctionsConfig } from "./config";
-import { now } from "moment";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -410,27 +409,37 @@ export async function MakeRepoReport(
   };
 }
 
-// TODO(samstern): Move these to a utility somewhere
-function filterProps(arr: any[], props: { [prop: string]: any }) {
-  let result = arr;
+function scoreStateCounts(x: IssueStateCounts) {
+  return util.samScore(x.open, x.closed);
+}
 
-  Object.keys(props).forEach((prop: string) => {
-    result = result.filter((x: any) => x[prop] === props[prop]);
-  });
+function getStateCounts(issues: Array<snapshot.Issue>): IssueStateCounts {
+  const open = issues.filter(x => x.state === "open").length;
+  const closed = issues.filter(x => x.state === "closed").length;
+  const pct = closed / (closed + open);
 
-  return result;
+  return {
+    open,
+    closed,
+    pct
+  };
+}
+
+// TODO: Move this somewhere
+interface IssueStateCounts {
+  open: number;
+  closed: number;
+  pct: number;
 }
 
 /**
  * HTTP function for experimenting with a new SAM score.
  */
-export const CalculateExperimentalScore = functions
+export const RepoIssueStatistics = functions
   .runWith(util.FUNCTION_OPTS)
   .https.onRequest(async (req, res) => {
-    // TODO: Allow passing in the 'start' date to get historical data.
-
-    const org = req.param("org") || "firebase";
-    const repo = req.param("repo");
+    const org = req.query["org"] || "firebase";
+    const repo = req.query["repo"];
     if (repo === undefined) {
       res.status(500).send("Must specify 'repo' param");
       return;
@@ -441,40 +450,78 @@ export const CalculateExperimentalScore = functions
       .child(org)
       .child(repo)
       .once("value");
-    const issueObj = issuesSnap.val();
+    const issueObj = issuesSnap.val() as snapshot.Map<snapshot.Issue>;
 
-    // TODO: Filter for last 3 months
-    const nowMs = new Date().getTime();
-    const cutoffMs = nowMs - 30 * 24 * 60 * 60 * 1000; // 30 days ago
-
-    const allIssues = Object.values(issueObj);
-    const recentIssues = allIssues.filter((issue: any) => {
-      const created = new Date(issue.created_at);
-      return created.getTime() > cutoffMs;
+    // All issues and prs sorted by age
+    const issuesAndPrs = Object.values(issueObj).sort((x, y) => {
+      return util.timeAgo(x) - util.timeAgo(y);
     });
 
-    // TODO: Get some type information with these issues
+    const [prs, issues] = util.split(issuesAndPrs, x => x.pull_request);
 
-    const prs = filterProps(allIssues, { pull_request: true });
-    const issues = filterProps(allIssues, { pull_request: false });
+    const recentDaysCutoff = 90;
+    const recentIssues = issues.filter(issue => {
+      const daysAgo = util.timeAgo(issue) / DAY_MS;
+      return daysAgo < recentDaysCutoff;
+    });
 
-    res.json({
-      issues: {
-        total: issues.length,
-        open: filterProps(allIssues, { state: "open" }).length,
-        closed: filterProps(allIssues, { state: "closed" }).length
-      },
-      prs: {
-        total: prs.length,
-        open: filterProps(allIssues, { state: "open" }).length,
-        closed: filterProps(allIssues, { state: "closed" }).length
-      },
-      recent_issues: {
-        open: filterProps(recentIssues, { state: "open" }).length,
-        closed: filterProps(recentIssues, { state: "closed" }).length,
-        total: recentIssues.length
+    const openIssues = issues.filter(x => x.state === "open");
+    const openIssueAges = openIssues.map(x => {
+      return Math.floor(util.timeAgo(x) / DAY_MS);
+    });
+
+    // TODO: stats about issue creation rate?
+    const issue_stats = {
+      oldest_open_days: openIssueAges[openIssueAges.length - 1],
+      median_open_days: openIssueAges[Math.floor(openIssueAges.length / 2)]
+    };
+
+    const weighted = {
+      open: 0,
+      closed: 0,
+      pct: 0.0
+    };
+    for (const i of issues) {
+      const daysAgo = util.timeAgo(i) / DAY_MS;
+      const yearsAgo = daysAgo / 365;
+
+      // A scale that goes 0.33 to inf as an issue ages
+      const weight = Math.max(yearsAgo, 0.5);
+      if (i.state === "open") {
+        weighted.open += weight;
+      } else {
+        weighted.closed += weight;
       }
+    }
+    weighted.pct = weighted.closed / (weighted.open + weighted.closed);
+
+    const [frs, nonFrs] = util.split(issues, i => {
+      if (!i.labels) {
+        return false;
+      }
+
+      return i.labels.indexOf("type: feature request") >= 0;
     });
+
+    const counts = {
+      issues: getStateCounts(issues),
+      prs: getStateCounts(prs),
+      frs: getStateCounts(frs),
+      nonFrs: getStateCounts(nonFrs),
+      recent_issues: getStateCounts(recentIssues)
+    };
+
+    const sam = scoreStateCounts(counts.issues);
+    const non_frs_sam = scoreStateCounts(counts.nonFrs);
+    const weighted_sam = scoreStateCounts(weighted);
+
+    const scores = {
+      sam,
+      non_frs_sam,
+      weighted_sam
+    };
+
+    res.json({ open_issue_stats: issue_stats, counts, scores });
   });
 
 /**
@@ -494,7 +541,7 @@ export const GetRepoReport = functions
 
     try {
       const report = await MakeRepoReport(org, repo);
-      res.status(200).send(JSON.stringify(report));
+      res.json(report);
     } catch (e) {
       res.status(500).send(e);
     }
