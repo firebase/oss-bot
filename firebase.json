@@ -1,6 +1,12 @@
 {
   "hosting": {
-    "public": "public"
+    "public": "public",
+    "rewrites": [
+      {
+        "source": "/issuestats",
+        "function": "RepoIssueStatistics"
+      }
+    ]
   },
   "emulators": {
     "functions": {
