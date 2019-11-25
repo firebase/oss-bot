@@ -69,6 +69,12 @@ export function split<T>(arr: T[], fn: (arg: T) => boolean) {
   const yes = arr.filter(fn);
   const no = arr.filter(x => !fn(x));
 
+  if (yes.length + no.length !== arr.length) {
+    console.warn(
+      `util.split() split ${arr.length} into ${yes.length} and ${no.length}`
+    );
+  }
+
   return [yes, no];
 }
 

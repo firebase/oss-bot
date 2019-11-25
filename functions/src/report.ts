@@ -1,4 +1,4 @@
-import { format, closestIndexTo } from "date-fns";
+import { format } from "date-fns";
 import { readFileSync } from "fs";
 import * as functions from "firebase-functions";
 import * as path from "path";
@@ -9,9 +9,9 @@ import * as email from "./email";
 import * as log from "./log";
 import * as snap from "./snapshot";
 import * as util from "./util";
+import * as stats from "./stats";
 import { snapshot, report } from "./types";
 import { BotConfig, getFunctionsConfig } from "./config";
-import { issue } from "firebase-functions/lib/providers/crashlytics";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -411,55 +411,6 @@ export async function MakeRepoReport(
 }
 
 /**
- * TODO(samstern): Move all this stuff somewhere.
- */
-
-function getStateCounts(issues: Array<snapshot.Issue>): IssueStats {
-  const [openIss, closedIss] = util.split(issues, IssueFilters.isOpen);
-
-  const open = openIss.length;
-  const closed = closedIss.length;
-  const percent_closed = Math.floor((closed / (closed + open)) * 100);
-  const sam_score = util.samScore(open, closed);
-
-  return {
-    open,
-    closed,
-    percent_closed,
-    sam_score
-  };
-}
-
-interface IssueStats {
-  open: number;
-  closed: number;
-  percent_closed?: number;
-  sam_score?: number;
-}
-
-const IssueFilters = {
-  isOpen: (x: snapshot.Issue) => {
-    return x.state === "open";
-  },
-
-  isPullRequest: (x: snapshot.Issue) => {
-    return x.pull_request;
-  },
-
-  isFeatureRequest: (x: snapshot.Issue) => {
-    if (!x.labels) {
-      return false;
-    }
-
-    return x.labels.indexOf("type: feature request") >= 0;
-  },
-
-  isInternal: (c: snapshot.Map<boolean>) => (x: snapshot.Issue) => {
-    return c[x.user.login];
-  }
-};
-
-/**
  * HTTP function for experimenting with a new SAM score.
  */
 export const RepoIssueStatistics = functions
@@ -472,73 +423,7 @@ export const RepoIssueStatistics = functions
       return;
     }
 
-    const issuesSnap = await database
-      .ref("issues")
-      .child(org)
-      .child(repo)
-      .once("value");
-    const issueObj = issuesSnap.val() as snapshot.Map<snapshot.Issue>;
-
-    const contributorsSnap = await database
-      .ref("repo-metadata")
-      .child(org)
-      .child(repo)
-      .child("collaborators")
-      .once("value");
-    const contributors = contributorsSnap.val() as snapshot.Map<boolean>;
-
-    // All issues and prs sorted by age
-    const issuesAndPrs = Object.values(issueObj).sort((x, y) => {
-      return util.timeAgo(x) - util.timeAgo(y);
-    });
-
-    // Split into filed-by-googlers and not.
-    const [internal, external] = util.split(
-      issuesAndPrs,
-      IssueFilters.isInternal(contributors)
-    );
-
-    // external_bugs are the issues we care about:
-    //  * Issue or PR
-    //  * Not filed by a Googler
-    //  * Not a feature request
-    const [external_frs, external_bugs] = util.split(
-      external,
-      IssueFilters.isFeatureRequest
-    );
-
-    const [prs, issues] = util.split(issuesAndPrs, IssueFilters.isPullRequest);
-    const [feature_requests, bugs] = util.split(
-      issues,
-      IssueFilters.isFeatureRequest
-    );
-
-    const [internal_prs, external_prs] = util.split(
-      prs,
-      IssueFilters.isInternal(contributors)
-    );
-
-    const counts = {
-      combined: {
-        all: getStateCounts(issuesAndPrs),
-        internal: getStateCounts(internal),
-        external: getStateCounts(external)
-      },
-
-      issues: {
-        all: getStateCounts(issues),
-        feature_requests: getStateCounts(feature_requests),
-        bugs: getStateCounts(bugs),
-        external_bugs: getStateCounts(external_bugs)
-      },
-
-      prs: {
-        all: getStateCounts(prs),
-        internal: getStateCounts(internal_prs),
-        external: getStateCounts(external_prs)
-      }
-    };
-
+    const counts = await stats.getRepoIssueStats(org, repo);
     res.json(counts);
   });
 
