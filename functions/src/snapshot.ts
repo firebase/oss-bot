@@ -12,7 +12,12 @@ const bot_config = config.BotConfig.getDefault();
 const gh_client = new github.GithubClient(
   config.getFunctionsConfig("github.token")
 );
-gh_client.auth();
+
+try {
+  gh_client.auth();
+} catch (e) {
+  log.warn(`Unable to authenticate Github client. If this is a non-test environment things will go badly: ${e}`);
+}
 
 // Just #pubsubthings
 const PubSub = require("@google-cloud/pubsub");
