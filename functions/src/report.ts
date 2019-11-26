@@ -37,7 +37,7 @@ interface RepoFilter {
   (repo: snapshot.Repo): boolean;
 }
 
-const snapshotsRef = database.ref("snapshots/github");
+const snapshotsRef = database().ref("snapshots/github");
 
 const email_client = new email.EmailClient(
   getFunctionsConfig("mailgun.key"),
@@ -461,7 +461,7 @@ export const SaveWeeklyReport = functions
 
     // Save firebase report to the DB
     const report = await GetWeeklyReport("firebase");
-    return database
+    return database()
       .ref("reports")
       .child("github")
       .child(util.DateSlug(now))
@@ -528,14 +528,14 @@ export async function GetWeeklyEmail(org: string) {
   // reports were stored just under reports/github. This is special-cased.
   const reportsChild = org === "firebase" ? "github" : org;
 
-  const reportSnapshot = await database
+  const reportSnapshot = await database()
     .ref("reports")
     .child(reportsChild)
     .limitToLast(1)
     .once("child_added");
   const report = reportSnapshot.val();
 
-  const previousReportSnapshot = await database
+  const previousReportSnapshot = await database()
     .ref("reports")
     .child(reportsChild)
     .limitToLast(2)

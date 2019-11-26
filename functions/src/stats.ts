@@ -52,14 +52,14 @@ export interface IssueStats {
  * HTTP function for experimenting with a new SAM score.
  */
 export async function getRepoIssueStats(org: string, repo: string) {
-  const issuesSnap = await database
+  const issuesSnap = await database()
     .ref("issues")
     .child(org)
     .child(repo)
     .once("value");
   const issueObj = issuesSnap.val() as snapshot.Map<snapshot.Issue>;
 
-  const contributorsSnap = await database
+  const contributorsSnap = await database()
     .ref("repo-metadata")
     .child(org)
     .child(repo)

@@ -18,6 +18,7 @@ import "mocha";
 import * as fs from "fs";
 import * as path from "path";
 import * as assert from "assert";
+import * as simple from "simple-mock";
 
 import * as log from "../log";
 import * as issues from "../issues";
@@ -25,6 +26,7 @@ import * as pullrequests from "../pullrequests";
 import * as config from "../config";
 import * as types from "../types";
 import * as mocks from "./mocks";
+import * as snapshot from "../snapshot";
 
 class SimpleIssue extends types.github.Issue {
   constructor(opts: any) {
@@ -224,6 +226,9 @@ function actionMatches(action: types.Action, props: any): boolean {
 describe("The OSS Robot", () => {
   before(() => {
     log.setLogLevel(log.Level.WARN);
+
+    // TODO(samstern): Could use the emulators so I don't need this.
+    simple.mock(snapshot, "userIsCollaborator").resolveWith(false);
   });
 
   after(() => {

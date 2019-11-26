@@ -65,6 +65,24 @@ function RepoSnapshotPath(org: string, repo: string, date: Date) {
   return `${DateSnapshotPath(org, date)}/repos/${repo}`;
 }
 
+export async function userIsCollaborator(
+  org: string,
+  repo: string,
+  user: string
+): Promise<boolean> {
+  const repoMetaRef = database()
+    .ref("repo-metadata")
+    .child(org)
+    .child(repo);
+
+  const userSnap = await repoMetaRef
+    .child("collaborators")
+    .child(user)
+    .once("value");
+
+  return userSnap.exists() && userSnap.val() === true;
+}
+
 /**
  * Get a point-in-time snapshot of a GitHub org.
  *
@@ -166,7 +184,9 @@ export async function FetchRepoSnapshot(
   date: Date
 ): Promise<snapshot.Repo | undefined> {
   const path = RepoSnapshotPath(org, repo, date);
-  const snap = await database.ref(path).once("value");
+  const snap = await database()
+    .ref(path)
+    .once("value");
   const data = snap.val();
   return data;
 }
@@ -187,7 +207,7 @@ export const SaveRepoSnapshot = functions
     }
 
     log.debug(`SaveRepoSnapshot(${org}/${repoName})`);
-    const orgRef = database.ref(DateSnapshotPath(org, new Date()));
+    const orgRef = database().ref(DateSnapshotPath(org, new Date()));
     const repoSnapRef = orgRef.child("repos").child(repoKey);
 
     // Get the "base" data that was retriebed during the org snapshot
@@ -221,7 +241,7 @@ export const SaveRepoSnapshot = functions
     log.debug(`Saving repo snapshot to ${repoSnapRef.path}`);
     await repoSnapRef.set(repoData);
 
-    const repoIssueRef = database
+    const repoIssueRef = database()
       .ref("issues")
       .child(org)
       .child(repoKey);
@@ -236,7 +256,7 @@ export const SaveRepoSnapshot = functions
     // Store non-date-specific repo metadata
     // TODO: This should probably be broken out into a function like GetRepoSnapshot
     //       and then only saved/timed here.
-    const repoMetaRef = database
+    const repoMetaRef = database()
       .ref("repo-metadata")
       .child(org)
       .child(repoKey);
@@ -274,7 +294,7 @@ export const SaveOrganizationSnapshot = functions
 
     // First snapshot the Fireabse org (deep snapshot)
     const firebaseOrgSnap = await GetOrganizationSnapshot("firebase", true);
-    await database
+    await database()
       .ref(DateSnapshotPath("firebase", new Date()))
       .set(firebaseOrgSnap);
 
@@ -283,7 +303,9 @@ export const SaveOrganizationSnapshot = functions
       if (org !== "firebase") {
         log.debug(`Taking snapshot of org: ${org}`);
         const orgSnap = await GetOrganizationSnapshot(org, false);
-        await database.ref(DateSnapshotPath(org, new Date())).set(orgSnap);
+        await database()
+          .ref(DateSnapshotPath(org, new Date()))
+          .set(orgSnap);
       }
     }
 
