@@ -448,52 +448,57 @@ export class IssueHandler {
     // Check for FR
     const is_fr = this.isFeatureRequest(issue);
 
+    // Try to label the issue based on configuration
+    const labelResult = this.config.getRelevantLabel(org, name, issue);
+    const found_label: boolean = !labelResult.error && !!labelResult.label;
+
     // Choose new label
-    let new_label: string;
-    let new_label_reason: string | undefined;
     if (is_fr) {
-      log.debug("Matched feature request template.");
-      new_label = LABEL_FR;
-      new_label_reason = "Matched the template for a feature request";
-    } else {
-      const labelResult = this.config.getRelevantLabel(org, name, issue);
-      if (!labelResult.error && labelResult.label) {
-        new_label = labelResult.label;
-        new_label_reason = `Issue matched regex for label "${new_label}" (${
-          labelResult.matchedRegex
-        })`;
-      } else {
-        new_label = LABEL_NEEDS_TRIAGE;
-        new_label_reason = "Issue did not match any label regexes";
-      }
-    }
-
-    // Add the label
-    log.debug(`Adding label: ${new_label}`);
-    const labelAction = new types.GithubAddLabelAction(
-      org,
-      name,
-      number,
-      new_label,
-      new_label_reason
-    );
-    actions.push(labelAction);
-
-    // Add a comment, if necessary
-    const found_label = new_label !== LABEL_NEEDS_TRIAGE;
-    if (!found_label) {
-      log.debug("Needs triage, adding friendly comment");
-      const commentAction = new types.GithubCommentAction(
-        org,
-        name,
-        number,
-        MSG_NEEDS_TRIAGE,
-        true,
-        "Friendly comment added when an issue is labeled needs-triage"
+      log.debug(`Matched feature request template, adding label ${LABEL_FR}`);
+      actions.push(
+        new types.GithubAddLabelAction(
+          org,
+          name,
+          number,
+          LABEL_FR,
+          "Matched the template for a feature request"
+        )
       );
-      actions.push(commentAction);
+    } else if (!labelResult.error && labelResult.label) {
+      const newLabel = labelResult.label;
+      log.debug(`Issue matched configuration for ${newLabel}`);
+      actions.push(
+        new types.GithubAddLabelAction(
+          org,
+          name,
+          number,
+          newLabel,
+          `Issue matched regex for label "${newLabel}" (${
+            labelResult.matchedRegex
+          })`
+        )
+      );
     } else {
-      log.debug(`Does not need triage, label is ${new_label}`);
+      log.debug("Issue needs triage, adding label and comment");
+      actions.push(
+        new types.GithubAddLabelAction(
+          org,
+          name,
+          number,
+          LABEL_NEEDS_TRIAGE,
+          "Issue did not match any label regexes"
+        )
+      );
+      actions.push(
+        new types.GithubCommentAction(
+          org,
+          name,
+          number,
+          MSG_NEEDS_TRIAGE,
+          true,
+          "Friendly comment added when an issue is labeled needs-triage"
+        )
+      );
     }
 
     return {
