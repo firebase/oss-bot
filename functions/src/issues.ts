@@ -338,7 +338,9 @@ export class IssueHandler {
     );
 
     const isBotComment = comment.user.login === "google-oss-bot";
-    if (cleanupConfig && cleanupConfig.issue && !isBotComment) {
+    const isClosed = issue.state === "closed";
+
+    if (cleanupConfig && cleanupConfig.issue && !isBotComment && !isClosed) {
       const issueConfig = cleanupConfig.issue;
       const labelNames = issue.labels.map(label => label.name);
 
