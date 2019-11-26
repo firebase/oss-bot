@@ -630,33 +630,10 @@ export namespace internal {
     number: number;
     title: string;
     body: string;
-    // TODO: does a PR have these?
     labels: Label[];
+    user: User;
 
     html_url?: string;
-    // id: number;
-    // url: string;
-    // diff_url: string;
-    // patch_url: string;
-    // issue_url: string;
-    // commits_url: string;
-    // review_comments_url: string;
-    // review_comment_url: string;
-    // comments_url: string;
-    // statuses_url: string;
-    // state: string;
-    // body: string;
-    // assignee: User;
-    // milestone: Milestone;
-    // locked: boolean;
-    // created_at: string;
-    // updated_at: string;
-    // closed_at: string;
-    // merged_at: string;
-    // head: Commit;
-    // base: Commit;
-    // _links: Links;
-    // user: User;
   }
 
   export interface Comment {
