@@ -209,12 +209,17 @@ export class IssueHandler {
     // Check if it matches the template. This feature is implicitly enabled by
     // the template having "matchable" structure so there is no need to check
     // the repo's configuration.
-    const templateActions = await this.checkNewIssueTemplate(
-      repo,
-      issue,
-      categorization
+    const templateActions = await this.checkNewIssueTemplate(repo, issue);
+
+    // There are some situations where we don't want to nag about the template
+    //  1) This is a feature request
+    //  2) We were able to label with some something besides needs_triage
+    const shouldValidateTemplate = !(
+      categorization.is_fr || categorization.found_label
     );
-    actions.push(...templateActions);
+    if (shouldValidateTemplate) {
+      actions.push(...templateActions);
+    }
 
     // Return a list of actions to do
     return actions;
@@ -514,8 +519,7 @@ export class IssueHandler {
    */
   async checkNewIssueTemplate(
     repo: types.internal.Repository,
-    issue: types.internal.Issue,
-    categorization: CategorizeIssueResult
+    issue: types.internal.Issue
   ): Promise<types.Action[]> {
     const actions: types.Action[] = [];
     const org = repo.owner.login;
@@ -525,21 +529,13 @@ export class IssueHandler {
     const res = await this.checkMatchesTemplate(org, name, issue);
     log.debug(`Check template result: ${JSON.stringify(res)}`);
 
-    // There are some situations where we don't want to nag about the template
-    //  1) This is a feature request
-    //  2) We were able to label with some something besides needs_triage
-    const skipTemplateComment =
-      categorization.is_fr || categorization.found_label;
-
     const validationConfig = this.config.getRepoTemplateValidationConfig(
       repo.owner.login,
       repo.name,
       res.templatePath
     );
 
-    if (skipTemplateComment) {
-      log.debug("FR or labeled issue, ignoring template matching");
-    } else if (!res.matches) {
+    if (!res.matches) {
       // If it does not match:
       //  * Add a comment explaining the probblems.
       //  * If configured, add a label for template validation failure.
