@@ -70,10 +70,11 @@ export async function userIsCollaborator(
   repo: string,
   user: string
 ): Promise<boolean> {
+  const repoKey = cleanRepoName(repo);
   const repoMetaRef = database()
     .ref("repo-metadata")
     .child(org)
-    .child(repo);
+    .child(repoKey);
 
   const userSnap = await repoMetaRef
     .child("collaborators")

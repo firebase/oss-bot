@@ -331,6 +331,8 @@ async function executeAction(action: types.Action): Promise<any> {
       emailAction.link,
       emailAction.action
     );
+  } else if (action.type === types.ActionType.GITHUB_NO_OP) {
+    actionPromise = Promise.resolve();
   } else {
     return Promise.reject(`Unrecognized action: ${JSON.stringify(action)}`);
   }

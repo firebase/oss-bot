@@ -226,13 +226,15 @@ function actionMatches(action: types.Action, props: any): boolean {
 describe("The OSS Robot", () => {
   before(() => {
     log.setLogLevel(log.Level.WARN);
-
-    // TODO(samstern): Could use the emulators so I don't need this.
-    simple.mock(snapshot, "userIsCollaborator").resolveWith(false);
   });
 
   after(() => {
     log.setLogLevel(log.Level.ALL);
+  });
+
+  beforeEach(() => {
+    // TODO(samstern): Could use the emulators so I don't need this.
+    simple.mock(snapshot, "userIsCollaborator").resolveWith(false);
   });
 
   afterEach(() => {
@@ -386,6 +388,25 @@ describe("The OSS Robot", () => {
     assertMatchingAction(actions, {
       type: types.ActionType.GITHUB_ADD_LABEL,
       label: "needs-triage"
+    });
+  });
+
+  it("should let a collaborator file a totally crap issue", async () => {
+    // Make everyone a collaborator
+    simple.mock(snapshot, 'userIsCollaborator').resolveWith(true);
+
+    const actions = await issue_handler.handleIssueEvent(
+      issue_opened_bot_test_empty,
+      issues.IssueAction.OPENED,
+      issue_opened_bot_test_empty.issue,
+      test_repo,
+      sender
+    );
+
+    assert.equal(actions.length, 1, "Should be one action");
+
+    assertMatchingAction(actions, {
+      type: types.ActionType.GITHUB_NO_OP
     });
   });
 

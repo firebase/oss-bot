@@ -208,23 +208,30 @@ export class IssueHandler {
       actions.push(...categorization.actions);
     }
 
-    // If the issue needs triage, there's a fixed label and comment
+    // If the issue is filed by a collaborator, we stop here.
     const isCollaborator = await snapshot.userIsCollaborator(
       org,
       name,
       issue.user.login
     );
-
-    if (repoFeatures.issue_labels && categorization.needs_triage) {
-      if (isCollaborator) {
-        log.debug(
-          `Issue is filed by repo collaborator: ${
+    if (isCollaborator) {
+      actions.push(
+        new types.GithubNoOpAction(
+          org,
+          name,
+          issue.number,
+          `No further action taken on this issue because it was filed by repo collaborator: ${
             issue.user.login
-          }, no needs-triage`
-        );
-      } else {
-        actions.push(...this.markNeedsTriage(repo, issue));
-      }
+          }`
+        )
+      );
+
+      return actions;
+    }
+
+    // If the issue needs triage, there's a fixed label and comment
+    if (repoFeatures.issue_labels && categorization.needs_triage) {
+      actions.push(...this.markNeedsTriage(repo, issue));
     }
 
     // Check if it matches the template. This feature is implicitly enabled by
