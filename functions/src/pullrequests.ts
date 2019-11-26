@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import * as marked from "marked";
 
 import * as config from "./config";
+import * as email from "./email";
 import * as log from "./log";
 import * as types from "./types";
 
@@ -45,10 +47,14 @@ const LABEL_NEEDS_TRIAGE = "needs-triage";
  */
 export class PullRequestHandler {
   config: config.BotConfig;
+  emailer: email.EmailUtils;
 
   constructor(config: config.BotConfig) {
     // Configuration
     this.config = config;
+
+    // Email utiltity
+    this.emailer = new email.EmailUtils(this.config);
   }
 
   /**
@@ -65,7 +71,7 @@ export class PullRequestHandler {
       case PullRequestAction.OPENED:
         return this.onNewPullRequest(repo, pr);
       case PullRequestAction.LABELED:
-        return this.onPullRequestLabeled(repo, pr);
+        return this.onPullRequestLabeled(repo, pr, event.label.name);
       case PullRequestAction.ASSIGNED:
       /* falls through */
       case PullRequestAction.UNASSIGNED:
@@ -118,10 +124,24 @@ export class PullRequestHandler {
 
   async onPullRequestLabeled(
     repo: types.github.Repository,
-    pr: types.github.PullRequest
+    pr: types.github.PullRequest,
+    label: string
   ): Promise<types.Action[]> {
-    // TODO(samstern): Send a an email to the right people
-    return [];
+    // Render the PR body
+    const body_html = marked(pr.body);
+
+    // Send a new PR email
+    const action = this.emailer.getIssueUpdateEmailAction(repo, pr, {
+      header: `New Pull Request from ${pr.user.login} in label ${label}`,
+      body: body_html,
+      label: label
+    });
+
+    if (!action) {
+      return [];
+    }
+
+    return [action];
   }
 
   /**

@@ -25,7 +25,6 @@ import * as pullrequests from "../pullrequests";
 import * as config from "../config";
 import * as types from "../types";
 import * as mocks from "./mocks";
-import { exec } from "child_process";
 
 class SimpleIssue extends types.github.Issue {
   constructor(opts: any) {
@@ -43,6 +42,7 @@ class SimplePullRequest extends types.github.PullRequest {
 
     this.title = opts.title;
     this.body = opts.body;
+    this.user = opts.user;
   }
 }
 
@@ -483,7 +483,7 @@ describe("The OSS Robot", () => {
     const issue = issue_opened_bot_test_partial.issue;
 
     // Should match the auth issue
-    const labelRes = issue_handler.getRelevantLabel(
+    const labelRes = issue_handler.config.getRelevantLabel(
       "samtstern",
       "BotTest",
       issue
@@ -561,7 +561,7 @@ describe("The OSS Robot", () => {
 
   it("should correctly label a real database issue", () => {
     const issue = issue_opened_js_sdk_db.issue;
-    const labelRes = issue_handler.getRelevantLabel(
+    const labelRes = issue_handler.config.getRelevantLabel(
       "samtstern",
       "BotTest",
       issue
@@ -571,7 +571,7 @@ describe("The OSS Robot", () => {
 
   it("should correctly label a real messaging issue", () => {
     const issue = issue_opened_js_sdk_messaging.issue;
-    const labelRes = issue_handler.getRelevantLabel(
+    const labelRes = issue_handler.config.getRelevantLabel(
       "samtstern",
       "BotTest",
       issue
@@ -585,7 +585,7 @@ describe("The OSS Robot", () => {
     dbLabel.name = "DatabaSe";
     issue.labels = [dbLabel];
 
-    const labelRes = issue_handler.getRelevantLabel(
+    const labelRes = issue_handler.config.getRelevantLabel(
       "samtstern",
       "BotTest",
       issue
@@ -608,10 +608,27 @@ describe("The OSS Robot", () => {
     assert.ok(regular === undefined, "Does not find an unspecified template");
   });
 
-  it("should send emails when a recognized label is added", async () => {
+  it("should send emails when a recognized label is added to an issue", async () => {
     const actions = await issue_handler.onIssueLabeled(
       test_repo,
       good_issue,
+      "auth"
+    );
+
+    assertMatchingAction(actions, {
+      type: types.ActionType.EMAIL_SEND
+    });
+  });
+
+  it("should send emails when a recognized label is added to a pull request", async () => {
+    const actions = await pr_handler.onPullRequestLabeled(
+      test_repo,
+      new SimplePullRequest({
+        body: "Hey this is an auth issue!",
+        user: {
+          login: "samtstern"
+        }
+      }),
       "auth"
     );
 

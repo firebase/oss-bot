@@ -20,6 +20,7 @@ import * as template from "./template";
 import * as config from "./config";
 import * as types from "./types";
 import * as log from "./log";
+import * as email from "./email";
 
 export const MSG_FOLLOW_TEMPLATE =
   "This issue does not seem to follow the issue template. " +
@@ -68,12 +69,6 @@ export enum IssueStatus {
   OPEN = "open"
 }
 
-interface SendIssueUpdateEmailOpts {
-  header: string;
-  body: string;
-  label?: string;
-}
-
 class CheckMatchesTemplateResult {
   skipped: boolean = false;
   matches: boolean = true;
@@ -85,13 +80,6 @@ class CheckMatchesTemplateResult {
     emptySections?: string[];
     otherError?: string;
   };
-}
-
-interface RelevantLabelResponse {
-  label?: string;
-  new?: boolean;
-  matchedRegex?: string;
-  error?: string;
 }
 
 interface CategorizeIssueResult {
@@ -114,6 +102,7 @@ const LABEL_FR = "type: feature-request";
 export class IssueHandler {
   gh_client: github.GithubClient;
   config: config.BotConfig;
+  emailer: email.EmailUtils;
 
   constructor(gh_client: github.GithubClient, config: config.BotConfig) {
     // Client for interacting with github
@@ -121,6 +110,9 @@ export class IssueHandler {
 
     // Configuration
     this.config = config;
+
+    // Email utiltity
+    this.emailer = new email.EmailUtils(this.config);
   }
 
   /**
@@ -247,7 +239,7 @@ export class IssueHandler {
     const assignee = issue.assignee.login;
     const body = "Assigned to " + assignee;
 
-    const action = this.getIssueUpdateEmailAction(repo, issue, {
+    const action = this.emailer.getIssueUpdateEmailAction(repo, issue, {
       header: "Changed: Assignee",
       body: body
     });
@@ -270,7 +262,7 @@ export class IssueHandler {
   ): types.Action[] {
     const body = "New status: " + new_status;
 
-    const action = this.getIssueUpdateEmailAction(repo, issue, {
+    const action = this.emailer.getIssueUpdateEmailAction(repo, issue, {
       header: "Changed: Status",
       body: body
     });
@@ -294,7 +286,7 @@ export class IssueHandler {
     const body_html = marked(issue.body);
 
     // Send a new issue email
-    const action = this.getIssueUpdateEmailAction(repo, issue, {
+    const action = this.emailer.getIssueUpdateEmailAction(repo, issue, {
       header: `New Issue from ${issue.user.login} in label ${label}`,
       body: body_html,
       label: label
@@ -330,7 +322,7 @@ export class IssueHandler {
 
     // Send an email to subscribers
     const comment_html = marked(comment.body);
-    const emailAction = this.getIssueUpdateEmailAction(repo, issue, {
+    const emailAction = this.emailer.getIssueUpdateEmailAction(repo, issue, {
       header: `New Comment by ${comment.user.login}`,
       body: comment_html
     });
@@ -462,7 +454,7 @@ export class IssueHandler {
       new_label = LABEL_FR;
       new_label_reason = "Matched the template for a feature request";
     } else {
-      const labelResult = this.getRelevantLabel(org, name, issue);
+      const labelResult = this.config.getRelevantLabel(org, name, issue);
       if (!labelResult.error && labelResult.label) {
         new_label = labelResult.label;
         new_label_reason = `Issue matched regex for label "${new_label}" (${
@@ -582,138 +574,6 @@ export class IssueHandler {
     }
 
     return actions;
-  }
-
-  /**
-   * Send an email when an issue has been updated.
-   */
-  getIssueUpdateEmailAction(
-    repo: types.internal.Repository,
-    issue: types.internal.Issue,
-    opts: SendIssueUpdateEmailOpts
-  ): types.SendEmailAction | undefined {
-    // Get basic issue information
-    const org = repo.owner.login;
-    const name = repo.name;
-    const number = issue.number;
-
-    // Check if emails are enabled at all
-    const repoFeatures = this.config.getRepoFeatures(org, name);
-    if (!repoFeatures.custom_emails) {
-      log.debug("Repo does not have the email feature enabled.");
-      return undefined;
-    }
-
-    // See if this issue belongs to any team.
-    let label: string | undefined = opts.label;
-    if (!label) {
-      const labelRes = this.getRelevantLabel(org, name, issue);
-      label = labelRes.label;
-    }
-    if (!label) {
-      log.debug("Not a relevant label, no email needed.");
-      return undefined;
-    }
-
-    // Get label email from mapping
-    let recipient;
-    const label_config = this.config.getRepoLabelConfig(org, name, label);
-    if (label_config) {
-      recipient = label_config.email;
-    }
-
-    if (!recipient) {
-      log.debug("Nobody to notify, no email needed.");
-      return undefined;
-    }
-
-    // Get email subject
-    const subject = this.getIssueEmailSubject(issue.title, org, name, label);
-
-    const issue_url =
-      issue.html_url || `https://github.com/${org}/${name}/issues/${number}`;
-
-    // Send email update
-    return new types.SendEmailAction(
-      recipient,
-      subject,
-      opts.header,
-      opts.body,
-      issue_url,
-      "Open Issue"
-    );
-  }
-
-  /**
-   * Pick the first label from an issue that has a related configuration.
-   */
-  getRelevantLabel(
-    org: string,
-    name: string,
-    issue: types.internal.Issue
-  ): RelevantLabelResponse {
-    // Make sure we at least have configuration for this repository
-    const repo_mapping = this.config.getRepoConfig(org, name);
-    if (!repo_mapping) {
-      log.debug(`No config for ${org}/${name} in: `, this.config);
-
-      return {
-        error: "No config found"
-      };
-    }
-
-    // Get the labeling rules for this repo
-    log.debug("Found config: ", repo_mapping);
-
-    // Iterate through issue labels, see if one of the existing ones works
-    // TODO(samstern): Deal with needs_triage separately
-    const issueLabelNames: string[] = issue.labels.map(label => {
-      return label.name;
-    });
-
-    for (const key of issueLabelNames) {
-      const label_mapping = this.config.getRepoLabelConfig(org, name, key);
-      if (label_mapping) {
-        return {
-          label: key,
-          new: false
-        };
-      }
-    }
-
-    // Try to match the issue body to a new label
-    log.debug("No existing relevant label, trying regex");
-    log.debug("Issue body: " + issue.body);
-
-    for (const label in repo_mapping.labels) {
-      const labelInfo = repo_mapping.labels[label];
-
-      // Some labels do not have a regex
-      if (!labelInfo.regex) {
-        log.debug(`Label ${label} does not have a regex.`);
-        continue;
-      }
-
-      const regex = new RegExp(labelInfo.regex);
-
-      // If the regex matches, choose the label and email then break out
-      if (regex.test(issue.body)) {
-        log.debug("Matched label: " + label, JSON.stringify(labelInfo));
-        return {
-          label,
-          new: true,
-          matchedRegex: regex.source
-        };
-      } else {
-        log.debug(`Did not match regex for ${label}: ${labelInfo.regex}`);
-      }
-    }
-
-    // Return undefined if none found
-    log.debug("No relevant label found");
-    return {
-      label: undefined
-    };
   }
 
   /**
@@ -863,19 +723,6 @@ export class IssueHandler {
     }
 
     return options;
-  }
-
-  /**
-   * Make an email subject that"s suitable for filtering.
-   * ex: "[firebase/ios-sdk][auth] I have an auth issue!"
-   */
-  getIssueEmailSubject(
-    title: string,
-    org: string,
-    name: string,
-    label: string
-  ): string {
-    return `[${org}/${name}][${label}] ${title}`;
   }
 
   /**
