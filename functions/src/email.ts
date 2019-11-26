@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 import * as log from "./log";
+import * as types from "./types";
+import * as config from "./config";
 
 const mailgun = require("mailgun-js");
 
@@ -130,5 +132,88 @@ export class EmailClient {
     }
 
     return this.sender;
+  }
+}
+
+export interface SendIssueUpdateEmailOpts {
+  header: string;
+  body: string;
+  label?: string;
+}
+
+export class EmailUtils {
+  constructor(private config: config.BotConfig) {}
+
+  /**
+   * Send an email when an issue has been updated.
+   */
+  getIssueUpdateEmailAction(
+    repo: types.internal.Repository,
+    issue: types.internal.IssueOrPullRequest,
+    opts: SendIssueUpdateEmailOpts
+  ): types.SendEmailAction | undefined {
+    // Get basic issue information
+    const org = repo.owner.login;
+    const name = repo.name;
+    const number = issue.number;
+
+    // Check if emails are enabled at all
+    const repoFeatures = this.config.getRepoFeatures(org, name);
+    if (!repoFeatures.custom_emails) {
+      log.debug("Repo does not have the email feature enabled.");
+      return undefined;
+    }
+
+    // See if this issue belongs to any team.
+    let label: string | undefined = opts.label;
+    if (!label) {
+      const labelRes = this.config.getRelevantLabel(org, name, issue);
+      label = labelRes.label;
+    }
+    if (!label) {
+      log.debug("Not a relevant label, no email needed.");
+      return undefined;
+    }
+
+    // Get label email from mapping
+    let recipient;
+    const label_config = this.config.getRepoLabelConfig(org, name, label);
+    if (label_config) {
+      recipient = label_config.email;
+    }
+
+    if (!recipient) {
+      log.debug("Nobody to notify, no email needed.");
+      return undefined;
+    }
+
+    // Get email subject
+    const subject = this.getIssueEmailSubject(issue.title, org, name, label);
+
+    const issue_url =
+      issue.html_url || `https://github.com/${org}/${name}/issues/${number}`;
+
+    // Send email update
+    return new types.SendEmailAction(
+      recipient,
+      subject,
+      opts.header,
+      opts.body,
+      issue_url,
+      "Open Issue"
+    );
+  }
+
+  /**
+   * Make an email subject that"s suitable for filtering.
+   * ex: "[firebase/ios-sdk][auth] I have an auth issue!"
+   */
+  getIssueEmailSubject(
+    title: string,
+    org: string,
+    name: string,
+    label: string
+  ): string {
+    return `[${org}/${name}][${label}] ${title}`;
   }
 }

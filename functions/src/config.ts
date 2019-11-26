@@ -24,6 +24,13 @@ interface Repo {
   name: string;
 }
 
+interface RelevantLabelResponse {
+  label?: string;
+  new?: boolean;
+  matchedRegex?: string;
+  error?: string;
+}
+
 export function getFunctionsConfig(key: string): any {
   // Allow the environment to overrride anything else
   const envKey = encoding.toEnvKey(key);
@@ -212,6 +219,78 @@ export class BotConfig {
     if (repoConfig && repoConfig.validation) {
       return repoConfig.validation.templates[templatePath];
     }
+  }
+
+  /**
+   * Pick the first label from an issue that has a related configuration.
+   */
+  getRelevantLabel(
+    org: string,
+    name: string,
+    issue: types.internal.IssueOrPullRequest
+  ): RelevantLabelResponse {
+    // Make sure we at least have configuration for this repository
+    const repo_mapping = this.getRepoConfig(org, name);
+    if (!repo_mapping) {
+      log.debug(`No config for ${org}/${name} in: `, this.config);
+
+      return {
+        error: "No config found"
+      };
+    }
+
+    // Get the labeling rules for this repo
+    log.debug("Found config: ", repo_mapping);
+
+    // Iterate through issue labels, see if one of the existing ones works
+    // TODO(samstern): Deal with needs_triage separately
+    const issueLabelNames: string[] = issue.labels.map(label => {
+      return label.name;
+    });
+
+    for (const key of issueLabelNames) {
+      const label_mapping = this.getRepoLabelConfig(org, name, key);
+      if (label_mapping) {
+        return {
+          label: key,
+          new: false
+        };
+      }
+    }
+
+    // Try to match the issue body to a new label
+    log.debug("No existing relevant label, trying regex");
+    log.debug("Issue body: " + issue.body);
+
+    for (const label in repo_mapping.labels) {
+      const labelInfo = repo_mapping.labels[label];
+
+      // Some labels do not have a regex
+      if (!labelInfo.regex) {
+        log.debug(`Label ${label} does not have a regex.`);
+        continue;
+      }
+
+      const regex = new RegExp(labelInfo.regex);
+
+      // If the regex matches, choose the label and email then break out
+      if (regex.test(issue.body)) {
+        log.debug("Matched label: " + label, JSON.stringify(labelInfo));
+        return {
+          label,
+          new: true,
+          matchedRegex: regex.source
+        };
+      } else {
+        log.debug(`Did not match regex for ${label}: ${labelInfo.regex}`);
+      }
+    }
+
+    // Return undefined if none found
+    log.debug("No relevant label found");
+    return {
+      label: undefined
+    };
   }
 
   /**

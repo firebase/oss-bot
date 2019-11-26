@@ -515,6 +515,7 @@ export namespace github {
     base: Commit;
     _links: Links;
     user: User;
+    labels: Label[];
   }
 }
 
@@ -622,6 +623,16 @@ export namespace internal {
 
     locked: boolean;
     assignee?: User;
+    html_url?: string;
+  }
+
+  export interface IssueOrPullRequest {
+    number: number;
+    title: string;
+    body: string;
+    labels: Label[];
+    user: User;
+
     html_url?: string;
   }
 
