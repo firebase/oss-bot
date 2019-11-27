@@ -110,6 +110,10 @@ export async function GetRepoSnapshot(
     log.warn(`GetRepoSnapshot called with null data for ${owner}/${repo}`);
   }
 
+  // Note: GitHub gives open_issues_count but it includes PRs.
+  // We want to separate the two and keep our own counts.
+  repoData.open_issues_count = 0;
+  repoData.open_pull_requests_count = 0;
   repoData.closed_issues_count = 0;
   repoData.closed_pull_requests_count = 0;
 
@@ -136,19 +140,32 @@ export async function GetRepoSnapshot(
     };
   }
 
-  // TODO(samstern): Modification inside the loop like this is no fun.
+  // Normalize the user and pull_request fields
   issues.forEach((issue: any) => {
     issue.user = scrubObject(issue.user, ["url"]);
     issue.pull_request = !!issue.pull_request;
+  });
 
-    if (issue.state !== "open") {
-      if (!issue.pull_request) {
-        repoData.closed_issues_count += 1;
+  // Gather issues by key and count states
+  issues.forEach((issue: any) => {
+    // Store all open issues in the snapshot
+    if (issue.state === "open") {
+      keyed_issues["id_" + issue.number] = issue;
+    }
+
+    // Increment one of the four counters.
+    if (issue.state === "open") {
+      if (issue.pull_request) {
+        repoData.open_pull_requests_count += 1;
       } else {
-        repoData.closed_pull_requests_count += 1;
+        repoData.open_issues_count += 1;
       }
     } else {
-      keyed_issues["id_" + issue.number] = issue;
+      if (issue.pull_request) {
+        repoData.closed_pull_requests_count += 1;
+      } else {
+        repoData.closed_issues_count += 1;
+      }
     }
   });
 
