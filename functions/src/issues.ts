@@ -194,6 +194,17 @@ export class IssueHandler {
     const org = repo.owner.login;
     const name = repo.name;
 
+    // When an issue is transferred from one repo to another GitHub uses the new-issue
+    // event but we shouldn't process it like that, a human has already looked at it.
+    if (issue.changes && issue.changes.old_issue) {
+      log.debug(
+        `onNewIssue: ignoring issue transferred from ${
+          issue.changes.old_issue.url
+        }`
+      );
+      return actions;
+    }
+
     const repoFeatures = this.config.getRepoFeatures(org, name);
     log.debug(
       `onNewIssue: ${name} has features ${JSON.stringify(repoFeatures)}`

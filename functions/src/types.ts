@@ -425,6 +425,11 @@ export namespace github {
     created_at: string;
     updated_at: string;
     repository: Repository;
+    changes?: {
+      old_issue?: {
+        url: string;
+      };
+    };
   }
 
   export class Comment {
@@ -613,17 +618,22 @@ export namespace internal {
   export interface Issue {
     number: number;
     state: string;
+    locked: boolean;
     title: string;
     body: string;
     user: User;
     labels: Label[];
     created_at: string;
     updated_at: string;
-    closed_at?: string | null;
 
-    locked: boolean;
+    closed_at?: string | null;
     assignee?: User;
     html_url?: string;
+    changes?: {
+      old_issue?: {
+        url: string;
+      };
+    };
   }
 
   export interface IssueOrPullRequest {
