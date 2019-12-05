@@ -9,6 +9,7 @@ export enum ActionType {
   GITHUB_REMOVE_LABEL = "GITHUB_REMOVE_LABEL",
   GITHUB_CLOSE = "GITHUB_CLOSE",
   GITHUB_LOCK = "GITHUB_LOCK",
+  GITHUB_NO_OP = "GITHUB_NO_OP",
   EMAIL_SEND = "EMAIL_SEND"
 }
 
@@ -17,7 +18,8 @@ export const GITHUB_ISSUE_ACTIONS = [
   ActionType.GITHUB_ADD_LABEL,
   ActionType.GITHUB_REMOVE_LABEL,
   ActionType.GITHUB_CLOSE,
-  ActionType.GITHUB_LOCK
+  ActionType.GITHUB_LOCK,
+  ActionType.GITHUB_NO_OP
 ];
 
 export class Action {
@@ -150,6 +152,16 @@ export class GithubCloseAction extends GithubIssueAction {
 export class GithubLockAction extends GithubIssueAction {
   constructor(org: string, name: string, number: number, reason?: string) {
     super(ActionType.GITHUB_LOCK, org, name, number);
+
+    if (reason) {
+      this.reason = reason;
+    }
+  }
+}
+
+export class GithubNoOpAction extends GithubIssueAction {
+  constructor(org: string, name: string, number: number, reason?: string) {
+    super(ActionType.GITHUB_NO_OP, org, name, number);
 
     if (reason) {
       this.reason = reason;

@@ -331,6 +331,8 @@ async function executeAction(action: types.Action): Promise<any> {
       emailAction.link,
       emailAction.action
     );
+  } else if (action.type === types.ActionType.GITHUB_NO_OP) {
+    actionPromise = Promise.resolve();
   } else {
     return Promise.reject(`Unrecognized action: ${JSON.stringify(action)}`);
   }
@@ -341,7 +343,7 @@ async function executeAction(action: types.Action): Promise<any> {
   // Log the data to the admin log
   if (types.GITHUB_ISSUE_ACTIONS.includes(action.type)) {
     const ghAction = action as types.GithubIssueAction;
-    const ref = database
+    const ref = database()
       .ref("repo-log")
       .child(ghAction.org)
       .child(ghAction.name)

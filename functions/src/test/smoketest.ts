@@ -18,6 +18,7 @@ import "mocha";
 import * as fs from "fs";
 import * as path from "path";
 import * as assert from "assert";
+import * as simple from "simple-mock";
 
 import * as log from "../log";
 import * as issues from "../issues";
@@ -25,6 +26,7 @@ import * as pullrequests from "../pullrequests";
 import * as config from "../config";
 import * as types from "../types";
 import * as mocks from "./mocks";
+import * as snapshot from "../snapshot";
 
 class SimpleIssue extends types.github.Issue {
   constructor(opts: any) {
@@ -230,6 +232,11 @@ describe("The OSS Robot", () => {
     log.setLogLevel(log.Level.ALL);
   });
 
+  beforeEach(() => {
+    // TODO(samstern): Could use the emulators so I don't need this.
+    simple.mock(snapshot, "userIsCollaborator").resolveWith(false);
+  });
+
   afterEach(() => {
     // Reset the standard config.
     issue_handler.setConfig(bot_config);
@@ -381,6 +388,25 @@ describe("The OSS Robot", () => {
     assertMatchingAction(actions, {
       type: types.ActionType.GITHUB_ADD_LABEL,
       label: "needs-triage"
+    });
+  });
+
+  it("should let a collaborator file a totally crap issue", async () => {
+    // Make everyone a collaborator
+    simple.mock(snapshot, 'userIsCollaborator').resolveWith(true);
+
+    const actions = await issue_handler.handleIssueEvent(
+      issue_opened_bot_test_empty,
+      issues.IssueAction.OPENED,
+      issue_opened_bot_test_empty.issue,
+      test_repo,
+      sender
+    );
+
+    assert.equal(actions.length, 1, "Should be one action");
+
+    assertMatchingAction(actions, {
+      type: types.ActionType.GITHUB_NO_OP
     });
   });
 

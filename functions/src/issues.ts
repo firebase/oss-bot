@@ -21,6 +21,7 @@ import * as config from "./config";
 import * as types from "./types";
 import * as log from "./log";
 import * as email from "./email";
+import * as snapshot from "./snapshot";
 
 export const MSG_FOLLOW_TEMPLATE =
   "This issue does not seem to follow the issue template. " +
@@ -83,9 +84,10 @@ class CheckMatchesTemplateResult {
 }
 
 interface CategorizeIssueResult {
-  found_label: boolean;
   is_fr: boolean;
+  needs_triage: boolean;
   actions: types.Action[];
+  matched_label?: string;
 }
 
 // Label for issues that confuse the bot
@@ -211,10 +213,36 @@ export class IssueHandler {
     );
 
     // Basic issue categorization, which involves adding labels
-    // and possibly a comment if the issue needs triage.
+    // based on matching configuration.
     const categorization = this.categorizeNewIssue(repo, issue);
     if (repoFeatures.issue_labels) {
       actions.push(...categorization.actions);
+    }
+
+    // If the issue is filed by a collaborator, we stop here.
+    const isCollaborator = await snapshot.userIsCollaborator(
+      org,
+      name,
+      issue.user.login
+    );
+    if (isCollaborator) {
+      actions.push(
+        new types.GithubNoOpAction(
+          org,
+          name,
+          issue.number,
+          `No further action taken on this issue because it was filed by repo collaborator: ${
+            issue.user.login
+          }`
+        )
+      );
+
+      return actions;
+    }
+
+    // If the issue needs triage, there's a fixed label and comment
+    if (repoFeatures.issue_labels && categorization.needs_triage) {
+      actions.push(...this.markNeedsTriage(repo, issue));
     }
 
     // Check if it matches the template. This feature is implicitly enabled by
@@ -226,7 +254,7 @@ export class IssueHandler {
     //  1) This is a feature request
     //  2) We were able to label with some something besides needs_triage
     const shouldValidateTemplate = !(
-      categorization.is_fr || categorization.found_label
+      categorization.is_fr || categorization.matched_label
     );
     if (shouldValidateTemplate) {
       actions.push(...templateActions);
@@ -448,6 +476,34 @@ export class IssueHandler {
     return actions;
   }
 
+  markNeedsTriage(
+    repo: types.internal.Repository,
+    issue: types.internal.Issue
+  ): types.Action[] {
+    log.debug("Issue needs triage, adding label and comment");
+    const org = repo.owner.login;
+    const name = repo.name;
+    const number = issue.number;
+
+    return [
+      new types.GithubAddLabelAction(
+        org,
+        name,
+        number,
+        LABEL_NEEDS_TRIAGE,
+        "Issue did not match any label regexes"
+      ),
+      new types.GithubCommentAction(
+        org,
+        name,
+        number,
+        MSG_NEEDS_TRIAGE,
+        true,
+        "Friendly comment added when an issue is labeled needs-triage"
+      )
+    ];
+  }
+
   /**
    * Check a new issue and determine how it should be labeled, adding an
    * explanatory comment if necessary.
@@ -456,22 +512,25 @@ export class IssueHandler {
     repo: types.internal.Repository,
     issue: types.internal.Issue
   ): CategorizeIssueResult {
-    const actions: types.Action[] = [];
     const org = repo.owner.login;
     const name = repo.name;
     const number = issue.number;
 
-    // Check for FR
-    const is_fr = this.isFeatureRequest(issue);
-
     // Try to label the issue based on configuration
     const labelResult = this.config.getRelevantLabel(org, name, issue);
-    const found_label: boolean = !labelResult.error && !!labelResult.label;
+
+    // TODO(samstern): Should this include actions at all?
+    const result: CategorizeIssueResult = {
+      is_fr: this.isFeatureRequest(issue),
+      matched_label: labelResult.label,
+      needs_triage: false,
+      actions: []
+    };
 
     // Choose new label
-    if (is_fr) {
+    if (result.is_fr) {
       log.debug(`Matched feature request template, adding label ${LABEL_FR}`);
-      actions.push(
+      result.actions.push(
         new types.GithubAddLabelAction(
           org,
           name,
@@ -483,7 +542,7 @@ export class IssueHandler {
     } else if (!labelResult.error && labelResult.label) {
       const newLabel = labelResult.label;
       log.debug(`Issue matched configuration for ${newLabel}`);
-      actions.push(
+      result.actions.push(
         new types.GithubAddLabelAction(
           org,
           name,
@@ -495,33 +554,11 @@ export class IssueHandler {
         )
       );
     } else {
-      log.debug("Issue needs triage, adding label and comment");
-      actions.push(
-        new types.GithubAddLabelAction(
-          org,
-          name,
-          number,
-          LABEL_NEEDS_TRIAGE,
-          "Issue did not match any label regexes"
-        )
-      );
-      actions.push(
-        new types.GithubCommentAction(
-          org,
-          name,
-          number,
-          MSG_NEEDS_TRIAGE,
-          true,
-          "Friendly comment added when an issue is labeled needs-triage"
-        )
-      );
+      // Mark the issue as needs triage
+      result.needs_triage = true;
     }
 
-    return {
-      found_label,
-      is_fr,
-      actions
-    };
+    return result;
   }
 
   /**
