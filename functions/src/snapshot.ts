@@ -5,6 +5,7 @@ import * as log from "./log";
 import * as util from "./util";
 import { snapshot } from "./types";
 import * as config from "./config";
+import { PubSub } from "@google-cloud/pubsub";
 
 // Config
 const bot_config = config.BotConfig.getDefault();
@@ -16,11 +17,12 @@ const gh_client = new github.GithubClient(
 try {
   gh_client.auth();
 } catch (e) {
-  log.warn(`Unable to authenticate Github client. If this is a non-test environment things will go badly: ${e}`);
+  log.warn(
+    `Unable to authenticate Github client. If this is a non-test environment things will go badly: ${e}`
+  );
 }
 
 // Just #pubsubthings
-const PubSub = require("@google-cloud/pubsub");
 const pubsubClient = new PubSub({
   projectId: process.env.GCLOUD_PROJECT
 });
@@ -369,7 +371,7 @@ interface OrgRepo {
 }
 
 function sendPubSub(topic: string, data: any): Promise<any> {
-  const publisher = pubsubClient.topic(topic).publisher();
+  const publisher = pubsubClient.topic(topic).publisher;
 
   log.debug(`PubSub(${topic}, ${JSON.stringify(data)}`);
   return publisher.publish(Buffer.from(JSON.stringify(data)));

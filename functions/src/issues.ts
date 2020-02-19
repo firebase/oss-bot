@@ -200,9 +200,7 @@ export class IssueHandler {
     // event but we shouldn't process it like that, a human has already looked at it.
     if (issue.changes && issue.changes.old_issue) {
       log.debug(
-        `onNewIssue: ignoring issue transferred from ${
-          issue.changes.old_issue.url
-        }`
+        `onNewIssue: ignoring issue transferred from ${issue.changes.old_issue.url}`
       );
       return actions;
     }
@@ -231,9 +229,7 @@ export class IssueHandler {
           org,
           name,
           issue.number,
-          `No further action taken on this issue because it was filed by repo collaborator: ${
-            issue.user.login
-          }`
+          `No further action taken on this issue because it was filed by repo collaborator: ${issue.user.login}`
         )
       );
 
@@ -273,9 +269,7 @@ export class IssueHandler {
   ): types.Action[] {
     if (!issue.assignee) {
       log.warn(
-        `onIssueAssigned called for an issue with no assignee: ${repo.name}#${
-          issue.number
-        }`
+        `onIssueAssigned called for an issue with no assignee: ${repo.name}#${issue.number}`
       );
       return [];
     }
@@ -401,9 +395,7 @@ export class IssueHandler {
             name,
             number,
             issueConfig.label_stale,
-            `Comment by ${
-              comment.user.login
-            } on stale issues remove the stale state.`
+            `Comment by ${comment.user.login} on stale issues remove the stale state.`
           )
         );
 
@@ -414,12 +406,8 @@ export class IssueHandler {
           : issueConfig.label_needs_info;
 
         const reason = isAuthorComment
-          ? `Comment by the author (${
-              issue.user.login
-            }) on a stale issue moves this to needs_attention`
-          : `Comment by a non-author (${
-              comment.user.login
-            }) on a stale issue moves this to needs_info`;
+          ? `Comment by the author (${issue.user.login}) on a stale issue moves this to needs_attention`
+          : `Comment by a non-author (${comment.user.login}) on a stale issue moves this to needs_info`;
 
         if (isAuthorComment && !issueConfig.label_needs_attention) {
           log.debug(
@@ -442,9 +430,7 @@ export class IssueHandler {
 
       if (isNeedsInfo && isAuthorComment) {
         // An author comment on a needs-info issue moves it to needs-attention.
-        const reason = `Comment by the author (${
-          issue.user.login
-        }) moves this from needs_info to needs_attention.`;
+        const reason = `Comment by the author (${issue.user.login}) moves this from needs_info to needs_attention.`;
         actions.push(
           new types.GithubRemoveLabelAction(
             org,
@@ -548,9 +534,7 @@ export class IssueHandler {
           name,
           number,
           newLabel,
-          `Issue matched regex for label "${newLabel}" (${
-            labelResult.matchedRegex
-          })`
+          `Issue matched regex for label "${newLabel}" (${labelResult.matchedRegex})`
         )
       );
     } else {
@@ -671,9 +655,7 @@ export class IssueHandler {
         templateOpts.path
       );
     } catch (e) {
-      const err = `failed to get issue template for ${org}/${name} at ${
-        templateOpts.path
-      };`;
+      const err = `failed to get issue template for ${org}/${name} at ${templateOpts.path};`;
       log.warn(`checkMatchesTemplate: ${err}: ${JSON.stringify(e)}`);
 
       result.failure = {
@@ -688,9 +670,7 @@ export class IssueHandler {
     const missingSections = checker.matchesTemplateSections(issueBody);
     if (missingSections.invalid.length > 0) {
       log.debug(
-        `checkMatchesTemplate: missing ${
-          missingSections.invalid.length
-        } sections from the template.`
+        `checkMatchesTemplate: missing ${missingSections.invalid.length} sections from the template.`
       );
       result.matches = false;
       result.message = MSG_FOLLOW_TEMPLATE;

@@ -80,9 +80,7 @@ export class CronHandler {
 
       if (actions.length >= 100) {
         console.warn(
-          `Found >100 (${
-            actions.length
-          } issues to perform when checking closed issues for ${org}/${name}, will do the rest tomorrow.`
+          `Found >100 (${actions.length} issues to perform when checking closed issues for ${org}/${name}, will do the rest tomorrow.`
         );
         return actions;
       }

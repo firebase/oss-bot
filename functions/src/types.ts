@@ -54,9 +54,7 @@ export class GithubIssueAction extends Action {
   }
 
   toString() {
-    return `IssueAction(${this.type}, ${this.org}/${this.name}#{${
-      this.number
-    })`;
+    return `IssueAction(${this.type}, ${this.org}/${this.name}#{${this.number})`;
   }
 }
 

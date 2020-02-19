@@ -5,8 +5,8 @@ import * as util from "./util";
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as moment from "moment";
+import { PubSub } from "@google-cloud/pubsub";
 
-const PubSub = require("@google-cloud/pubsub");
 const pubsubClient = new PubSub({
   projectId: process.env.GCLOUD_PROJECT
 });
@@ -155,7 +155,7 @@ export const UpdateAllMetrics = functions
     const snap = await db.ref("metrics").once("value");
     const val = snap.val();
 
-    const publisher = pubsubClient.topic("update-metrics").publisher();
+    const publisher = pubsubClient.topic("update-metrics").publisher;
 
     Object.keys(val).forEach(async (projectId: string) => {
       log.debug(`Updating metrics for: ${projectId}`);

@@ -393,7 +393,7 @@ describe("The OSS Robot", () => {
 
   it("should let a collaborator file a totally crap issue", async () => {
     // Make everyone a collaborator
-    simple.mock(snapshot, 'userIsCollaborator').resolveWith(true);
+    simple.mock(snapshot, "userIsCollaborator").resolveWith(true);
 
     const actions = await issue_handler.handleIssueEvent(
       issue_opened_bot_test_empty,
