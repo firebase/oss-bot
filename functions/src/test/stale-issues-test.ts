@@ -43,8 +43,10 @@ const NOW_TIME = new Date();
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const JUST_NOW = new Date(NOW_TIME.getTime() - 1000).toISOString();
-const FOUR_DAYS_AGO = new Date(NOW_TIME.getTime() - 4 * DAY_MS).toISOString();
-const EIGHT_DAYS_AGO = new Date(NOW_TIME.getTime() - 8 * DAY_MS).toISOString();
+const SEVEN_DAYS_AGO = new Date(NOW_TIME.getTime() - 7 * DAY_MS).toISOString();
+const FOURTEEN_DAYS_AGO = new Date(
+  NOW_TIME.getTime() - 14 * DAY_MS
+).toISOString();
 const THREE_MONTHS_AGO = new Date(
   NOW_TIME.getTime() - 90 * DAY_MS
 ).toISOString();
@@ -71,8 +73,8 @@ const STALE_ISSUE: types.internal.Issue = {
   body: "Body of my issue",
   user: { login: "some-user" },
   labels: [{ name: "stale" }],
-  created_at: EIGHT_DAYS_AGO,
-  updated_at: EIGHT_DAYS_AGO,
+  created_at: FOURTEEN_DAYS_AGO,
+  updated_at: FOURTEEN_DAYS_AGO,
   locked: false
 };
 
@@ -83,8 +85,8 @@ const NEEDS_INFO_ISSUE: types.internal.Issue = {
   body: "Body of my issue",
   user: { login: "some-user" },
   labels: [{ name: "needs-info" }],
-  created_at: FOUR_DAYS_AGO,
-  updated_at: FOUR_DAYS_AGO,
+  created_at: SEVEN_DAYS_AGO,
+  updated_at: SEVEN_DAYS_AGO,
   locked: false
 };
 
@@ -95,9 +97,9 @@ const NEW_CLOSED_ISSUE: types.internal.Issue = {
   body: "Body of my issue",
   user: { login: "some-user" },
   labels: [],
-  created_at: EIGHT_DAYS_AGO,
-  updated_at: EIGHT_DAYS_AGO,
-  closed_at: FOUR_DAYS_AGO,
+  created_at: FOURTEEN_DAYS_AGO,
+  updated_at: FOURTEEN_DAYS_AGO,
+  closed_at: SEVEN_DAYS_AGO,
   locked: false
 };
 
@@ -173,8 +175,8 @@ describe("Stale issue handler", async () => {
         login: "some-user"
       },
       labels: [{ name: "needs-info" }],
-      created_at: EIGHT_DAYS_AGO,
-      updated_at: EIGHT_DAYS_AGO,
+      created_at: FOURTEEN_DAYS_AGO,
+      updated_at: FOURTEEN_DAYS_AGO,
       locked: false
     };
 
@@ -182,8 +184,8 @@ describe("Stale issue handler", async () => {
       {
         body: "My comment",
         user: { login: "some-user" },
-        created_at: EIGHT_DAYS_AGO,
-        updated_at: EIGHT_DAYS_AGO
+        created_at: FOURTEEN_DAYS_AGO,
+        updated_at: FOURTEEN_DAYS_AGO
       }
     ];
 
@@ -221,8 +223,8 @@ describe("Stale issue handler", async () => {
         login: "some-user"
       },
       labels: [{ name: "stale" }],
-      created_at: FOUR_DAYS_AGO,
-      updated_at: FOUR_DAYS_AGO,
+      created_at: SEVEN_DAYS_AGO,
+      updated_at: SEVEN_DAYS_AGO,
       locked: false
     };
 
@@ -230,14 +232,14 @@ describe("Stale issue handler", async () => {
       {
         body: "My original comment",
         user: { login: "some-user" },
-        created_at: FOUR_DAYS_AGO,
-        updated_at: FOUR_DAYS_AGO
+        created_at: SEVEN_DAYS_AGO,
+        updated_at: SEVEN_DAYS_AGO
       },
       {
         body: cron_handler.getMarkStaleComment("some-user", 7, 3),
         user: { login: "google-oss-bot" },
-        created_at: FOUR_DAYS_AGO,
-        updated_at: FOUR_DAYS_AGO
+        created_at: SEVEN_DAYS_AGO,
+        updated_at: SEVEN_DAYS_AGO
       }
     ];
 
@@ -280,8 +282,8 @@ describe("Stale issue handler", async () => {
         { name: "needs-info" },
         { name: "stale" }
       ],
-      created_at: EIGHT_DAYS_AGO,
-      updated_at: EIGHT_DAYS_AGO,
+      created_at: FOURTEEN_DAYS_AGO,
+      updated_at: FOURTEEN_DAYS_AGO,
       locked: false
     };
 
@@ -304,8 +306,8 @@ describe("Stale issue handler", async () => {
     const comment: types.internal.Comment = {
       user: STALE_ISSUE.user,
       body: "New comment by the author",
-      created_at: FOUR_DAYS_AGO,
-      updated_at: FOUR_DAYS_AGO
+      created_at: SEVEN_DAYS_AGO,
+      updated_at: SEVEN_DAYS_AGO
     };
 
     const actions = await issue_handler.onCommentCreated(
@@ -369,8 +371,8 @@ describe("Stale issue handler", async () => {
     const comment: types.internal.Comment = {
       user: { login: "someone-else" },
       body: "New comment by someone else",
-      created_at: FOUR_DAYS_AGO,
-      updated_at: FOUR_DAYS_AGO
+      created_at: SEVEN_DAYS_AGO,
+      updated_at: SEVEN_DAYS_AGO
     };
 
     const actions = await issue_handler.onCommentCreated(

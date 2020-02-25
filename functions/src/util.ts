@@ -61,6 +61,36 @@ export function samScore(open: number, closed: number): number {
   return Math.round(score * 1000) / 1000;
 }
 
+export function createdDate(obj: types.internal.Timestamped): Date {
+  return new Date(Date.parse(obj.created_at));
+}
+
+export function daysAgo(past: Date, future?: Date): number {
+  const msInDay = 24 * 60 * 60 * 1000;
+  const now = future || new Date();
+
+  const diff = now.getTime() - past.getTime();
+  return Math.floor(diff / msInDay);
+}
+
+export function workingDaysAgo(past: Date, future?: Date): number {
+  const msInDay = 24 * 60 * 60 * 1000;
+  const now = (future || new Date()).getTime();
+
+  let workingDays = 0;
+  let t = past.getTime();
+
+  while (t < now) {
+    t += msInDay;
+    const tDate = new Date(t);
+    if (tDate.getDay() !== 0 && tDate.getDay() !== 6) {
+      workingDays += 1;
+    }
+  }
+
+  return workingDays;
+}
+
 export function timeAgo(obj: types.internal.Timestamped): number {
   return Date.now() - Date.parse(obj.created_at);
 }
