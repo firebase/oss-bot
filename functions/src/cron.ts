@@ -161,9 +161,6 @@ export class CronHandler {
   ): Promise<types.Action[]> {
     const actions: types.Action[] = [];
 
-    const needsInfoTime = issueConfig.needs_info_days * DAY_MS;
-    const staleTime = issueConfig.stale_days * DAY_MS;
-
     const number = issue.number;
     const labelNames = issue.labels.map(label => label.name);
 
@@ -211,8 +208,10 @@ export class CronHandler {
       //
       // A comment by anyone in the last 7 days makes the issue non-stale.
       const lastComment = comments[0];
-      const lastCommentTime = util.timeAgo(lastComment);
-      const shouldMarkStale = lastCommentTime > needsInfoTime;
+      const lastCommentTime = util.createdDate(lastComment);
+      const lastCommentWorkingDaysAgo = util.workingDaysAgo(lastCommentTime);
+      const shouldMarkStale =
+        lastCommentWorkingDaysAgo >= issueConfig.needs_info_days;
 
       if (shouldMarkStale) {
         // We add the 'stale' label and also add a comment. Note that
@@ -223,7 +222,7 @@ export class CronHandler {
           name,
           number,
           issueConfig.label_stale,
-          `Last comment was ${lastCommentTime} ago.`
+          `Last comment was ${lastCommentWorkingDaysAgo} working days ago (${lastCommentTime}).`
         );
         const addStaleComment = new types.GithubCommentAction(
           org,
@@ -259,22 +258,28 @@ export class CronHandler {
         );
       }
 
-      if (markStaleComment && util.timeAgo(markStaleComment) > staleTime) {
-        const addClosingComment = new types.GithubCommentAction(
-          org,
-          name,
-          number,
-          this.getCloseComment(issue.user.login),
-          false,
-          `Comment after closing issue for being stale.`
-        );
-        const closeIssue = new types.GithubCloseAction(
-          org,
-          name,
-          number,
-          `Closing issue for being stale.`
-        );
-        actions.push(addClosingComment, closeIssue);
+      if (markStaleComment) {
+        const markStaleCommentTime = util.createdDate(markStaleComment);
+        const shouldCloseStale =
+          util.workingDaysAgo(markStaleCommentTime) >= issueConfig.stale_days;
+
+        if (shouldCloseStale) {
+          const addClosingComment = new types.GithubCommentAction(
+            org,
+            name,
+            number,
+            this.getCloseComment(issue.user.login),
+            false,
+            `Comment after closing issue for being stale (comment at ${markStaleCommentTime}).`
+          );
+          const closeIssue = new types.GithubCloseAction(
+            org,
+            name,
+            number,
+            `Closing issue for being stale.`
+          );
+          actions.push(addClosingComment, closeIssue);
+        }
       }
     }
 
@@ -287,7 +292,7 @@ export class CronHandler {
     staleDays: number
   ): string {
     return `<!-- ${EVT_MARK_STALE} -->
-Hey @${author}. We need more information to resolve this issue but there hasn't been an update in ${needsInfoDays} days. I'm marking the issue as stale and if there are no new updates in the next ${staleDays} days I will close it automatically.
+Hey @${author}. We need more information to resolve this issue but there hasn't been an update in ${needsInfoDays} weekdays. I'm marking the issue as stale and if there are no new updates in the next ${staleDays} days I will close it automatically.
 
 If you have more information that will help us get to the bottom of this, just add a comment!`;
   }
