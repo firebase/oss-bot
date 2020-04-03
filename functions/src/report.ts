@@ -511,13 +511,13 @@ export const GetRepoTimeSeries = functions
     // CORS-hack
     res.set("Access-Control-Allow-Origin", "*");
 
-    const org = req.query["org"] || "firebase";
-    const repo = req.query["repo"];
+    const org: string = req.query["org"] || "firebase";
+    const repo: string = req.query["repo"];
     if (repo === undefined) {
       res.status(500).send("Must specify 'repo' param");
       return;
     }
-    const field = req.query["field"];
+    const field: string = req.query["field"];
     if (field === undefined) {
       res.status(500).send("Must specify 'field' param");
       return;
@@ -528,9 +528,9 @@ export const GetRepoTimeSeries = functions
     try {
       // TODO: More query params
       const report = await MakeRepoTimeSeries(
-        org,
-        repo,
-        field,
+        org.toLowerCase(),
+        repo.toLowerCase(),
+        field.toLowerCase(),
         points,
         daysBetween
       );
