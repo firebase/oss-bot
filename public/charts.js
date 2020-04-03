@@ -7,7 +7,7 @@ let lastChart = undefined;
 // TODO: DRY with stats.js
 function drawChart(ctx, title, labels, axes, dataSets) {
   if (lastChart) {
-    lastChart.clear();
+    lastChart.destroy();
   }
 
   lastChart = new Chart(ctx, {
