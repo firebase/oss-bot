@@ -25,12 +25,7 @@ function drawChart(ctx, title, labels, axes, dataSets) {
 }
 
 async function makeMetricChart(ctx) {
-  // TODO: Actually read the query
-  const resp = await fetchData(
-    "firebase",
-    "firebase-android-sdk",
-    "open_issues"
-  );
+  const resp = await fetchData();
 
   const y_axis = {
     id: "y-axis",
