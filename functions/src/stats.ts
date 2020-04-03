@@ -48,9 +48,6 @@ export interface IssueStats {
   sam_score: number;
 }
 
-/**
- * HTTP function for experimenting with a new SAM score.
- */
 export async function getRepoIssueStats(org: string, repo: string) {
   const issuesSnap = await database()
     .ref("issues")

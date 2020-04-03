@@ -1,0 +1,38 @@
+body {
+  font-family: "Open Sans", "sans-serif";
+}
+
+#chart-loading {
+  display: none;
+}
+
+#chart-loading.visible {
+  display: unset;
+}
+
+td {
+  text-align: left !important;
+  vertical-align: middle;
+}
+
+td.right {
+  text-align: right;
+}
+
+table input {
+  display: inline-block;
+}
+
+table select {
+  display: inline-block;
+}
+
+.card {
+  display: block;
+  width: 80%;
+  max-width: 1000px;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: rgba(0, 0, 0, 0.4) 0 0 2px;
+  margin: 8px;
+}

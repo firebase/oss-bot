@@ -1,9 +1,9 @@
-import * as firebase_admin from "firebase-admin";
-let DATABASE: firebase_admin.database.Database | undefined = undefined;
+import * as admin from "firebase-admin";
+let DATABASE: admin.database.Database | undefined = undefined;
 
-export function database(): firebase_admin.database.Database {
+export function database(): admin.database.Database {
   if (!DATABASE) {
-    DATABASE = firebase_admin.initializeApp().database();
+    DATABASE = admin.initializeApp().database();
   }
 
   return DATABASE;

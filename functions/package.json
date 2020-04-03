@@ -54,6 +54,7 @@
     "fmt": "prettier --write src/**/*.ts src/**.ts",
     "format": "npm run fmt",
     "build": "npm run fmt && npm run build-ts && npm run tslint && npm run build-mjml",
+    "build:watch": "tsc --watch",
     "dev": "tsc --watch",
     "build-ts": "tsc",
     "build-mjml": "mjml templates/weekly.mjml --output dist/weekly.mustache && mjml templates/repo-weekly.mjml --output dist/repo-weekly.mustache",

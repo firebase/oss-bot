@@ -614,6 +614,13 @@ export namespace report {
     opened_issues: ChangedIssue[];
     closed_issues: ChangedIssue[];
   }
+
+  export interface RepoTimeSeries {
+    org: string;
+    repo: string;
+    field: string;
+    data: { [key: string]: number | string };
+  }
 }
 
 /**

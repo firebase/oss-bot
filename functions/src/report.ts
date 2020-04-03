@@ -410,6 +410,58 @@ export async function MakeRepoReport(
   };
 }
 
+export async function MakeRepoTimeSeries(
+  org: string,
+  repo: string,
+  field: string,
+  points: number,
+  daysBetween: number = 1
+): Promise<report.RepoTimeSeries> {
+  const result: report.RepoTimeSeries = {
+    org,
+    repo,
+    field,
+    data: {}
+  };
+
+  const now = new Date();
+  for (let i = 0; i < points; i++) {
+    // Always start at day now-1 because we don't always have today's report
+    const diff = (1 + i * daysBetween) * DAY_MS;
+    const pointDate = new Date(now.getTime() - diff);
+
+    const dateSlug = util.DateSlug(pointDate);
+    const snapshot = await snap.FetchRepoSnapshot(org, repo, pointDate);
+    if (!snapshot) {
+      console.warn(`Could not fetch data for ${repo} on ${dateSlug}`);
+      continue;
+    }
+
+    let val: number;
+    switch (field) {
+      case "open_issues_count":
+      case "open_issues":
+        val = snapshot.open_issues_count;
+        break;
+      case "closed_issues_count":
+      case "closed_issues":
+        val = snapshot.closed_issues_count;
+        break;
+      case "stargazers_count":
+      case "stars_count":
+      case "stars":
+        val = snapshot.stargazers_count;
+        break;
+      default:
+        throw `Invalid field: ${field}`;
+    }
+
+    result.data[dateSlug] = val;
+  }
+
+  return result;
+}
+
 /**
  * HTTP function for experimenting with a new SAM score.
  */
@@ -435,8 +487,8 @@ export const GetRepoReport = functions
   .https.onRequest(async (req, res) => {
     // TODO: Allow passing in the 'start' date to get historical data.
 
-    const org = req.param("org") || "firebase";
-    const repo = req.param("repo");
+    const org = req.query["org"] || "firebase";
+    const repo = req.query["repo"];
     if (repo === undefined) {
       res.status(500).send("Must specify 'repo' param");
       return;
@@ -444,6 +496,44 @@ export const GetRepoReport = functions
 
     try {
       const report = await MakeRepoReport(org, repo);
+      res.json(report);
+    } catch (e) {
+      res.status(500).send(e);
+    }
+  });
+
+/**
+ * HTTP Function to get a JSON report on a repo.
+ */
+export const GetRepoTimeSeries = functions
+  .runWith(util.FUNCTION_OPTS)
+  .https.onRequest(async (req, res) => {
+    // CORS-hack
+    res.set("Access-Control-Allow-Origin", "*");
+
+    const org = req.query["org"] || "firebase";
+    const repo = req.query["repo"];
+    if (repo === undefined) {
+      res.status(500).send("Must specify 'repo' param");
+      return;
+    }
+    const field = req.query["field"];
+    if (field === undefined) {
+      res.status(500).send("Must specify 'field' param");
+      return;
+    }
+    const points = Number.parseInt(req.query["points"]) || 7;
+    const daysBetween = Number.parseInt(req.query["daysBetween"]) || 1;
+
+    try {
+      // TODO: More query params
+      const report = await MakeRepoTimeSeries(
+        org,
+        repo,
+        field,
+        points,
+        daysBetween
+      );
       res.json(report);
     } catch (e) {
       res.status(500).send(e);

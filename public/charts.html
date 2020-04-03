@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Repo Stats</title>
+
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/mvp.css" />
+    <link rel="stylesheet" href="charts.css" />
+
+    <script
+      defer
+      src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"
+    ></script>
+    <script defer src="./charts.js"></script>
+  </head>
+
+  <body>
+    <main>
+      <article>
+        <h2>Query</h2>
+        <table>
+          <tr>
+            <td class="right">
+              Repo
+            </td>
+            <td>
+              <input
+                type="text"
+                id="field-org"
+                placeholder="org name..."
+                value="firebase"
+              />
+              <input
+                type="text"
+                id="field-repo"
+                placeholder="repo name...."
+                value="firebase-android-sdk"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td class="right">
+              Stat
+            </td>
+            <td>
+              <select id="field-field">
+                <option value="open_issues">Open Issues</option>
+                <option value="closed_issues">Closed Issues</option>
+                <option value="stars">Stars</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td class="right">
+              Time
+            </td>
+            <td>
+              <input
+                type="text"
+                id="field-points"
+                placeholder="num points..."
+                value="12"
+              />
+              <select id="field-daysBetween">
+                <option value="1">Days</option>
+                <option value="7" selected="selected">Weeks</option>
+                <option value="30">Months</option>
+              </select>
+            </td>
+          </tr>
+        </table>
+        <br />
+        <button onclick="loadChart()">Run</button>
+      </article>
+
+      <article>
+        <h2>Results</h2>
+        <div id="chart-content" class="card">
+          <img id="chart-loading" src="/assets/img/loading.gif" width="50px" />
+          <canvas class="chart"></canvas>
+        </div>
+      </article>
+    </main>
+  </body>
+</html>
