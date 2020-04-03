@@ -2,9 +2,15 @@ const COLOR_PINK = "rgb(255, 99, 132)";
 const COLOR_GREEN = "rgb(99, 255, 132)";
 const COLOR_BLUE = "rgb(51, 153, 255)";
 
+let lastChart = undefined;
+
 // TODO: DRY with stats.js
 function drawChart(ctx, title, labels, axes, dataSets) {
-  var chart = new Chart(ctx, {
+  if (lastChart) {
+    lastChart.clear();
+  }
+
+  lastChart = new Chart(ctx, {
     type: "line",
     data: {
       labels: labels,
