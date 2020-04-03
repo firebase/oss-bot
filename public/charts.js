@@ -90,9 +90,9 @@ function getQueryUrl() {
   const points = document.querySelector("#field-points").value;
   const daysBetween = document.querySelector("#field-daysBetween").value;
 
-  let base = "https://us-central1-ossbot-f0cad.cloudfunctions.net"
+  let base = "https://us-central1-ossbot-f0cad.cloudfunctions.net";
   if (window.location.hostname === "localhost") {
-    base = "http://localhost:5001/ossbot-test/us-central1"
+    base = "http://localhost:5001/ossbot-test/us-central1";
   }
   return `${base}/GetRepoTimeSeries?org=${org}&repo=${repo}&field=${field}&points=${points}&daysBetween=${daysBetween}`;
 }

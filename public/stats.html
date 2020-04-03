@@ -61,12 +61,9 @@
     </div>
 
     <script>
-      document.addEventListener("DOMContentLoaded", function() {
+      document.addEventListener("DOMContentLoaded", function () {
         console.log("All scripts loaded, initializing...");
-        firebase
-          .auth()
-          .signInAnonymously()
-          .then(initializeCharts);
+        firebase.auth().signInAnonymously().then(initializeCharts);
       });
     </script>
   </body>

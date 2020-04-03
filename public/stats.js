@@ -8,11 +8,11 @@ var DOWNLOADS_AXIS = {
   position: "left",
   scaleLabel: {
     display: true,
-    labelString: "Downloads"
+    labelString: "Downloads",
   },
   ticks: {
-    beginAtZero: true
-  }
+    beginAtZero: true,
+  },
 };
 
 var APPS_AXIS = {
@@ -21,11 +21,11 @@ var APPS_AXIS = {
   position: "left",
   scaleLabel: {
     display: true,
-    labelString: "Apps"
+    labelString: "Apps",
   },
   ticks: {
-    beginAtZero: true
-  }
+    beginAtZero: true,
+  },
 };
 
 var SAM_AXIS = {
@@ -34,16 +34,16 @@ var SAM_AXIS = {
   position: "right",
   scaleLabel: {
     display: true,
-    labelString: "SAM"
+    labelString: "SAM",
   },
   ticks: {
     min: 0.0,
     max: 2.0,
-    beginAtZero: true
+    beginAtZero: true,
   },
   gridLines: {
-    drawOnChartArea: false
-  }
+    drawOnChartArea: false,
+  },
 };
 
 var SOURCE_CONFIGS = {
@@ -54,16 +54,16 @@ var SOURCE_CONFIGS = {
         label: "Downloads",
         cumulative: false,
         color: COLOR_PINK,
-        axis: DOWNLOADS_AXIS
+        axis: DOWNLOADS_AXIS,
       },
       {
         key: "sam",
         label: "SAM Score",
         cumulative: false,
         color: COLOR_GREEN,
-        axis: SAM_AXIS
-      }
-    ]
+        axis: SAM_AXIS,
+      },
+    ],
   },
   npm: {
     series: [
@@ -72,16 +72,16 @@ var SOURCE_CONFIGS = {
         label: "Downloads",
         cumulative: false,
         color: COLOR_PINK,
-        axis: DOWNLOADS_AXIS
+        axis: DOWNLOADS_AXIS,
       },
       {
         key: "sam",
         label: "SAM Score",
         cumulative: false,
         color: COLOR_GREEN,
-        axis: SAM_AXIS
-      }
-    ]
+        axis: SAM_AXIS,
+      },
+    ],
   },
   cocoapods: {
     series: [
@@ -90,24 +90,24 @@ var SOURCE_CONFIGS = {
         label: "Downloads",
         cumulative: true,
         color: COLOR_PINK,
-        axis: DOWNLOADS_AXIS
+        axis: DOWNLOADS_AXIS,
       },
       {
         key: "apps",
         label: "Apps",
         cumulative: true,
         color: COLOR_BLUE,
-        axis: APPS_AXIS
+        axis: APPS_AXIS,
       },
       {
         key: "sam",
         label: "SAM Score",
         cumulative: false,
         color: COLOR_GREEN,
-        axis: SAM_AXIS
-      }
-    ]
-  }
+        axis: SAM_AXIS,
+      },
+    ],
+  },
 };
 
 function drawChart(ctx, title, labels, axes, dataSets) {
@@ -115,19 +115,19 @@ function drawChart(ctx, title, labels, axes, dataSets) {
     type: "line",
     data: {
       labels: labels,
-      datasets: dataSets
+      datasets: dataSets,
     },
     options: {
       responsive: true,
       stacked: false,
       title: {
         display: true,
-        text: title
+        text: title,
       },
       scales: {
-        yAxes: axes
-      }
-    }
+        yAxes: axes,
+      },
+    },
   });
 }
 
@@ -140,7 +140,7 @@ function makeMetricChart(id, ctx) {
     .ref("metrics")
     .child(id)
     .once("value")
-    .then(function(snap) {
+    .then(function (snap) {
       return snap.val();
     });
 
@@ -151,14 +151,14 @@ function makeMetricChart(id, ctx) {
   var dataSets = [];
 
   getInfo
-    .then(function(infoVal) {
+    .then(function (infoVal) {
       name = infoVal.name;
 
       var source = infoVal.source;
       var config = SOURCE_CONFIGS[source];
 
       var promises = [];
-      config.series.forEach(function(series) {
+      config.series.forEach(function (series) {
         // Collect the axes, no duplicates
         if (axes.indexOf(series.axis) < 0) {
           axes.push(series.axis);
@@ -169,7 +169,7 @@ function makeMetricChart(id, ctx) {
           .child(series.key)
           .limitToLast(limit)
           .once("value")
-          .then(function(snap) {
+          .then(function (snap) {
             var data = snap.val();
 
             // Take the x-axis labels from the first series
@@ -185,11 +185,11 @@ function makeMetricChart(id, ctx) {
               borderColor: series.color,
               fill: false,
               data: [],
-              yAxisID: series.axis.id
+              yAxisID: series.axis.id,
             };
 
             // Accumulate the data
-            labels.forEach(function(label) {
+            labels.forEach(function (label) {
               var pt = data[label];
               if (pt > 0) {
                 dataSet.data.push(pt);
@@ -216,14 +216,14 @@ function makeMetricChart(id, ctx) {
 
       return Promise.all(promises);
     })
-    .then(function() {
+    .then(function () {
       // Once we have all data, draw the chart
       drawChart(ctx, name, labels, axes, dataSets);
     });
 }
 
-window.initializeCharts = function() {
-  this.document.querySelectorAll(".card").forEach(function(element) {
+window.initializeCharts = function () {
+  this.document.querySelectorAll(".card").forEach(function (element) {
     var chart = element.querySelector("canvas");
     var repoId = element.getAttribute("data-repo");
 

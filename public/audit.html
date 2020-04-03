@@ -56,13 +56,15 @@
             <td>{{entry.timeString()}}</td>
             <td>{{entry.data.event}}</td>
             <td>
-              <a :href="entry.targetLink()" target="_blank">{{entry.data.target}}</a>
+              <a :href="entry.targetLink()" target="_blank"
+                >{{entry.data.target}}</a
+              >
             </td>
             <td>
               <table class="details-table pure-table" v-if="entry.hasDetails()">
                 <tbody>
                   <tr v-for="detail in entry.detailsEntries()">
-                    <td class=key><code>{{detail[0]}}</code></td>
+                    <td class="key"><code>{{detail[0]}}</code></td>
                     <td class="value"><code>{{detail[1]}}</code></td>
                   </tr>
                 </tbody>
@@ -76,13 +78,10 @@
 
     <script>
       initializeApp();
-      
-      document.addEventListener("DOMContentLoaded", function() {
+
+      document.addEventListener("DOMContentLoaded", function () {
         console.log("All scripts loaded, initializing...");
-        firebase
-          .auth()
-          .signInAnonymously()
-          .then(initializeData);
+        firebase.auth().signInAnonymously().then(initializeData);
       });
     </script>
   </body>
