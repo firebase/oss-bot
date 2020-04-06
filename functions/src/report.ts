@@ -452,6 +452,11 @@ export async function MakeRepoTimeSeries(
       case "stars":
         val = snapshot.stargazers_count;
         break;
+      case "sam":
+      case "samscore":
+      case "sam_score":
+        val = ComputeSAMScore(snapshot);
+        break;
       default:
         throw `Invalid field: ${field}`;
     }
