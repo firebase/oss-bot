@@ -37,12 +37,16 @@ const STARS_AXIS = {
   },
 };
 
+let chartContext = undefined;
 let lastChart = undefined;
+
 let CHART_AXES = [];
 let CHART_DATA = {
   datasets: [],
   labels: [],
 };
+
+let CHART_OPTS = [];
 
 function randomColor() {
   const r = Math.floor(Math.random() * 256);
@@ -85,9 +89,8 @@ function drawChart(ctx) {
   });
 }
 
-async function makeMetricChart(ctx) {
-  const resp = await fetchQueryData();
-
+async function addSeriesToChart(ctx, opts) {
+  const resp = await fetchQueryData(opts);
   const y_axis = selectAxis(resp.field);
 
   const seriesColor = randomColor();
@@ -146,32 +149,103 @@ function getQueryUrl(opts) {
   return `${base}/GetRepoTimeSeries?org=${org}&repo=${repo}&field=${field}&points=${points}&daysBetween=${daysBetween}`;
 }
 
-async function fetchQueryData() {
-  const opts = getQueryOptsFromForm();
+async function fetchQueryData(opts) {
   const url = getQueryUrl(opts);
   const res = await fetch(url);
   return res.json();
 }
 
-function toggleLoading() {
+async function withLoading(fn) {
   const loading = this.document.querySelector("#chart-loading");
-  loading.classList.toggle("visible");
+  loading.classList.add("visible");
+  lockFields();
+
+  await fn();
+
+  unlockFields();
+  loading.classList.remove("visible");
 }
 
 function lockFields() {
-  document.querySelector("#field-points").setAttribute("disabled", true);
-  document.querySelector("#field-daysBetween").setAttribute("disabled", true);
+  const fields = [
+    "#field-org",
+    "#field-repo",
+    "#field-field",
+    "#field-points",
+    "#field-daysBetween"
+  ];
+
+  for (const id of fields) {
+    document.querySelector(id).setAttribute("disabled", true);
+  }
 }
 
 function unlockFields() {
-  document.querySelector("#field-points").removeAttribute("disabled");
-  document.querySelector("#field-daysBetween").removeAttribute("disabled");
+  const fields = [
+    "#field-org",
+    "#field-repo",
+    "#field-field",
+    "#field-points",
+    "#field-daysBetween"
+  ];
+
+  for (const id of fields) {
+    document.querySelector(id).removeAttribute("disabled");
+  }
 }
+
+function appendSeriesToState(opts) {
+  CHART_OPTS.push(opts);
+  setState();
+}
+
+function resetSeriesState() {
+  CHART_OPTS = [];
+  setState();
+}
+
+function setState() {
+  const optsEncoded = btoa(JSON.stringify(CHART_OPTS));
+  setQueryStringParameter("series", optsEncoded);
+}
+
+function getQueryStringParameter(name) {
+  const params = new URLSearchParams(window.location.search);
+  return params.get(name);
+}
+
+function setQueryStringParameter(name, value) {
+  const params = new URLSearchParams(window.location.search);
+  params.set(name, value);
+  window.history.replaceState({}, "", decodeURIComponent(`${window.location.pathname}?${params}`));
+}
+
+async function loadChartFromSeriesState() {
+  const param = getQueryStringParameter("series");
+  if (param) {
+    CHART_OPTS = JSON.parse(atob(param));
+    for (const series of CHART_OPTS) {
+      console.log("Loading series: ", JSON.stringify(series));
+      await addSeriesToChart(chartContext, series);
+    }
+  }
+}
+
+const onDocReady = function (cb) {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function (e) {
+      cb();
+    })
+  } else {
+    cb();
+  }
+};
 
 window.resetChart = function () {
   clearChart();
   unlockFields();
 
+  resetSeriesState();
   CHART_AXES = [];
   CHART_DATA.datasets = [];
   CHART_DATA.labels = [];
@@ -184,12 +258,21 @@ window.clearChart = function () {
   }
 };
 
-window.loadChart = async function () {
+window.addSeriesFromForm = async function () {
+  withLoading(async () => {
+    const opts = getQueryOptsFromForm();
+    appendSeriesToState(opts);  
+
+    await addSeriesToChart(chartContext, opts);
+  });
+};
+
+onDocReady(() => {
   const chartCard = this.document.querySelector("#chart-content");
   const chart = chartCard.querySelector("canvas");
-
-  toggleLoading();
-  lockFields();
-  await makeMetricChart(chart.getContext("2d"));
-  toggleLoading();
-};
+  chartContext = chart.getContext("2d");
+  
+  withLoading(async () => {
+    await loadChartFromSeriesState();
+  });
+});
