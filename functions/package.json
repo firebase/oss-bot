@@ -6,6 +6,7 @@
   },
   "dependencies": {
     "@firebase/app": "^0.5.4",
+    "@google-cloud/bigquery": "^4.7.0",
     "@google-cloud/logging": "^7.1.0",
     "@google-cloud/pubsub": "^1.5.0",
     "@octokit/plugin-retry": "^2.2.0",

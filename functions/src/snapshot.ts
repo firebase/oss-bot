@@ -3,9 +3,11 @@ import { database } from "./database";
 import * as github from "./github";
 import * as log from "./log";
 import * as util from "./util";
-import { snapshot } from "./types";
+import { snapshot, bigquery } from "./types";
 import * as config from "./config";
 import { PubSub } from "@google-cloud/pubsub";
+import { BigQuery } from "@google-cloud/bigquery";
+import { createIssuesTable, listIssuesTables, insertIssues } from "./bigquery";
 
 // Config
 const bot_config = config.BotConfig.getDefault();
@@ -220,6 +222,9 @@ export const SaveRepoSnapshot = functions
   .runWith(util.FUNCTION_OPTS)
   .pubsub.topic("repo_snapshot")
   .onPublish(async event => {
+    // Date for ingestion
+    const now = new Date();
+
     // TODO: Enable retry, using retry best practices
     const data = event.json;
     const org = data.org;
@@ -278,6 +283,13 @@ export const SaveRepoSnapshot = functions
       log.warn(`Failed to save snapshot of issues for ${org}/${repoKey}: ${e}`);
     }
 
+    // Stream issues to BigQuery
+    try {
+      await insertIssues(org, repoName, Object.values(issueData), now);
+    } catch (e) {
+      log.warn("BigQuery failure", JSON.stringify(e));
+    }
+
     // Store non-date-specific repo metadata
     // TODO: This should probably be broken out into a function like GetRepoSnapshot
     //       and then only saved/timed here.
@@ -314,6 +326,15 @@ export const SaveOrganizationSnapshot = functions
     for (const r of configRepos) {
       if (configOrgs.indexOf(r.org) < 0 && r.org !== "samtstern") {
         configOrgs.push(r.org);
+      }
+    }
+
+    // Make sure each org has a BQ table
+    const tableNames = await listIssuesTables();
+    for (const org of configOrgs) {
+      if (!tableNames.includes(org)) {
+        log.debug("Creating table for org: ", org);
+        await createIssuesTable(org);
       }
     }
 
