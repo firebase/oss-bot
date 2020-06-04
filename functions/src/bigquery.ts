@@ -65,13 +65,13 @@ export async function insertIssues(
 }
 
 function getIssuesViewSql(org: string) {
-  return `SELECT * 
-FROM 
+  return `SELECT *
+FROM
   (
-    SELECT 
-      *, ROW_NUMBER() 
-    OVER (PARTITION BY repo, number ORDER BY ingested) as rn 
+    SELECT
+      *, ROW_NUMBER()
+    OVER (PARTITION BY repo, number ORDER BY ingested) as rn
     FROM github_issues.${org}
-  )  
+  )
 WHERE rn = 1`;
 }
