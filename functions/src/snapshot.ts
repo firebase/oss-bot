@@ -335,8 +335,6 @@ export const SaveOrganizationSnapshot = functions
       if (!tableNames.includes(org)) {
         log.debug("Creating table for org: ", org);
         await createIssuesTable(org);
-
-        // TODO: Create view
       }
     }
 
