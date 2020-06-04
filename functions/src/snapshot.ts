@@ -7,6 +7,7 @@ import { snapshot, bigquery } from "./types";
 import * as config from "./config";
 import { PubSub } from "@google-cloud/pubsub";
 import { BigQuery } from "@google-cloud/bigquery";
+import { createIssuesTable, listIssuesTables, insertIssues } from "./bigquery";
 
 // Config
 const bot_config = config.BotConfig.getDefault();
@@ -25,11 +26,6 @@ try {
 
 // Just #pubsubthings
 const pubsubClient = new PubSub({
-  projectId: process.env.GCLOUD_PROJECT
-});
-
-// Just #bigquerythings
-const bqClient = new BigQuery({
   projectId: process.env.GCLOUD_PROJECT
 });
 
@@ -287,17 +283,9 @@ export const SaveRepoSnapshot = functions
       log.warn(`Failed to save snapshot of issues for ${org}/${repoKey}: ${e}`);
     }
 
-    // Save issues to BigQuery
-    const issues = Object.values(issueData).map(
-      i => new bigquery.Issue(i, repoName, now)
-    );
-    log.debug(`Inserting ${issues.length} issues into BigQuery`);
+    // Stream issues to BigQuery
     try {
-      const insertRes = await bqClient
-        .dataset("github_issues")
-        .table(org)
-        .insert(issues);
-      log.debug(`Inserted: ${JSON.stringify(insertRes[0])}`);
+      await insertIssues(org, repoName, Object.values(issueData), now);
     } catch (e) {
       log.warn("BigQuery failure", JSON.stringify(e));
     }
@@ -342,33 +330,13 @@ export const SaveOrganizationSnapshot = functions
     }
 
     // Make sure each org has a BQ table
-    const [tables] = await bqClient.dataset("github_issues").getTables();
-    const tableNames = tables.map(x => x.id);
+    const tableNames = await listIssuesTables();
     for (const org of configOrgs) {
       if (!tableNames.includes(org)) {
         log.debug("Creating table for org: ", org);
-        await bqClient.dataset("github_issues").createTable(org, {
-          schema: {
-            fields: [
-              { name: "repo", type: "STRING" },
-              { name: "number", type: "INTEGER" },
-              { name: "title", type: "STRING" },
-              { name: "state", type: "STRING" },
-              { name: "pull_request", type: "BOOLEAN" },
-              { name: "locked", type: "BOOLEAN" },
-              { name: "comments", type: "INTEGER" },
-              {
-                name: "user",
-                type: "RECORD",
-                fields: [{ name: "login", type: "STRING" }]
-              },
-              { name: "labels", type: "STRING", mode: "REPEATED" },
-              { name: "created_at", type: "STRING" },
-              { name: "updated_at", type: "STRING" },
-              { name: "ingested", type: "TIMESTAMP" }
-            ]
-          }
-        });
+        await createIssuesTable(org);
+
+        // TODO: Create view
       }
     }
 

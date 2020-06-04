@@ -712,20 +712,19 @@ export namespace bigquery {
 
     constructor(issue: snapshot.Issue, repo: string, ingested: Date) {
       this.repo = repo;
-      this.ingested = ingested.toISOString();
-
-      this.title = issue.title;
       this.number = issue.number;
-      this.comments = issue.comments;
-      this.pull_request = issue.pull_request;
+      this.title = issue.title;
       this.state = issue.state;
+      this.pull_request = issue.pull_request;
       this.locked = issue.locked;
+      this.comments = issue.comments;
       this.user = {
         login: issue.user.login
       };
       this.labels = issue.labels || [];
       this.updated_at = issue.updated_at;
       this.created_at = issue.created_at;
+      this.ingested = ingested.toISOString();
     }
   }
 }
