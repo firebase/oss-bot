@@ -95,6 +95,35 @@ export async function getRepoIssueStats(org: string, repo: string) {
     IssueFilters.isInternal(contributors)
   );
 
+  // TODO: Maybe exclude based on the repo's acual label config.
+  const labelBlacklist = ["type:", "priority", "needs"];
+
+  // Group issues by label
+  const labelIssues: { [label: string]: snapshot.Issue[] } = {};
+  for (const issue of issues) {
+    if (!issue.labels) {
+      continue;
+    }
+
+    for (const label of issue.labels) {
+      if (labelBlacklist.some(prefix => label.toLowerCase().includes(prefix))) {
+        continue;
+      }
+
+      if (!labelIssues[label]) {
+        labelIssues[label] = [];
+      }
+
+      labelIssues[label].push(issue);
+    }
+  }
+
+  // Get stats per label
+  const labelStats: { [label: string]: IssueStats } = {};
+  Object.keys(labelIssues).forEach(label => {
+    labelStats[label] = calculateStats(labelIssues[label]);
+  });
+
   const counts = {
     combined: {
       all: calculateStats(issuesAndPrs),
@@ -111,7 +140,8 @@ export async function getRepoIssueStats(org: string, repo: string) {
       all: calculateStats(prs),
       internal: calculateStats(internal_prs),
       external: calculateStats(external_prs)
-    }
+    },
+    labelStats
   };
 
   return counts;

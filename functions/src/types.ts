@@ -1,3 +1,5 @@
+import { IssueStats } from "./stats";
+
 export enum ActionService {
   GITHUB = "GITHUB",
   EMAIL = "EMAIL"
@@ -599,6 +601,10 @@ export namespace report {
     link: string;
   }
 
+  export interface LabelReport extends IssueStats {
+    name: string;
+  }
+
   export interface Repo {
     name: string;
 
@@ -613,6 +619,8 @@ export namespace report {
 
     opened_issues: ChangedIssue[];
     closed_issues: ChangedIssue[];
+
+    worst_labels: LabelReport[];
   }
 
   export interface RepoTimeSeries {
