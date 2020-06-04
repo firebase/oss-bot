@@ -3,9 +3,10 @@ import { database } from "./database";
 import * as github from "./github";
 import * as log from "./log";
 import * as util from "./util";
-import { snapshot } from "./types";
+import { snapshot, bigquery } from "./types";
 import * as config from "./config";
 import { PubSub } from "@google-cloud/pubsub";
+import { BigQuery } from "@google-cloud/bigquery";
 
 // Config
 const bot_config = config.BotConfig.getDefault();
@@ -24,6 +25,11 @@ try {
 
 // Just #pubsubthings
 const pubsubClient = new PubSub({
+  projectId: process.env.GCLOUD_PROJECT
+});
+
+// Just #bigquerythings
+const bqClient = new BigQuery({
   projectId: process.env.GCLOUD_PROJECT
 });
 
@@ -220,6 +226,9 @@ export const SaveRepoSnapshot = functions
   .runWith(util.FUNCTION_OPTS)
   .pubsub.topic("repo_snapshot")
   .onPublish(async event => {
+    // Date for ingestion
+    const now = new Date();
+
     // TODO: Enable retry, using retry best practices
     const data = event.json;
     const org = data.org;
@@ -278,6 +287,21 @@ export const SaveRepoSnapshot = functions
       log.warn(`Failed to save snapshot of issues for ${org}/${repoKey}: ${e}`);
     }
 
+    // Save issues to BigQuery
+    const issues = Object.values(issueData).map(
+      i => new bigquery.Issue(i, repoName, now)
+    );
+    log.debug(`Inserting ${issues.length} issues into BigQuery`);
+    try {
+      const insertRes = await bqClient
+        .dataset("github_issues")
+        .table(org)
+        .insert(issues);
+      log.debug(`Inserted: ${JSON.stringify(insertRes[0])}`);
+    } catch (e) {
+      log.warn("BigQuery failure", JSON.stringify(e));
+    }
+
     // Store non-date-specific repo metadata
     // TODO: This should probably be broken out into a function like GetRepoSnapshot
     //       and then only saved/timed here.
@@ -314,6 +338,37 @@ export const SaveOrganizationSnapshot = functions
     for (const r of configRepos) {
       if (configOrgs.indexOf(r.org) < 0 && r.org !== "samtstern") {
         configOrgs.push(r.org);
+      }
+    }
+
+    // Make sure each org has a BQ table
+    const [tables] = await bqClient.dataset("github_issues").getTables();
+    const tableNames = tables.map(x => x.id);
+    for (const org of configOrgs) {
+      if (!tableNames.includes(org)) {
+        log.debug("Creating table for org: ", org);
+        await bqClient.dataset("github_issues").createTable(org, {
+          schema: {
+            fields: [
+              { name: "repo", type: "STRING" },
+              { name: "number", type: "INTEGER" },
+              { name: "title", type: "STRING" },
+              { name: "state", type: "STRING" },
+              { name: "pull_request", type: "BOOLEAN" },
+              { name: "locked", type: "BOOLEAN" },
+              { name: "comments", type: "INTEGER" },
+              {
+                name: "user",
+                type: "RECORD",
+                fields: [{ name: "login", type: "STRING" }]
+              },
+              { name: "labels", type: "STRING", mode: "REPEATED" },
+              { name: "created_at", type: "STRING" },
+              { name: "updated_at", type: "STRING" },
+              { name: "ingested", type: "TIMESTAMP" }
+            ]
+          }
+        });
       }
     }
 
