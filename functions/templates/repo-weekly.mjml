@@ -50,6 +50,15 @@
           </mj-text>
 
           <mj-text font-size="14px">
+            These labels have the most open issues:
+            <ol>
+              {{#worst_labels}}
+              <li><b>{{name}}</b> - {{open}} open, {{closed}} closed</li>
+              {{/worst_labels}}
+            </ol>
+          </mj-text>
+
+          <mj-text font-size="14px">
             These issues were newly opened this week:
             <ul>
               {{#opened_issues}}

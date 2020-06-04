@@ -33,6 +33,7 @@ export { SaveOrganizationSnapshot, SaveRepoSnapshot } from "./snapshot";
 export {
   RepoIssueStatistics,
   GetRepoReport,
+  GetRepoReportHTML,
   GetRepoTimeSeries,
   GetWeeklyReport,
   SaveWeeklyReport,

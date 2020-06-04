@@ -394,6 +394,28 @@ export async function MakeRepoReport(
       return toChangedIssue(org, repo, issue);
     });
 
+  // Get the repo report for more detail stats
+  const repoStats = await stats.getRepoIssueStats(org, repo);
+
+  // Get the labels with the most open issues
+  const labelStats = repoStats.labelStats;
+  const sortedLabelKeys = Object.keys(labelStats).sort((a, b) => {
+    const aStats = labelStats[a];
+    const bStats = labelStats[b];
+
+    return bStats.open - aStats.open;
+  });
+
+  const worst_labels: report.LabelReport[] = [];
+  for (let i = 0; i < sortedLabelKeys.length && i < 5; i++) {
+    const key = sortedLabelKeys[i];
+    const stats = labelStats[key];
+    worst_labels.push({
+      name: key,
+      ...stats
+    });
+  }
+
   return {
     name: repo,
 
@@ -406,7 +428,9 @@ export async function MakeRepoReport(
     forks,
 
     opened_issues,
-    closed_issues
+    closed_issues,
+
+    worst_labels
   };
 }
 
@@ -502,6 +526,27 @@ export const GetRepoReport = functions
     try {
       const report = await MakeRepoReport(org, repo);
       res.json(report);
+    } catch (e) {
+      res.status(500).send(e);
+    }
+  });
+
+/**
+ * Preview the email for a repo
+ */
+export const GetRepoReportHTML = functions
+  .runWith(util.FUNCTION_OPTS)
+  .https.onRequest(async (req, res) => {
+    const org = req.query["org"] || "firebase";
+    const repo = req.query["repo"];
+    if (repo === undefined) {
+      res.status(500).send("Must specify 'repo' param");
+      return;
+    }
+
+    try {
+      const report = await GetWeeklyRepoEmail(org, repo);
+      res.send(report);
     } catch (e) {
       res.status(500).send(e);
     }
