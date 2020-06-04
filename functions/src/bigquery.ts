@@ -42,9 +42,9 @@ export async function createIssuesTable(org: string): Promise<void> {
   await bqClient.dataset(ISSUES_DATASET).createTable(`${org}_view`, {
     view: {
       query: getIssuesViewSql(org),
-      useLegacySql: false,
+      useLegacySql: false
     }
-  })
+  });
 }
 
 export async function insertIssues(
@@ -73,5 +73,5 @@ FROM
     OVER (PARTITION BY repo, number ORDER BY ingested) as rn 
     FROM github_issues.${org}
   )  
-WHERE rn = 1`
+WHERE rn = 1`;
 }
