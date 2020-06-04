@@ -1,10 +1,10 @@
-import { BigQuery } from "@google-cloud/bigquery";
+import { BigQuery, TableSchema, ViewDefinition } from "@google-cloud/bigquery";
 import { snapshot, bigquery } from "./types";
 import * as log from "./log";
 
 const ISSUES_DATASET = "github_issues";
 
-const ISSUES_SCHEMA = {
+const ISSUES_SCHEMA: TableSchema = {
   fields: [
     { name: "repo", type: "STRING" },
     { name: "number", type: "INTEGER" },
@@ -38,6 +38,13 @@ export async function createIssuesTable(org: string): Promise<void> {
   await bqClient.dataset(ISSUES_DATASET).createTable(org, {
     schema: ISSUES_SCHEMA
   });
+
+  await bqClient.dataset(ISSUES_DATASET).createTable(`${org}_view`, {
+    view: {
+      query: getIssuesViewSql(org),
+      useLegacySql: false,
+    }
+  })
 }
 
 export async function insertIssues(
@@ -55,4 +62,16 @@ export async function insertIssues(
     .table(org)
     .insert(issues);
   log.debug(`Inserted: ${JSON.stringify(insertRes[0])}`);
+}
+
+function getIssuesViewSql(org: string) {
+  return `SELECT * 
+FROM 
+  (
+    SELECT 
+      *, ROW_NUMBER() 
+    OVER (PARTITION BY repo, number ORDER BY ingested) as rn 
+    FROM github_issues.${org}
+  )  
+WHERE rn = 1`
 }
