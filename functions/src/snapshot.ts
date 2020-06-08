@@ -331,10 +331,10 @@ export const SaveOrganizationSnapshot = functions
 
     // Make sure each org has a BQ table
     const tableNames = await listIssuesTables();
-    for (const org of configOrgs) {
-      if (!tableNames.includes(org)) {
-        log.debug("Creating table for org: ", org);
-        await createIssuesTable(org);
+    for (const repo of configRepos) {
+      if (!tableNames.includes(repo.org)) {
+        log.debug("Creating table for org: ", repo.org);
+        await createIssuesTable(repo.org);
       }
     }
 
