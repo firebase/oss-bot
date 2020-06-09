@@ -65,13 +65,22 @@ export async function insertIssues(
 }
 
 function getIssuesViewSql(org: string) {
-  return `SELECT *
-FROM
-  (
-    SELECT
-      *, ROW_NUMBER()
-    OVER (PARTITION BY repo, number ORDER BY ingested) as rn
-    FROM github_issues.${org}
-  )
-WHERE rn = 1`;
+  return `SELECT
+  issues.*
+FROM (
+  SELECT
+    *
+  FROM
+    github_issues.${org}) AS issues
+JOIN (
+  SELECT
+    repo,
+    MAX(ingested) AS timestamp
+  FROM
+    github_issues.${org}
+  GROUP BY
+    repo) AS max_ingestion
+ON
+  issues.repo = max_ingestion.repo
+  AND issues.ingested = max_ingestion.timestamp`;
 }
