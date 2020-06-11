@@ -25,7 +25,8 @@ import * as log from "../log";
 import * as issues from "../issues";
 import * as types from "../types";
 import * as util from "./test-util";
-import { getDateWorkingDaysBefore } from "../util";
+import { workingDaysAgo, getDateWorkingDaysBefore } from "../util";
+import { get } from "https";
 
 // Bot configuration
 const config_json = require("./mock_data/config.json");
@@ -135,6 +136,14 @@ describe("Stale issue handler", async () => {
   afterEach(() => {
     log.setLogLevel(log.Level.ALL);
     simple.restore();
+  });
+
+  it("properly calculates working days", async () => {
+    const now = new Date();
+
+    for (let i = 0; i < 7; i++) {
+      assert.equal(workingDaysAgo(getDateWorkingDaysBefore(now, i), now), i);
+    }
   });
 
   it("should do nothing to a needs-info issue that is fresh", async () => {
