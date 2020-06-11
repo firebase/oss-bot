@@ -25,6 +25,8 @@ import * as log from "../log";
 import * as issues from "../issues";
 import * as types from "../types";
 import * as util from "./test-util";
+import { workingDaysAgo, getDateWorkingDaysBefore } from "../util";
+import { get } from "https";
 
 // Bot configuration
 const config_json = require("./mock_data/config.json");
@@ -40,18 +42,14 @@ const cron_handler = new cron.CronHandler(gh_client, bot_config);
 const issue_handler = new issues.IssueHandler(gh_client, bot_config);
 
 const NOW_TIME = new Date();
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 const JUST_NOW = new Date(NOW_TIME.getTime() - 1000).toISOString();
-const SEVEN_DAYS_AGO = new Date(NOW_TIME.getTime() - 7 * DAY_MS).toISOString();
-const FOURTEEN_DAYS_AGO = new Date(
-  NOW_TIME.getTime() - 14 * DAY_MS
-).toISOString();
-const THREE_MONTHS_AGO = new Date(
-  NOW_TIME.getTime() - 90 * DAY_MS
-).toISOString();
-const FOUR_MONTHS_AGO = new Date(
-  NOW_TIME.getTime() - 120 * DAY_MS
+const SEVEN_WKD_AGO = getDateWorkingDaysBefore(NOW_TIME, 7).toISOString();
+const FOURTEEN_WKD_AGO = getDateWorkingDaysBefore(NOW_TIME, 14).toISOString();
+const NINETY_WKD_AGO = getDateWorkingDaysBefore(NOW_TIME, 90).toISOString();
+const HUNDREDTWENTY_WKD_AGO = getDateWorkingDaysBefore(
+  NOW_TIME,
+  120
 ).toISOString();
 
 const DEFAULT_CONFIG: types.IssueCleanupConfig = {
@@ -73,8 +71,22 @@ const STALE_ISSUE: types.internal.Issue = {
   body: "Body of my issue",
   user: { login: "some-user" },
   labels: [{ name: "stale" }],
-  created_at: FOURTEEN_DAYS_AGO,
-  updated_at: FOURTEEN_DAYS_AGO,
+  created_at: FOURTEEN_WKD_AGO,
+  updated_at: FOURTEEN_WKD_AGO,
+  locked: false
+};
+
+const READY_TO_CLOSE_ISSUE: types.internal.Issue = {
+  number: 1,
+  state: "open",
+  title: "Issue that is stale",
+  body: "foo bar",
+  user: {
+    login: "some-user"
+  },
+  labels: [{ name: "stale" }, { name: "needs-info" }],
+  created_at: FOURTEEN_WKD_AGO,
+  updated_at: FOURTEEN_WKD_AGO,
   locked: false
 };
 
@@ -85,8 +97,8 @@ const NEEDS_INFO_ISSUE: types.internal.Issue = {
   body: "Body of my issue",
   user: { login: "some-user" },
   labels: [{ name: "needs-info" }],
-  created_at: SEVEN_DAYS_AGO,
-  updated_at: SEVEN_DAYS_AGO,
+  created_at: SEVEN_WKD_AGO,
+  updated_at: SEVEN_WKD_AGO,
   locked: false
 };
 
@@ -97,9 +109,9 @@ const NEW_CLOSED_ISSUE: types.internal.Issue = {
   body: "Body of my issue",
   user: { login: "some-user" },
   labels: [],
-  created_at: FOURTEEN_DAYS_AGO,
-  updated_at: FOURTEEN_DAYS_AGO,
-  closed_at: SEVEN_DAYS_AGO,
+  created_at: FOURTEEN_WKD_AGO,
+  updated_at: FOURTEEN_WKD_AGO,
+  closed_at: SEVEN_WKD_AGO,
   locked: false
 };
 
@@ -110,9 +122,9 @@ const OLD_CLOSED_ISSUE: types.internal.Issue = {
   body: "Body of my issue",
   user: { login: "some-user" },
   labels: [],
-  created_at: FOUR_MONTHS_AGO,
-  updated_at: FOUR_MONTHS_AGO,
-  closed_at: THREE_MONTHS_AGO,
+  created_at: HUNDREDTWENTY_WKD_AGO,
+  updated_at: HUNDREDTWENTY_WKD_AGO,
+  closed_at: NINETY_WKD_AGO,
   locked: false
 };
 
@@ -124,6 +136,14 @@ describe("Stale issue handler", async () => {
   afterEach(() => {
     log.setLogLevel(log.Level.ALL);
     simple.restore();
+  });
+
+  it("properly calculates working days", async () => {
+    const now = new Date();
+
+    for (let i = 0; i < 7; i++) {
+      assert.equal(workingDaysAgo(getDateWorkingDaysBefore(now, i), now), i);
+    }
   });
 
   it("should do nothing to a needs-info issue that is fresh", async () => {
@@ -175,8 +195,8 @@ describe("Stale issue handler", async () => {
         login: "some-user"
       },
       labels: [{ name: "needs-info" }],
-      created_at: FOURTEEN_DAYS_AGO,
-      updated_at: FOURTEEN_DAYS_AGO,
+      created_at: FOURTEEN_WKD_AGO,
+      updated_at: FOURTEEN_WKD_AGO,
       locked: false
     };
 
@@ -184,8 +204,8 @@ describe("Stale issue handler", async () => {
       {
         body: "My comment",
         user: { login: "some-user" },
-        created_at: FOURTEEN_DAYS_AGO,
-        updated_at: FOURTEEN_DAYS_AGO
+        created_at: FOURTEEN_WKD_AGO,
+        updated_at: FOURTEEN_WKD_AGO
       }
     ];
 
@@ -214,32 +234,19 @@ describe("Stale issue handler", async () => {
   });
 
   it("should comment and close a stale issue after {X} days", async () => {
-    const staleIssue: types.internal.Issue = {
-      number: 1,
-      state: "open",
-      title: "Issue that is stale",
-      body: "foo bar",
-      user: {
-        login: "some-user"
-      },
-      labels: [{ name: "stale" }],
-      created_at: SEVEN_DAYS_AGO,
-      updated_at: SEVEN_DAYS_AGO,
-      locked: false
-    };
-
+    const issue = READY_TO_CLOSE_ISSUE;
     const issueComments: types.internal.Comment[] = [
       {
         body: "My original comment",
-        user: { login: "some-user" },
-        created_at: SEVEN_DAYS_AGO,
-        updated_at: SEVEN_DAYS_AGO
+        user: issue.user,
+        created_at: SEVEN_WKD_AGO,
+        updated_at: SEVEN_WKD_AGO
       },
       {
-        body: cron_handler.getMarkStaleComment("some-user", 7, 3),
+        body: cron_handler.getMarkStaleComment(issue.user.login, 7, 3),
         user: { login: "google-oss-bot" },
-        created_at: SEVEN_DAYS_AGO,
-        updated_at: SEVEN_DAYS_AGO
+        created_at: SEVEN_WKD_AGO,
+        updated_at: SEVEN_WKD_AGO
       }
     ];
 
@@ -252,7 +259,7 @@ describe("Stale issue handler", async () => {
     const actions = await cron_handler.handleStaleIssue(
       "samtstern",
       "bottest",
-      staleIssue,
+      issue,
       DEFAULT_CONFIG
     );
 
@@ -260,11 +267,11 @@ describe("Stale issue handler", async () => {
       new types.GithubCommentAction(
         "samtstern",
         "bottest",
-        staleIssue.number,
-        cron_handler.getCloseComment("some-user"),
+        issue.number,
+        cron_handler.getCloseComment(issue.user.login),
         false
       ),
-      new types.GithubCloseAction("samtstern", "bottest", staleIssue.number)
+      new types.GithubCloseAction("samtstern", "bottest", issue.number)
     ]);
   });
 
@@ -282,8 +289,8 @@ describe("Stale issue handler", async () => {
         { name: "needs-info" },
         { name: "stale" }
       ],
-      created_at: FOURTEEN_DAYS_AGO,
-      updated_at: FOURTEEN_DAYS_AGO,
+      created_at: FOURTEEN_WKD_AGO,
+      updated_at: FOURTEEN_WKD_AGO,
       locked: false
     };
 
@@ -306,8 +313,8 @@ describe("Stale issue handler", async () => {
     const comment: types.internal.Comment = {
       user: STALE_ISSUE.user,
       body: "New comment by the author",
-      created_at: SEVEN_DAYS_AGO,
-      updated_at: SEVEN_DAYS_AGO
+      created_at: SEVEN_WKD_AGO,
+      updated_at: SEVEN_WKD_AGO
     };
 
     const actions = await issue_handler.onCommentCreated(
@@ -371,8 +378,8 @@ describe("Stale issue handler", async () => {
     const comment: types.internal.Comment = {
       user: { login: "someone-else" },
       body: "New comment by someone else",
-      created_at: SEVEN_DAYS_AGO,
-      updated_at: SEVEN_DAYS_AGO
+      created_at: SEVEN_WKD_AGO,
+      updated_at: SEVEN_WKD_AGO
     };
 
     const actions = await issue_handler.onCommentCreated(

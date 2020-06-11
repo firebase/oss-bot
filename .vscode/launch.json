@@ -7,6 +7,20 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Debug test-ts",
+            "program": "${workspaceFolder}/functions/node_modules/mocha/bin/_mocha",
+            "runtimeArgs": [
+                "--inspect-brk"
+            ],
+            "args": [
+                "-r",
+                "ts-node/register",
+                "functions/src/test/*test.ts"
+            ],
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Launch Program",
             "program": "${file}"
         },
@@ -16,14 +30,6 @@
             "name": "Attach to Port",
             "address": "localhost",
             "port": 5858
-        },
-        {
-			"type": "node",
-            "request": "attach",
-			"name": "Debug Mocha Test",
-			"address": "localhost",
-			"port": 5858,
-			"sourceMaps": false
-		}
+        }
     ]
 }

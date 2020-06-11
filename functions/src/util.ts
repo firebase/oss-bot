@@ -73,6 +73,23 @@ export function daysAgo(past: Date, future?: Date): number {
   return Math.floor(diff / msInDay);
 }
 
+export function getDateWorkingDaysBefore(start: Date, days: number): Date {
+  const msInDay = 24 * 60 * 60 * 1000;
+  let daysSubtracted = 0;
+
+  let t = start.getTime();
+  while (daysSubtracted < days) {
+    const tDate = new Date(t);
+    if (tDate.getDay() !== 0 && tDate.getDay() !== 6) {
+      daysSubtracted += 1;
+    }
+
+    t -= msInDay;
+  }
+
+  return new Date(t);
+}
+
 export function workingDaysAgo(past: Date, future?: Date): number {
   const msInDay = 24 * 60 * 60 * 1000;
   const now = (future || new Date()).getTime();

@@ -196,91 +196,85 @@ export class CronHandler {
     let comments = await this.gh_client.getCommentsForIssue(org, name, number);
     comments = comments.sort(util.compareTimestamps).reverse();
 
-    if (stateNeedsInfo) {
-      log.debug(
-        `Processing ${name}#${number} as needs-info, labels=${JSON.stringify(
-          labelNames
-        )}`
-      );
-      // The github webhook handler will automatically remove the needs-info label
-      // if the author comments, so we can assume inside the cronjob that this has
-      // not happened and just look at the date of the last comment.
-      //
-      // A comment by anyone in the last 7 days makes the issue non-stale.
-      const lastComment = comments[0];
-      const lastCommentTime = util.createdDate(lastComment);
-      const lastCommentWorkingDaysAgo = util.workingDaysAgo(lastCommentTime);
-      const shouldMarkStale =
-        lastCommentWorkingDaysAgo >= issueConfig.needs_info_days;
+    // When the issue was marked stale, the bot will have left a comment with certain metadata
+    const markStaleComment = comments.find(comment => {
+      return comment.body.includes(EVT_MARK_STALE);
+    });
 
-      if (shouldMarkStale) {
-        // We add the 'stale' label and also add a comment. Note that
-        // if the issue was labeled 'needs-info' this label is not removed
-        // here.
-        const addStaleLabel = new types.GithubAddLabelAction(
-          org,
-          name,
-          number,
-          issueConfig.label_stale,
-          `Last comment was ${lastCommentWorkingDaysAgo} working days ago (${lastCommentTime}).`
-        );
-        const addStaleComment = new types.GithubCommentAction(
-          org,
-          name,
-          number,
-          this.getMarkStaleComment(
-            issue.user.login,
-            issueConfig.needs_info_days,
-            issueConfig.stale_days
-          ),
-          false,
-          `Comment that goes alongside the stale label.`
-        );
-        actions.push(addStaleLabel, addStaleComment);
-      }
+    if (stateStale && !markStaleComment) {
+      log.warn(
+        `Issue ${name}/${number} is stale but no relevant comment was found.`
+      );
     }
 
-    if (stateStale) {
+    if (stateNeedsInfo || stateStale) {
       log.debug(
-        `Processing ${name}#${number} as stale, labels=${JSON.stringify(
+        `Processing ${name}#${number} as needs-info or stale, labels=${JSON.stringify(
           labelNames
         )}`
       );
+    }
 
-      // When the issue was marked stale, the bot will have left a comment with certain metadata
-      const markStaleComment = comments.find(comment => {
-        return comment.body.includes(EVT_MARK_STALE);
-      });
+    // The github webhook handler will automatically remove the needs-info label
+    // if the author comments, so we can assume inside the cronjob that this has
+    // not happened and just look at the date of the last comment.
+    //
+    // A comment by anyone in the last 7 days makes the issue non-stale.
+    const lastCommentTime = util.createdDate(comments[0]);
+    const shouldMarkStale =
+      stateNeedsInfo &&
+      util.workingDaysAgo(lastCommentTime) >= issueConfig.needs_info_days;
 
-      if (!markStaleComment) {
-        log.warn(
-          `Issue ${name}/${number} is stale but no relevant comment was found.`
-        );
-      }
+    const shouldClose =
+      stateStale &&
+      markStaleComment != undefined &&
+      util.workingDaysAgo(util.createdDate(markStaleComment)) >=
+        issueConfig.stale_days;
 
-      if (markStaleComment) {
-        const markStaleCommentTime = util.createdDate(markStaleComment);
-        const shouldCloseStale =
-          util.workingDaysAgo(markStaleCommentTime) >= issueConfig.stale_days;
-
-        if (shouldCloseStale) {
-          const addClosingComment = new types.GithubCommentAction(
-            org,
-            name,
-            number,
-            this.getCloseComment(issue.user.login),
-            false,
-            `Comment after closing issue for being stale (comment at ${markStaleCommentTime}).`
-          );
-          const closeIssue = new types.GithubCloseAction(
-            org,
-            name,
-            number,
-            `Closing issue for being stale.`
-          );
-          actions.push(addClosingComment, closeIssue);
-        }
-      }
+    if (shouldClose) {
+      const addClosingComment = new types.GithubCommentAction(
+        org,
+        name,
+        number,
+        this.getCloseComment(issue.user.login),
+        false,
+        `Comment after closing issue for being stale (comment at ${util.createdDate(
+          markStaleComment!
+        )}).`
+      );
+      const closeIssue = new types.GithubCloseAction(
+        org,
+        name,
+        number,
+        `Closing issue for being stale.`
+      );
+      actions.push(addClosingComment, closeIssue);
+    } else if (shouldMarkStale) {
+      // We add the 'stale' label and also add a comment. Note that
+      // if the issue was labeled 'needs-info' this label is not removed
+      // here.
+      const addStaleLabel = new types.GithubAddLabelAction(
+        org,
+        name,
+        number,
+        issueConfig.label_stale,
+        `Last comment was ${util.workingDaysAgo(
+          lastCommentTime
+        )} working days ago (${lastCommentTime}).`
+      );
+      const addStaleComment = new types.GithubCommentAction(
+        org,
+        name,
+        number,
+        this.getMarkStaleComment(
+          issue.user.login,
+          issueConfig.needs_info_days,
+          issueConfig.stale_days
+        ),
+        false,
+        `Comment that goes alongside the stale label.`
+      );
+      actions.push(addStaleLabel, addStaleComment);
     }
 
     return actions;
