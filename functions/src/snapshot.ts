@@ -3,11 +3,10 @@ import { database } from "./database";
 import * as github from "./github";
 import * as log from "./log";
 import * as util from "./util";
-import { snapshot, bigquery } from "./types";
+import { snapshot } from "./types";
 import * as config from "./config";
-import { PubSub } from "@google-cloud/pubsub";
-import { BigQuery } from "@google-cloud/bigquery";
 import { createIssuesTable, listIssuesTables, insertIssues } from "./bigquery";
+import { sendPubSub } from "./pubsub";
 
 // Config
 const bot_config = config.BotConfig.getDefault();
@@ -23,11 +22,6 @@ try {
     `Unable to authenticate Github client. If this is a non-test environment things will go badly: ${e}`
   );
 }
-
-// Just #pubsubthings
-const pubsubClient = new PubSub({
-  projectId: process.env.GCLOUD_PROJECT
-});
 
 function cleanRepoName(name: string): string {
   let cleanName = name.toLowerCase();
@@ -389,11 +383,4 @@ export const SaveOrganizationSnapshot = functions
 interface OrgRepo {
   org: string;
   repo: string;
-}
-
-function sendPubSub(topic: string, data: any): Promise<any> {
-  const publisher = pubsubClient.topic(topic).publisher;
-
-  log.debug(`PubSub(${topic}, ${JSON.stringify(data)}`);
-  return publisher.publish(Buffer.from(JSON.stringify(data)));
 }

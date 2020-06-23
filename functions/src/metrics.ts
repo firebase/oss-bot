@@ -5,11 +5,7 @@ import * as util from "./util";
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as moment from "moment";
-import { PubSub } from "@google-cloud/pubsub";
-
-const pubsubClient = new PubSub({
-  projectId: process.env.GCLOUD_PROJECT
-});
+import { sendPubSub } from "./pubsub";
 
 // TODO: Should probably move this out
 async function getDatedSAM(
@@ -155,12 +151,8 @@ export const UpdateAllMetrics = functions
     const snap = await db.ref("metrics").once("value");
     const val = snap.val();
 
-    const publisher = pubsubClient.topic("update-metrics").publisher;
-
     Object.keys(val).forEach(async (projectId: string) => {
       log.debug(`Updating metrics for: ${projectId}`);
-
-      const dataBuffer = Buffer.from(JSON.stringify({ project: projectId }));
-      await publisher.publish(dataBuffer);
+      await sendPubSub("update-metrics", { project: projectId });
     });
   });
