@@ -269,7 +269,7 @@ export const botCleanupRepo = functions
     const isTestBot = process.env.GCLOUD_PROJECT === "ossbot-test";
     const isTestRepo = org === "samtstern" && repo === "bottest";
     if (isTestBot && !isTestRepo) {
-      console.log(`Test bot, skipping ${repo.name}`);
+      console.log(`Test bot, skipping ${repo}`);
       return;
     }
 
