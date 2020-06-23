@@ -27,6 +27,7 @@ import * as util from "./util";
 import * as log from "./log";
 
 import { database } from "./database";
+import { sendPubSub } from "./pubsub";
 
 export { SaveOrganizationSnapshot, SaveRepoSnapshot } from "./snapshot";
 
@@ -247,29 +248,42 @@ export const botCleanup = functions
     console.log("The cleanup job is running!");
     const repos = bot_config.getAllRepos();
     for (const repo of repos) {
-      // If we're in the ossbot-test project we don't want to do any cron processing
-      // on prod repos.
-      // TODO: Make this less hardcoded
-      const isTestBot = process.env.GCLOUD_PROJECT === "ossbot-test";
-      const isTestRepo = repo.org === "samtstern" && repo.name === "bottest";
-      if (isTestBot && !isTestRepo) {
-        console.log(`Test bot, skipping ${repo.name}`);
-        continue;
-      }
+      await sendPubSub("bot-cleanup-repo", { org: repo.org, repo: repo.name });
+    }
 
-      const actions = await cron_handler.processIssues(repo.org, repo.name);
+    return true;
+  });
 
-      console.log(
-        `Taking ${actions.length} actions when cleaning up ${repo.name}`
-      );
+export const botCleanupRepo = functions
+  .runWith(util.FUNCTION_OPTS)
+  .pubsub.topic("bot-cleanup-repo")
+  .onPublish(async (event, ctx) => {
+    const data = event.json;
 
-      // Run each action in order but don't explode on failure.
-      for (const action of actions) {
-        try {
-          await executeAction(action);
-        } catch (e) {
-          console.warn(`Failed to execute action ${action.toString()}`, e);
-        }
+    const org = data.org;
+    const repo = data.repo;
+
+    // If we're in the ossbot-test project we don't want to do any cron processing
+    // on prod repos.
+    // TODO: Make this less hardcoded
+    const isTestBot = process.env.GCLOUD_PROJECT === "ossbot-test";
+    const isTestRepo = org === "samtstern" && repo === "bottest";
+    if (isTestBot && !isTestRepo) {
+      console.log(`Test bot, skipping ${repo.name}`);
+      return;
+    }
+
+    const actions = await cron_handler.processIssues(org, repo);
+    console.log(
+      `Taking ${actions.length} actions when cleaning up ${org}/${repo}`
+    );
+
+    // Run each action in order but don't explode on failure.
+    for (const action of actions) {
+      try {
+        await executeAction(action);
+      } catch (e) {
+        console.warn(`Failed to execute action ${action.toString()}`, e);
       }
     }
 
