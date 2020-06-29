@@ -15,7 +15,8 @@
  */
 import * as log from "./log";
 import * as util from "./util";
-import * as Octokit from "@octokit/rest";
+import { Octokit } from "@octokit/rest";
+import { OctokitResponse } from "@octokit/types";
 
 const OctokitRetry = require("@octokit/plugin-retry");
 const GithubApi = require("@octokit/rest").plugin(OctokitRetry);
@@ -63,7 +64,7 @@ export class GithubClient {
     return this.api.issues.addLabels({
       owner: org,
       repo: name,
-      number: number,
+      issue_number: number,
       labels: [label]
     });
   }
@@ -82,7 +83,7 @@ export class GithubClient {
     return this.api.issues.removeLabel({
       owner: org,
       repo: name,
-      number: number,
+      issue_number: number,
       name: label
     });
   }
@@ -101,7 +102,7 @@ export class GithubClient {
     return this.api.issues.createComment({
       owner: org,
       repo: name,
-      number: number,
+      issue_number: number,
       body: body
     });
   }
@@ -123,7 +124,7 @@ export class GithubClient {
     this.auth();
 
     return this.api.repos
-      .getContents({
+      .getContent({
         owner: org,
         repo: name,
         path: file
@@ -137,14 +138,14 @@ export class GithubClient {
   /**
    * Closes an issue on a github repo.
    */
-  closeIssue(org: string, name: string, number: number): Promise<any> {
+  closeIssue(org: string, name: string, issue_number: number): Promise<any> {
     this.auth();
 
     // Add the closed-by-bot label
     const add_label = this.api.issues.addLabels({
       owner: org,
       repo: name,
-      number: number,
+      issue_number,
       labels: ["closed-by-bot"]
     });
 
@@ -152,7 +153,7 @@ export class GithubClient {
     const close_issue = this.api.issues.update({
       owner: org,
       repo: name,
-      number: number,
+      issue_number,
       state: "closed"
     });
 
@@ -162,11 +163,11 @@ export class GithubClient {
   /**
    * Get all comments on a GitHUb issue.
    */
-  getCommentsForIssue(owner: string, repo: string, number: number) {
+  getCommentsForIssue(owner: string, repo: string, issue_number: number) {
     return paginate(this.api.issues.listComments, {
       owner,
       repo,
-      number
+      issue_number
     });
   }
 
@@ -238,13 +239,13 @@ export class GithubClient {
   /**
    * Lock a GitHub issue.
    */
-  lockIssue(owner: string, repo: string, number: number) {
+  lockIssue(owner: string, repo: string, issue_number: number) {
     this.auth();
 
     return this.api.issues.lock({
       owner,
       repo,
-      number
+      issue_number
     });
   }
 }
@@ -255,7 +256,7 @@ type IssueState = "open" | "closed" | "all";
  * Interface for a Github API call.
  */
 interface GithubFn<S, T> {
-  (args: S): Promise<Octokit.Response<T>>;
+  (params?: S): Promise<OctokitResponse<T>>;
 }
 
 /**
@@ -270,7 +271,7 @@ interface PageParams {
   page?: number;
 
   // Ignore extra properties
-  [others: string]: any;
+  [others: string]: unknown;
 }
 
 /**
@@ -280,7 +281,7 @@ interface PageParams {
 async function paginate<S extends PageParams, T>(
   fn: GithubFn<S, Array<T>>,
   options: S
-) {
+): Promise<T[]> {
   const per_page = 100;
   let pagesRemaining = true;
   let page = 0;
