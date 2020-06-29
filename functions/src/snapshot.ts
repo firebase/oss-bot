@@ -15,14 +15,6 @@ const gh_client = new github.GithubClient(
   config.getFunctionsConfig("github.token")
 );
 
-try {
-  gh_client.auth();
-} catch (e) {
-  log.warn(
-    `Unable to authenticate Github client. If this is a non-test environment things will go badly: ${e}`
-  );
-}
-
 function cleanRepoName(name: string): string {
   let cleanName = name.toLowerCase();
   cleanName = cleanName.replace(".", "_");

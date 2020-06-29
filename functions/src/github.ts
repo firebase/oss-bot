@@ -35,18 +35,8 @@ export class GithubClient {
 
     // Underlying Github API client
     this.api = new GithubApi({
+      token: this.token,
       timeout: 10000
-    });
-  }
-
-  /**
-   * Authenticate with Github as the bot. This function should be called before
-   * each use of the Github API.
-   */
-  auth() {
-    this.api.authenticate({
-      type: "oauth",
-      token: this.token
     });
   }
 
@@ -59,8 +49,6 @@ export class GithubClient {
     number: number,
     label: string
   ): Promise<any> {
-    this.auth();
-
     return this.api.issues.addLabels({
       owner: org,
       repo: name,
@@ -78,8 +66,6 @@ export class GithubClient {
     number: number,
     label: string
   ): Promise<any> {
-    this.auth();
-
     return this.api.issues.removeLabel({
       owner: org,
       repo: name,
@@ -97,8 +83,6 @@ export class GithubClient {
     number: number,
     body: string
   ): Promise<any> {
-    this.auth();
-
     return this.api.issues.createComment({
       owner: org,
       repo: name,
@@ -111,8 +95,6 @@ export class GithubClient {
    * Gets issue template from a github repo.
    */
   getIssueTemplate(org: string, name: string, file: string) {
-    this.auth();
-
     log.debug(`GithubClient.getIssueTemplate: ${org}/${name}, file=${file}`);
     return this.getFileContent(org, name, file);
   }
@@ -121,8 +103,6 @@ export class GithubClient {
    * Gets file content from a github repo.
    */
   getFileContent(org: string, name: string, file: string) {
-    this.auth();
-
     return this.api.repos
       .getContent({
         owner: org,
@@ -139,8 +119,6 @@ export class GithubClient {
    * Closes an issue on a github repo.
    */
   closeIssue(org: string, name: string, issue_number: number): Promise<any> {
-    this.auth();
-
     // Add the closed-by-bot label
     const add_label = this.api.issues.addLabels({
       owner: org,
@@ -175,8 +153,6 @@ export class GithubClient {
    * Get information about a GitHub organization.
    */
   getOrg(org: string) {
-    this.auth();
-
     return this.api.orgs.get({
       org
     });
@@ -186,8 +162,6 @@ export class GithubClient {
    * Gets information about a GitHub repo.
    */
   async getRepo(org: string, repo: string) {
-    this.auth();
-
     const res = await this.api.repos.get({
       owner: org,
       repo
@@ -200,8 +174,6 @@ export class GithubClient {
    * List all the repos in a GitHub organization.
    */
   getReposInOrg(org: string) {
-    this.auth();
-
     return paginate(this.api.repos.listForOrg, {
       org
     });
@@ -211,8 +183,6 @@ export class GithubClient {
    * List all the issues (open or closed) on a GitHub repo.
    */
   getIssuesForRepo(owner: string, repo: string, state?: IssueState) {
-    this.auth();
-
     state = state || "all";
     return paginate(this.api.issues.listForRepo, {
       owner,
@@ -225,8 +195,6 @@ export class GithubClient {
    * List Github logins of all collaborators on a repo, direct or otherwise.
    */
   getCollaboratorsForRepo(owner: string, repo: string) {
-    this.auth();
-
     return paginate(this.api.repos.listCollaborators, {
       owner,
       repo,
@@ -240,8 +208,6 @@ export class GithubClient {
    * Lock a GitHub issue.
    */
   lockIssue(owner: string, repo: string, issue_number: number) {
-    this.auth();
-
     return this.api.issues.lock({
       owner,
       repo,
