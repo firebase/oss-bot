@@ -19,7 +19,7 @@ import { Octokit } from "@octokit/rest";
 import { OctokitResponse } from "@octokit/types";
 
 const OctokitRetry = require("@octokit/plugin-retry");
-const GithubApi = require("@octokit/rest").plugin(OctokitRetry);
+const GithubApi = Octokit.plugin(OctokitRetry);
 
 /**
  * Get a new client for interacting with Github.
