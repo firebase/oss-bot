@@ -35,7 +35,7 @@ export class GithubClient {
 
     // Underlying Github API client
     this.api = new GithubApi({
-      token: this.token,
+      auth: this.token,
       timeout: 10000
     });
   }
