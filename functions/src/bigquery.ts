@@ -56,6 +56,12 @@ export async function insertIssues(
   const issues = Object.values(issueData).map(
     i => new bigquery.Issue(i, repo, ingested)
   );
+
+  if (issues.length === 0) {
+    log.debug(`No issues to insert into BigQuery`);
+    return;
+  }
+
   log.debug(`Inserting ${issues.length} issues into BigQuery`);
   const insertRes = await bqClient
     .dataset("github_issues")
