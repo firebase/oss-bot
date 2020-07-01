@@ -11,7 +11,7 @@ import { sendPubSub } from "./pubsub";
 // Config
 const bot_config = config.BotConfig.getDefault();
 
-const gh_client = new github.GithubClient(
+const gh_client = new github.GitHubClient(
   config.getFunctionsConfig("github.token")
 );
 
@@ -110,7 +110,7 @@ export async function GetOrganizationSnapshot(org: string, deep: boolean) {
 }
 
 /**
- * Get a point-in-time snapshot for a Github repo.
+ * Get a point-in-time snapshot for a GitHub repo.
  *
  * repoData is the base data retrieved by GetOrganizationSnapshot.
  * Yes, I know this is ugly.

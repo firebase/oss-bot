@@ -236,7 +236,7 @@ repo configuration.
 
 ### Configure Secrets
 
-#### Github:
+#### GitHub:
 
 Go to the [github token page](https://github.com/settings/tokens/new) and
 create a new personal access token for the bot account with the following
@@ -265,9 +265,9 @@ recipient to some public group.
 firebase functions:config:set email.recipient="<GROUP_TO_GET_EMAILS>"
 ```
 
-#### Configure Github Webhook
+#### Configure GitHub Webhook
 
-In Github add a webhook with the following configuration:
+In GitHub add a webhook with the following configuration:
 
   * Payload URL - your cloud functions HTTP URL. Which should be
     `https://<YOURPROJECT>.cloudfunctions.net/githubWebhook`.
