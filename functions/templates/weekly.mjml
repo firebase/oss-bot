@@ -6,7 +6,7 @@
         <mj-column>
           <mj-image width="300" src="https://firebasestorage.googleapis.com/v0/b/ossbot-f0cad.appspot.com/o/Octocat%2BFirebase.png?alt=media&token=fc1b2b27-fbcd-40a1-b642-99ffb248c12e"></mj-image>
           <mj-text font-size="20" color="#626262" align="center">
-            Firebase + Github Weekly!
+            Firebase + GitHub Weekly!
           </mj-text>
           <mj-divider border-color="#CCC"></mj-divider>
         </mj-column>
@@ -16,7 +16,7 @@
       <mj-section>
         <mj-column>
           <mj-text font-size="14px" color="#FF6F00" font-family="helvetica">
-            Hello friends! It's me, <b>Osscar the OSS bot</b>, and here is what is happening in our Github organization this week!
+            Hello friends! It's me, <b>Osscar the OSS bot</b>, and here is what is happening in our GitHub organization this week!
           </mj-text>
         </mj-column>
       </mj-section>

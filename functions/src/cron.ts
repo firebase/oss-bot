@@ -28,13 +28,13 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Create a new handler for cron-style tasks.
- * @param {GithubClient} gh_client client for accessing Github.
+ * @param {GitHubClient} gh_client client for accessing GitHub.
  */
 export class CronHandler {
-  gh_client: github.GithubClient;
+  gh_client: github.GitHubClient;
   config: BotConfig;
 
-  constructor(gh_client: github.GithubClient, config: BotConfig) {
+  constructor(gh_client: github.GitHubClient, config: BotConfig) {
     this.gh_client = gh_client;
     this.config = config;
   }
@@ -120,7 +120,7 @@ export class CronHandler {
 
     if (nowMs - closedAtMs > lockMillis) {
       actions.push(
-        new types.GithubLockAction(
+        new types.GitHubLockAction(
           org,
           name,
           issue.number,
@@ -232,7 +232,7 @@ export class CronHandler {
         issueConfig.stale_days;
 
     if (shouldClose) {
-      const addClosingComment = new types.GithubCommentAction(
+      const addClosingComment = new types.GitHubCommentAction(
         org,
         name,
         number,
@@ -242,7 +242,7 @@ export class CronHandler {
           markStaleComment!
         )}).`
       );
-      const closeIssue = new types.GithubCloseAction(
+      const closeIssue = new types.GitHubCloseAction(
         org,
         name,
         number,
@@ -253,7 +253,7 @@ export class CronHandler {
       // We add the 'stale' label and also add a comment. Note that
       // if the issue was labeled 'needs-info' this label is not removed
       // here.
-      const addStaleLabel = new types.GithubAddLabelAction(
+      const addStaleLabel = new types.GitHubAddLabelAction(
         org,
         name,
         number,
@@ -262,7 +262,7 @@ export class CronHandler {
           lastCommentTime
         )} working days ago (${lastCommentTime}).`
       );
-      const addStaleComment = new types.GithubCommentAction(
+      const addStaleComment = new types.GitHubCommentAction(
         org,
         name,
         number,

@@ -19,22 +19,22 @@ import { Octokit } from "@octokit/rest";
 import { OctokitResponse } from "@octokit/types";
 
 const OctokitRetry = require("@octokit/plugin-retry");
-const GithubApi = Octokit.plugin(OctokitRetry);
+const GitHubApi = Octokit.plugin(OctokitRetry);
 
 /**
- * Get a new client for interacting with Github.
- * @param {string} token Github API token.
+ * Get a new client for interacting with GitHub.
+ * @param {string} token GitHub API token.
  */
-export class GithubClient {
+export class GitHubClient {
   private token: string;
   private api: Octokit;
 
   constructor(token: string) {
-    // Github API token
+    // GitHub API token
     this.token = token;
 
-    // Underlying Github API client
-    this.api = new GithubApi({
+    // Underlying GitHub API client
+    this.api = new GitHubApi({
       auth: this.token,
       timeout: 10000
     });
@@ -95,7 +95,7 @@ export class GithubClient {
    * Gets issue template from a github repo.
    */
   getIssueTemplate(org: string, name: string, file: string) {
-    log.debug(`GithubClient.getIssueTemplate: ${org}/${name}, file=${file}`);
+    log.debug(`GitHubClient.getIssueTemplate: ${org}/${name}, file=${file}`);
     return this.getFileContent(org, name, file);
   }
 
@@ -192,7 +192,7 @@ export class GithubClient {
   }
 
   /**
-   * List Github logins of all collaborators on a repo, direct or otherwise.
+   * List GitHub logins of all collaborators on a repo, direct or otherwise.
    */
   getCollaboratorsForRepo(owner: string, repo: string) {
     return paginate(this.api.repos.listCollaborators, {
@@ -219,9 +219,9 @@ export class GithubClient {
 type IssueState = "open" | "closed" | "all";
 
 /**
- * Interface for a Github API call.
+ * Interface for a GitHub API call.
  */
-interface GithubFn<S, T> {
+interface GitHubFn<S, T> {
   (params?: S): Promise<OctokitResponse<T>>;
 }
 
@@ -241,11 +241,11 @@ interface PageParams {
 }
 
 /**
- * Read all pages of a Github API call and return them all as an
+ * Read all pages of a GitHub API call and return them all as an
  * array.
  */
 async function paginate<S extends PageParams, T>(
-  fn: GithubFn<S, Array<T>>,
+  fn: GitHubFn<S, Array<T>>,
   options: S
 ): Promise<T[]> {
   const per_page = 100;

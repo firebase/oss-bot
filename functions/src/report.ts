@@ -609,7 +609,7 @@ export const SaveWeeklyReport = functions
   });
 
 /**
- * PubSub function that sends the Github email based on the latest weekly report.
+ * PubSub function that sends the GitHub email based on the latest weekly report.
  */
 export const SendWeeklyEmail = functions
   .runWith(util.FUNCTION_OPTS)
@@ -619,13 +619,13 @@ export const SendWeeklyEmail = functions
     const now = new Date();
 
     const dateString = format(now, "MM/DD/YY");
-    const subject = `Firebase Github Summary for ${dateString}`;
+    const subject = `Firebase GitHub Summary for ${dateString}`;
 
     await email_client.sendEmail(EMAIL_GROUP, subject, emailText);
   });
 
 /**
- * PubSub function that sends the Github email based on the latest weekly report.
+ * PubSub function that sends the GitHub email based on the latest weekly report.
  */
 export const SendWeeklyRepoEmails = functions
   .runWith(util.FUNCTION_OPTS)
@@ -649,7 +649,7 @@ export const SendWeeklyRepoEmails = functions
 
       const emailText = await GetWeeklyRepoEmail(repo.org, repo.name);
       const dateString = format(new Date(), "MM/DD/YY");
-      const subject = `${repo.name} Github Summary for ${dateString}`;
+      const subject = `${repo.name} GitHub Summary for ${dateString}`;
 
       log.debug(`Sending email for ${repo.name} to ${reportConfig.email}`);
       await email_client.sendEmail(reportConfig.email, subject, emailText);

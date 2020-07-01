@@ -98,15 +98,15 @@ const LABEL_FR = "type: feature request";
 
 /**
  * Construct a new issue handler.
- * @param {GithubClient} gh_client client for interacting with Github.
+ * @param {GitHubClient} gh_client client for interacting with GitHub.
  * @param {BotConfig} config bot configuration.
  */
 export class IssueHandler {
-  gh_client: github.GithubClient;
+  gh_client: github.GitHubClient;
   config: config.BotConfig;
   emailer: email.EmailUtils;
 
-  constructor(gh_client: github.GithubClient, config: config.BotConfig) {
+  constructor(gh_client: github.GitHubClient, config: config.BotConfig) {
     // Client for interacting with github
     this.gh_client = gh_client;
 
@@ -118,7 +118,7 @@ export class IssueHandler {
   }
 
   /**
-   * Handle an event associated with a Github issue.
+   * Handle an event associated with a GitHub issue.
    */
   async handleIssueEvent(
     event: types.github.WebhookEvent,
@@ -155,7 +155,7 @@ export class IssueHandler {
   }
 
   /**
-   * Handle an event associated with a Github issue comment.
+   * Handle an event associated with a GitHub issue comment.
    */
   async handleIssueCommentEvent(
     event: types.github.WebhookEvent,
@@ -225,7 +225,7 @@ export class IssueHandler {
     );
     if (isCollaborator) {
       actions.push(
-        new types.GithubNoOpAction(
+        new types.GitHubNoOpAction(
           org,
           name,
           issue.number,
@@ -390,7 +390,7 @@ export class IssueHandler {
       if (isStale) {
         // Any comment on a stale issue removes the stale flag
         actions.push(
-          new types.GithubRemoveLabelAction(
+          new types.GitHubRemoveLabelAction(
             org,
             name,
             number,
@@ -417,7 +417,7 @@ export class IssueHandler {
 
         if (labelToAdd) {
           actions.push(
-            new types.GithubAddLabelAction(
+            new types.GitHubAddLabelAction(
               org,
               name,
               number,
@@ -432,7 +432,7 @@ export class IssueHandler {
         // An author comment on a needs-info issue moves it to needs-attention.
         const reason = `Comment by the author (${issue.user.login}) moves this from needs_info to needs_attention.`;
         actions.push(
-          new types.GithubRemoveLabelAction(
+          new types.GitHubRemoveLabelAction(
             org,
             name,
             number,
@@ -443,7 +443,7 @@ export class IssueHandler {
 
         if (issueConfig.label_needs_attention) {
           actions.push(
-            new types.GithubAddLabelAction(
+            new types.GitHubAddLabelAction(
               org,
               name,
               number,
@@ -472,14 +472,14 @@ export class IssueHandler {
     const number = issue.number;
 
     return [
-      new types.GithubAddLabelAction(
+      new types.GitHubAddLabelAction(
         org,
         name,
         number,
         LABEL_NEEDS_TRIAGE,
         "Issue did not match any label regexes"
       ),
-      new types.GithubCommentAction(
+      new types.GitHubCommentAction(
         org,
         name,
         number,
@@ -517,7 +517,7 @@ export class IssueHandler {
     if (result.is_fr) {
       log.debug(`Matched feature request template, adding label ${LABEL_FR}`);
       result.actions.push(
-        new types.GithubAddLabelAction(
+        new types.GitHubAddLabelAction(
           org,
           name,
           number,
@@ -529,7 +529,7 @@ export class IssueHandler {
       const newLabel = labelResult.label;
       log.debug(`Issue matched configuration for ${newLabel}`);
       result.actions.push(
-        new types.GithubAddLabelAction(
+        new types.GitHubAddLabelAction(
           org,
           name,
           number,
@@ -585,7 +585,7 @@ export class IssueHandler {
           "There was an unknown error when trying to match the issue template";
       }
 
-      const template_action = new types.GithubCommentAction(
+      const template_action = new types.GitHubCommentAction(
         org,
         name,
         number,
@@ -597,7 +597,7 @@ export class IssueHandler {
 
       if (validationConfig && validationConfig.validation_failed_label) {
         const label = validationConfig.validation_failed_label;
-        const label_action = new types.GithubAddLabelAction(
+        const label_action = new types.GitHubAddLabelAction(
           repo.owner.login,
           repo.name,
           issue.number,

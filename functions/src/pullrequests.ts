@@ -58,7 +58,7 @@ export class PullRequestHandler {
   }
 
   /**
-   * Handle an issue associated with a Github pull request.
+   * Handle an issue associated with a GitHub pull request.
    */
   async handlePullRequestEvent(
     event: types.github.WebhookEvent,

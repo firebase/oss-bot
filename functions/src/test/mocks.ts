@@ -21,7 +21,7 @@ import * as config from "../config";
 import * as github from "../github";
 import * as email from "../email";
 
-export class MockGithubClient extends github.GithubClient {
+export class MockGitHubClient extends github.GitHubClient {
   auth() {
     log.debug("mock: github.auth()");
   }

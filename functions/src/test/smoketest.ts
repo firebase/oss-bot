@@ -71,7 +71,7 @@ const bot_config = new config.BotConfig(config_json);
 
 // Issue event handler
 const issue_handler = new issues.IssueHandler(
-  new mocks.MockGithubClient("abc1234"),
+  new mocks.MockGitHubClient("abc1234"),
   bot_config
 );
 

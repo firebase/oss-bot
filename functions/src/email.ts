@@ -65,7 +65,7 @@ export class EmailClient {
   }
 
   /**
-   * Send an emails styled like a Github update.
+   * Send an emails styled like a GitHub update.
    */
   sendStyledEmail(
     recipient: string,

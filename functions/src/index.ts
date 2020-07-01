@@ -53,8 +53,8 @@ export {
 // Config
 const bot_config = config.BotConfig.getDefault();
 
-// Github events
-enum GithubEvent {
+// GitHub events
+enum GitHubEvent {
   ISSUE = "issues",
   ISSUE_COMMENT = "issue_comment",
   PULL_REQUEST = "pull_request"
@@ -63,8 +63,8 @@ enum GithubEvent {
 // 15 days, in milliseconds
 const PR_EXPIRY_MS = 15 * 24 * 60 * 60 * 1000;
 
-// Github API client
-const gh_client: github.GithubClient = new github.GithubClient(
+// GitHub API client
+const gh_client: github.GitHubClient = new github.GitHubClient(
   config.getFunctionsConfig("github.token")
 );
 
@@ -74,23 +74,23 @@ const email_client: email.EmailClient = new email.EmailClient(
   config.getFunctionsConfig("mailgun.domain")
 );
 
-// Handler for Github issues
+// Handler for GitHub issues
 const issue_handler = new issues.IssueHandler(gh_client, bot_config);
 
-// Handler for Github pull requests
+// Handler for GitHub pull requests
 const pr_handler = new pullrequests.PullRequestHandler(bot_config);
 
 // Handler for Cron jobs
 const cron_handler = new cron.CronHandler(gh_client, bot_config);
 
 /**
- * Function that responds to Github events (HTTP webhook).
+ * Function that responds to GitHub events (HTTP webhook).
  */
 export const githubWebhook = functions
   .runWith(util.FUNCTION_OPTS)
   .https.onRequest(async (request, response) => {
     // Get event and action;
-    const event = request.get("X-Github-Event");
+    const event = request.get("X-GitHub-Event");
     const action = request.body.action;
 
     const repo = request.body.repository;
@@ -132,7 +132,7 @@ export const githubWebhook = functions
     });
 
     switch (event) {
-      case GithubEvent.ISSUE:
+      case GitHubEvent.ISSUE:
         actions = await issue_handler.handleIssueEvent(
           request.body,
           action,
@@ -141,7 +141,7 @@ export const githubWebhook = functions
           sender
         );
         break;
-      case GithubEvent.ISSUE_COMMENT:
+      case GitHubEvent.ISSUE_COMMENT:
         const comment = request.body.comment;
         actions = await issue_handler.handleIssueCommentEvent(
           request.body,
@@ -152,7 +152,7 @@ export const githubWebhook = functions
           sender
         );
         break;
-      case GithubEvent.PULL_REQUEST:
+      case GitHubEvent.PULL_REQUEST:
         const pr = request.body.pull_request;
         actions = await pr_handler.handlePullRequestEvent(
           request.body,
@@ -182,7 +182,7 @@ export const githubWebhook = functions
       }
 
       if (action.type == types.ActionType.GITHUB_COMMENT) {
-        const commentAction = action as types.GithubCommentAction;
+        const commentAction = action as types.GitHubCommentAction;
 
         // Special handling for collapsible comment actions at the end
         if (commentAction.collapse == true) {
@@ -215,7 +215,7 @@ export const githubWebhook = functions
       const firstComment = collapsibleComments[0];
       promises.push(
         executeAction(
-          new types.GithubCommentAction(
+          new types.GitHubCommentAction(
             firstComment.org,
             firstComment.name,
             firstComment.number,
@@ -300,7 +300,7 @@ async function executeAction(action: types.Action): Promise<any> {
 
   let actionPromise: Promise<any> | undefined;
   if (action.type == types.ActionType.GITHUB_COMMENT) {
-    const commentAction = action as types.GithubCommentAction;
+    const commentAction = action as types.GitHubCommentAction;
     actionPromise = gh_client.addComment(
       commentAction.org,
       commentAction.name,
@@ -308,7 +308,7 @@ async function executeAction(action: types.Action): Promise<any> {
       commentAction.message
     );
   } else if (action.type == types.ActionType.GITHUB_ADD_LABEL) {
-    const addLabelAction = action as types.GithubAddLabelAction;
+    const addLabelAction = action as types.GitHubAddLabelAction;
     actionPromise = gh_client.addLabel(
       addLabelAction.org,
       addLabelAction.name,
@@ -316,7 +316,7 @@ async function executeAction(action: types.Action): Promise<any> {
       addLabelAction.label
     );
   } else if (action.type == types.ActionType.GITHUB_REMOVE_LABEL) {
-    const removeLabelAction = action as types.GithubRemoveLabelAction;
+    const removeLabelAction = action as types.GitHubRemoveLabelAction;
     actionPromise = gh_client.removeLabel(
       removeLabelAction.org,
       removeLabelAction.name,
@@ -324,14 +324,14 @@ async function executeAction(action: types.Action): Promise<any> {
       removeLabelAction.label
     );
   } else if (action.type == types.ActionType.GITHUB_CLOSE) {
-    const closeAction = action as types.GithubCloseAction;
+    const closeAction = action as types.GitHubCloseAction;
     actionPromise = gh_client.closeIssue(
       closeAction.org,
       closeAction.name,
       closeAction.number
     );
   } else if (action.type == types.ActionType.GITHUB_LOCK) {
-    const lockAction = action as types.GithubLockAction;
+    const lockAction = action as types.GitHubLockAction;
     actionPromise = gh_client.lockIssue(
       lockAction.org,
       lockAction.name,
@@ -358,7 +358,7 @@ async function executeAction(action: types.Action): Promise<any> {
 
   // Log the data to the admin log
   if (types.GITHUB_ISSUE_ACTIONS.includes(action.type)) {
-    const ghAction = action as types.GithubIssueAction;
+    const ghAction = action as types.GitHubIssueAction;
     const ref = database()
       .ref("repo-log")
       .child(ghAction.org)

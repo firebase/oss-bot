@@ -38,7 +38,7 @@ export class Action {
   }
 }
 
-export class GithubIssueAction extends Action {
+export class GitHubIssueAction extends Action {
   org: string;
   name: string;
   number: number;
@@ -60,7 +60,7 @@ export class GithubIssueAction extends Action {
   }
 }
 
-export class GithubCommentAction extends GithubIssueAction {
+export class GitHubCommentAction extends GitHubIssueAction {
   message: string;
   collapse: boolean;
 
@@ -89,7 +89,7 @@ export class GithubCommentAction extends GithubIssueAction {
   }
 }
 
-export class GithubAddLabelAction extends GithubIssueAction {
+export class GitHubAddLabelAction extends GitHubIssueAction {
   label: string;
 
   constructor(
@@ -114,7 +114,7 @@ export class GithubAddLabelAction extends GithubIssueAction {
   }
 }
 
-export class GithubRemoveLabelAction extends GithubIssueAction {
+export class GitHubRemoveLabelAction extends GitHubIssueAction {
   label: string;
 
   constructor(
@@ -139,7 +139,7 @@ export class GithubRemoveLabelAction extends GithubIssueAction {
   }
 }
 
-export class GithubCloseAction extends GithubIssueAction {
+export class GitHubCloseAction extends GitHubIssueAction {
   constructor(org: string, name: string, number: number, reason?: string) {
     super(ActionType.GITHUB_CLOSE, org, name, number);
 
@@ -149,7 +149,7 @@ export class GithubCloseAction extends GithubIssueAction {
   }
 }
 
-export class GithubLockAction extends GithubIssueAction {
+export class GitHubLockAction extends GitHubIssueAction {
   constructor(org: string, name: string, number: number, reason?: string) {
     super(ActionType.GITHUB_LOCK, org, name, number);
 
@@ -159,7 +159,7 @@ export class GithubLockAction extends GithubIssueAction {
   }
 }
 
-export class GithubNoOpAction extends GithubIssueAction {
+export class GitHubNoOpAction extends GitHubIssueAction {
   constructor(org: string, name: string, number: number, reason?: string) {
     super(ActionType.GITHUB_NO_OP, org, name, number);
 
@@ -212,7 +212,7 @@ export class ActionLog {
   reason: string;
   time: number;
 
-  constructor(action: GithubIssueAction) {
+  constructor(action: GitHubIssueAction) {
     this.event = action.type;
     this.target = `issues/${action.number}`;
     this.details = action.details();

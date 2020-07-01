@@ -1,6 +1,6 @@
 {
   "name": "oss-bot",
-  "description": "Github monitoring robot.",
+  "description": "GitHub monitoring robot.",
   "engines": {
     "node": "8"
   },

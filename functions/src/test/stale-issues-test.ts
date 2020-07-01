@@ -32,8 +32,8 @@ import { get } from "https";
 const config_json = require("./mock_data/config.json");
 const bot_config = new config.BotConfig(config_json);
 
-// Github client
-const gh_client = new github.GithubClient("fake-token");
+// GitHub client
+const gh_client = new github.GitHubClient("fake-token");
 
 // Cron handler
 const cron_handler = new cron.CronHandler(gh_client, bot_config);
@@ -224,7 +224,7 @@ describe("Stale issue handler", async () => {
 
     util.actionsEqual(
       actions[0],
-      new types.GithubAddLabelAction(
+      new types.GitHubAddLabelAction(
         "samtstern",
         "bottest",
         needsInfo.number,
@@ -264,14 +264,14 @@ describe("Stale issue handler", async () => {
     );
 
     util.actionsListEqual(actions, [
-      new types.GithubCommentAction(
+      new types.GitHubCommentAction(
         "samtstern",
         "bottest",
         issue.number,
         cron_handler.getCloseComment(issue.user.login),
         false
       ),
-      new types.GithubCloseAction("samtstern", "bottest", issue.number)
+      new types.GitHubCloseAction("samtstern", "bottest", issue.number)
     ]);
   });
 
@@ -324,13 +324,13 @@ describe("Stale issue handler", async () => {
     );
 
     util.actionsListEqual(actions, [
-      new types.GithubRemoveLabelAction(
+      new types.GitHubRemoveLabelAction(
         repo.owner.login,
         repo.name,
         STALE_ISSUE.number,
         "stale"
       ),
-      new types.GithubAddLabelAction(
+      new types.GitHubAddLabelAction(
         repo.owner.login,
         repo.name,
         STALE_ISSUE.number,
@@ -360,7 +360,7 @@ describe("Stale issue handler", async () => {
     );
 
     util.actionsListEqual(actions, [
-      new types.GithubRemoveLabelAction(
+      new types.GitHubRemoveLabelAction(
         repo.owner.login,
         repo.name,
         NEEDS_INFO_ISSUE.number,
@@ -389,13 +389,13 @@ describe("Stale issue handler", async () => {
     );
 
     util.actionsListEqual(actions, [
-      new types.GithubRemoveLabelAction(
+      new types.GitHubRemoveLabelAction(
         repo.owner.login,
         repo.name,
         STALE_ISSUE.number,
         "stale"
       ),
-      new types.GithubAddLabelAction(
+      new types.GitHubAddLabelAction(
         repo.owner.login,
         repo.name,
         STALE_ISSUE.number,
@@ -418,7 +418,7 @@ describe("Stale issue handler", async () => {
     );
 
     util.actionsListEqual(actions, [
-      new types.GithubLockAction(
+      new types.GitHubLockAction(
         repo.owner.login,
         repo.name,
         OLD_CLOSED_ISSUE.number
