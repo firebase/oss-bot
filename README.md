@@ -163,7 +163,7 @@ be configured in your repo config:
       // checker.
       "ignore_labels": ["Feature Request", "Internal"],
 
-      // [REAUIRED] Time, in days, to stay in the needs_info state before becoming stale
+      // [REQUIRED] Time, in days, to stay in the needs_info state before becoming stale
       // stale.  These issues transition from label_needs_info to label_stale.
       "needs_info_days": 7,
 
