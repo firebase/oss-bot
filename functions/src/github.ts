@@ -119,23 +119,12 @@ export class GitHubClient {
    * Closes an issue on a github repo.
    */
   closeIssue(org: string, name: string, issue_number: number): Promise<any> {
-    // Add the closed-by-bot label
-    const add_label = this.api.issues.addLabels({
-      owner: org,
-      repo: name,
-      issue_number,
-      labels: ["closed-by-bot"]
-    });
-
-    // Close the issue
-    const close_issue = this.api.issues.update({
+    return this.api.issues.update({
       owner: org,
       repo: name,
       issue_number,
       state: "closed"
     });
-
-    return Promise.all([add_label, close_issue]);
   }
 
   /**

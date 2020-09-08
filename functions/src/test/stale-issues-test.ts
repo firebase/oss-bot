@@ -56,6 +56,10 @@ const DEFAULT_CONFIG: types.IssueCleanupConfig = {
   label_needs_info: "needs-info",
   label_needs_attention: "needs-attention",
   label_stale: "stale",
+  auto_close_labels: {
+    add: ["closed-by-bot", "add-on-close"],
+    remove: ["remove-on-close"]
+  },
   ignore_labels: ["feature-request"],
   needs_info_days: 7,
   stale_days: 3
@@ -271,7 +275,25 @@ describe("Stale issue handler", async () => {
         cron_handler.getCloseComment(issue.user.login),
         false
       ),
-      new types.GitHubCloseAction("samtstern", "bottest", issue.number)
+      new types.GitHubCloseAction("samtstern", "bottest", issue.number),
+      new types.GitHubAddLabelAction(
+        "samtstern",
+        "bottest",
+        issue.number,
+        "closed-by-bot"
+      ),
+      new types.GitHubAddLabelAction(
+        "samtstern",
+        "bottest",
+        issue.number,
+        "add-on-close"
+      ),
+      new types.GitHubRemoveLabelAction(
+        "samtstern",
+        "bottest",
+        issue.number,
+        "remove-on-close"
+      )
     ]);
   });
 
