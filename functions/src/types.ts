@@ -280,6 +280,10 @@ export interface IssueCleanupConfig {
   label_needs_info: string;
   label_needs_attention?: string;
   label_stale: string;
+  auto_close_labels?: {
+    add: string[];
+    remove: string[];
+  };
   ignore_labels?: string[];
   needs_info_days: number;
   stale_days: number;
