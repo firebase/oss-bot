@@ -232,6 +232,7 @@ export class CronHandler {
         issueConfig.stale_days;
 
     if (shouldClose) {
+      // 1) Add a comment about closing
       const addClosingComment = new types.GitHubCommentAction(
         org,
         name,
@@ -242,13 +243,31 @@ export class CronHandler {
           markStaleComment!
         )}).`
       );
+      actions.push(addClosingComment);
+
+      // 2) Close the issue
       const closeIssue = new types.GitHubCloseAction(
         org,
         name,
         number,
         `Closing issue for being stale.`
       );
-      actions.push(addClosingComment, closeIssue);
+      actions.push(closeIssue);
+
+      // 3) Add and remove labels (according to config)
+      if (issueConfig.auto_close_labels) {
+        for (const l of issueConfig.auto_close_labels.add) {
+          actions.push(new types.GitHubAddLabelAction(org, name, number, l));
+        }
+        for (const l of issueConfig.auto_close_labels.remove) {
+          actions.push(new types.GitHubRemoveLabelAction(org, name, number, l));
+        }
+      } else {
+        // Default is to add 'closed-by-bot'
+        actions.push(
+          new types.GitHubAddLabelAction(org, name, number, "closed-by-bot")
+        );
+      }
     } else if (shouldMarkStale) {
       // We add the 'stale' label and also add a comment. Note that
       // if the issue was labeled 'needs-info' this label is not removed
