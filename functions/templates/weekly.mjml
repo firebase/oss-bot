@@ -4,7 +4,7 @@
       <mj-section>
 
         <mj-column>
-          <mj-image width="300" src="https://firebasestorage.googleapis.com/v0/b/ossbot-f0cad.appspot.com/o/Octocat%2BFirebase.png?alt=media&token=fc1b2b27-fbcd-40a1-b642-99ffb248c12e"></mj-image>
+          <mj-image width="300" src="https://ossbot.computer/assets/img/octocat-firebase.png"></mj-image>
           <mj-text font-size="20" color="#626262" align="center">
             Firebase + GitHub Weekly!
           </mj-text>
