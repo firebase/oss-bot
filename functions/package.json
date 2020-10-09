@@ -2,7 +2,7 @@
   "name": "oss-bot",
   "description": "GitHub monitoring robot.",
   "engines": {
-    "node": "8"
+    "node": "10"
   },
   "main": "dist/index.js",
   "dependencies": {
@@ -15,7 +15,7 @@
     "chalk": "^2.1.0",
     "date-fns": "^1.28.5",
     "diff": "^3.2.0",
-    "firebase-admin": "^8.9.2",
+    "firebase-admin": "^9.2.0",
     "firebase-functions": "^3.11.0",
     "mailgun-js": "^0.22.0",
     "marked": "^0.6.1",
