@@ -37,8 +37,6 @@ interface RepoFilter {
   (repo: snapshot.Repo): boolean;
 }
 
-const snapshotsRef = database().ref("snapshots/github");
-
 const email_client = new email.EmailClient(
   getFunctionsConfig("mailgun.key"),
   getFunctionsConfig("mailgun.domain")
@@ -51,6 +49,8 @@ const EMAIL_DEBUG = getFunctionsConfig("email.debug") === "true";
 const EMAIL_GROUP = getFunctionsConfig("email.recipient");
 
 export async function GetWeeklyReport(org: string) {
+  const snapshotsRef = database().ref("snapshots/github");
+
   // Grab the most recent daily snapshot
   const recentEntrySnapshot = await snapshotsRef
     .limitToLast(1)
@@ -136,11 +136,11 @@ function GetTotalSamScore(org: snapshot.Org) {
     .map((repoKey: string) => {
       const repo = org.repos[repoKey];
 
-      if (repo.open_issues_count == undefined) {
+      if (repo.open_issues_count === undefined) {
         log.warn(`Repo ${repoKey} has null open issues count.`);
       }
 
-      if (repo.closed_issues_count == undefined) {
+      if (repo.closed_issues_count === undefined) {
         log.warn(`Repo ${repoKey} has null closed issues count.`);
       }
 
@@ -497,9 +497,9 @@ export async function MakeRepoTimeSeries(
 export const RepoIssueStatistics = functions
   .runWith(util.FUNCTION_OPTS)
   .https.onRequest(async (req, res) => {
-    const org = req.query["org"] || "firebase";
-    const repo = req.query["repo"];
-    if (repo === undefined) {
+    const org = (req.query["org"] as string) || "firebase";
+    const repo = req.query["repo"] as string;
+    if (!repo) {
       res.status(500).send("Must specify 'repo' param");
       return;
     }
@@ -516,9 +516,9 @@ export const GetRepoReport = functions
   .https.onRequest(async (req, res) => {
     // TODO: Allow passing in the 'start' date to get historical data.
 
-    const org = req.query["org"] || "firebase";
-    const repo = req.query["repo"];
-    if (repo === undefined) {
+    const org = (req.query["org"] as string) || "firebase";
+    const repo = req.query["repo"] as string;
+    if (!repo) {
       res.status(500).send("Must specify 'repo' param");
       return;
     }
@@ -537,9 +537,9 @@ export const GetRepoReport = functions
 export const GetRepoReportHTML = functions
   .runWith(util.FUNCTION_OPTS)
   .https.onRequest(async (req, res) => {
-    const org = req.query["org"] || "firebase";
-    const repo = req.query["repo"];
-    if (repo === undefined) {
+    const org = (req.query["org"] as string) || "firebase";
+    const repo = req.query["repo"] as string;
+    if (!repo) {
       res.status(500).send("Must specify 'repo' param");
       return;
     }
@@ -561,19 +561,20 @@ export const GetRepoTimeSeries = functions
     // CORS-hack
     res.set("Access-Control-Allow-Origin", "*");
 
-    const org: string = req.query["org"] || "firebase";
-    const repo: string = req.query["repo"];
-    if (repo === undefined) {
+    const org: string = (req.query["org"] as string) || "firebase";
+    const repo: string = req.query["repo"] as string;
+    if (!repo) {
       res.status(500).send("Must specify 'repo' param");
       return;
     }
-    const field: string = req.query["field"];
-    if (field === undefined) {
+    const field: string = req.query["field"] as string;
+    if (!field) {
       res.status(500).send("Must specify 'field' param");
       return;
     }
-    const points = Number.parseInt(req.query["points"]) || 7;
-    const daysBetween = Number.parseInt(req.query["daysBetween"]) || 1;
+    const points = Number.parseInt(req.query["points"] as string) || 7;
+    const daysBetween =
+      Number.parseInt(req.query["daysBetween"] as string) || 1;
 
     try {
       // TODO: More query params
