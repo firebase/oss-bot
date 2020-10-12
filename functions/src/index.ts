@@ -43,13 +43,6 @@ export {
   SendWeeklyRepoEmails
 } from "./report";
 
-export {
-  BackfillMetrics,
-  UpdateMetricsWebhook,
-  UpdateMetrics,
-  UpdateAllMetrics
-} from "./metrics";
-
 // Config
 const bot_config = config.BotConfig.getDefault();
 
