@@ -148,6 +148,9 @@ export async function GetRepoSnapshot(
       user: {
         login: issue.user.login
       },
+      assignee: {
+        login: issue.assignee?.login
+      },
       labels: issue.labels.map(l => l.name),
       updated_at: issue.updated_at,
       created_at: issue.created_at

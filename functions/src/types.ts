@@ -576,6 +576,9 @@ export namespace snapshot {
     user: {
       login: string;
     };
+    assignee: {
+      login?: string;
+    };
     labels?: string[];
     updated_at: string;
     created_at: string;
@@ -698,21 +701,23 @@ export namespace internal {
 
 export namespace bigquery {
   export class Issue {
-    repo: string;
-    ingested: string;
-
-    title: string;
-    number: number;
-    comments: number;
-    pull_request: boolean;
-    state: string;
-    locked: boolean;
-    user: {
-      login: string;
+    repo?: string;
+    ingested?: string;
+    title?: string;
+    number?: number;
+    comments?: number;
+    pull_request?: boolean;
+    state?: string;
+    locked?: boolean;
+    user?: {
+      login?: string;
     };
-    labels: string[];
-    updated_at: string;
-    created_at: string;
+    assignee?: {
+      login?: string;
+    };
+    labels?: string[];
+    updated_at?: string;
+    created_at?: string;
 
     constructor(issue: snapshot.Issue, repo: string, ingested: Date) {
       this.repo = repo;
@@ -724,6 +729,9 @@ export namespace bigquery {
       this.comments = issue.comments;
       this.user = {
         login: issue.user.login
+      };
+      this.assignee = {
+        login: issue.assignee.login
       };
       this.labels = issue.labels || [];
       this.updated_at = issue.updated_at;
