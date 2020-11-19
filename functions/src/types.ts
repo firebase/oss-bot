@@ -577,7 +577,7 @@ export namespace snapshot {
       login: string;
     };
     assignee: {
-      login?: string;
+      login: string;
     };
     labels?: string[];
     updated_at: string;
