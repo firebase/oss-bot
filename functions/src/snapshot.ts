@@ -149,7 +149,7 @@ export async function GetRepoSnapshot(
         login: issue.user.login
       },
       assignee: {
-        login: issue.assignee?.login
+        login: issue.assignee?.login || ""
       },
       labels: issue.labels.map(l => l.name),
       updated_at: issue.updated_at,
@@ -269,7 +269,7 @@ export const SaveRepoSnapshot = functions
     try {
       await repoIssueRef.set(issueData);
     } catch (e) {
-      log.warn(`Failed to save snapshot of issues for ${org}/${repoKey}: ${e}`);
+      throw new Error(`Failed to save snapshot of issues for ${org}/${repoKey}: ${e}`);
     }
 
     // Stream issues to BigQuery
