@@ -648,12 +648,16 @@ export const SendWeeklyRepoEmails = functions
         reportConfig.email = EMAIL_GROUP;
       }
 
-      const emailText = await GetWeeklyRepoEmail(repo.org, repo.name);
-      const dateString = format(new Date(), "MM/DD/YY");
-      const subject = `${repo.name} GitHub Summary for ${dateString}`;
+      try {
+        const emailText = await GetWeeklyRepoEmail(repo.org, repo.name);
+        const dateString = format(new Date(), "MM/DD/YY");
+        const subject = `${repo.name} GitHub Summary for ${dateString}`;
 
-      log.debug(`Sending email for ${repo.name} to ${reportConfig.email}`);
-      await email_client.sendEmail(reportConfig.email, subject, emailText);
+        log.debug(`Sending email for ${repo.name} to ${reportConfig.email}`);
+        await email_client.sendEmail(reportConfig.email, subject, emailText);
+      } catch (e) {
+        log.error(`Failed to send email for ${repo.name}`, e);
+      }
     }
   });
 
