@@ -39,16 +39,95 @@ export class CronHandler {
     this.config = config;
   }
 
-  async processIssues(org: string, name: string) {
-    log.debug(`Processing issues for ${org}/${name}`);
+  async preProcessIssues(
+    org: string,
+    name: string,
+    issueConfig: types.IssueCleanupConfig
+  ): Promise<types.Action[]> {
+    log.debug(`preProcessIssues(${org}/${name})`);
 
-    // Get the configuration for this repo
-    const cleanupConfig = this.config.getRepoCleanupConfig(org, name);
-    if (!cleanupConfig || !cleanupConfig.issue) {
-      log.debug(`No issue cleanup config for ${org}/${name}`);
+    const actions: types.Action[] = [];
+
+    if (!issueConfig.label_needs_attention) {
+      log.debug(`No label_needs_attention for ${org}/${name}`);
       return [];
     }
-    const issueConfig = cleanupConfig.issue;
+
+    // Go through every open "needs-info" issue and make sure it shouldn't be "needs-attention"
+    const needsInfoIssues = await this.gh_client.getIssuesForRepo(
+      org,
+      name,
+      "open",
+      [issueConfig.label_needs_info]
+    );
+
+    for (const issue of needsInfoIssues) {
+      const issueActions = await this.doubleCheckNeedsInfo(
+        org,
+        name,
+        issue,
+        issueConfig
+      );
+      actions.push(...issueActions);
+    }
+
+    return actions;
+  }
+
+  async doubleCheckNeedsInfo(
+    org: string,
+    name: string,
+    issue: types.internal.Issue,
+    issueConfig: types.IssueCleanupConfig
+  ): Promise<types.Action[]> {
+    const actions: types.Action[] = [];
+
+    // If the very last comment is by the author then we likely have a mistake
+    const comments = await this.gh_client.getCommentsForIssue(
+      org,
+      name,
+      issue.number
+    );
+
+    if (comments.length === 0) {
+      return [];
+    }
+
+    const lastComment = comments.sort(util.compareTimestamps).reverse()[0];
+    if (lastComment.user.login === issue.user.login) {
+      const reason = `Last comment was by ${issue.user.login} implying that this issue should not be needs-info`;
+      actions.push(
+        new types.GitHubRemoveLabelAction(
+          org,
+          name,
+          issue.number,
+          issueConfig.label_needs_info,
+          reason
+        )
+      );
+
+      if (issueConfig.label_needs_attention) {
+        actions.push(
+          new types.GitHubAddLabelAction(
+            org,
+            name,
+            issue.number,
+            issueConfig.label_needs_attention,
+            reason
+          )
+        );
+      }
+    }
+
+    return actions;
+  }
+
+  async processIssues(
+    org: string,
+    name: string,
+    issueConfig: types.IssueCleanupConfig
+  ): Promise<types.Action[]> {
+    log.debug(`processIssues(${org}/${name})`);
 
     const lockActions = await this.handleClosedIssues(org, name, issueConfig);
     const staleActions = await this.handleStaleIssues(org, name, issueConfig);

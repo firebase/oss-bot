@@ -171,12 +171,20 @@ export class GitHubClient {
   /**
    * List all the issues (open or closed) on a GitHub repo.
    */
-  getIssuesForRepo(owner: string, repo: string, state?: IssueState) {
-    state = state || "all";
+  getIssuesForRepo(
+    owner: string,
+    repo: string,
+    state?: IssueState,
+    labels?: string[]
+  ) {
+    const stateFilter = state || "all";
+    const labelsFilter = labels === undefined ? undefined : labels.join(",");
+
     return paginate(this.api.issues.listForRepo, {
       owner,
       repo,
-      state
+      state: stateFilter,
+      labels: labelsFilter
     });
   }
 
