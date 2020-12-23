@@ -270,22 +270,46 @@ export const botCleanupRepo = functions
       return;
     }
 
-    const actions = await cron_handler.processIssues(org, repo);
+    const cleanupConfig = cron_handler.config.getRepoCleanupConfig(org, repo);
+    if (!cleanupConfig || !cleanupConfig.issue) {
+      log.debug(`No issue cleanup config for ${org}/${repo}`);
+      return;
+    }
+
+    // Pre-process issues on the repo to see if we missed any webhooks before moving on.
+    const preprocessActions = await cron_handler.preProcessIssues(
+      org,
+      repo,
+      cleanupConfig.issue
+    );
+    console.log(
+      `Taking ${preprocessActions.length} actions before cleaning up ${org}/${repo}`
+    );
+    await safeExecuteActions(preprocessActions);
+
+    // Process all issues on the repo
+    const actions = await cron_handler.processIssues(
+      org,
+      repo,
+      cleanupConfig.issue
+    );
     console.log(
       `Taking ${actions.length} actions when cleaning up ${org}/${repo}`
     );
-
-    // Run each action in order but don't explode on failure.
-    for (const action of actions) {
-      try {
-        await executeAction(action);
-      } catch (e) {
-        console.warn(`Failed to execute action ${action.toString()}`, e);
-      }
-    }
+    await safeExecuteActions(actions);
 
     return true;
   });
+
+async function safeExecuteActions(actions: types.Action[]): Promise<void> {
+  for (const action of actions) {
+    try {
+      await executeAction(action);
+    } catch (e) {
+      console.warn(`Failed to execute action ${action.toString()}`, e);
+    }
+  }
+}
 
 async function executeAction(action: types.Action): Promise<any> {
   log.logData({
