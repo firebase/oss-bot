@@ -19,6 +19,7 @@ import * as github from "./github";
 import * as log from "./log";
 import * as util from "./util";
 import * as types from "./types";
+import { locale } from "moment";
 
 // Metadata the bot can leave in comments to mark its actions
 const EVT_MARK_STALE = "event: mark-stale";
@@ -129,10 +130,25 @@ export class CronHandler {
   ): Promise<types.Action[]> {
     log.debug(`processIssues(${org}/${name})`);
 
-    const lockActions = await this.handleClosedIssues(org, name, issueConfig);
-    const staleActions = await this.handleStaleIssues(org, name, issueConfig);
+    const actions: types.Action[] = [];
 
-    return [...lockActions, ...staleActions];
+    const lockActions = await this.handleClosedIssues(org, name, issueConfig);
+    actions.push(...lockActions);
+
+    const now = new Date();
+    if (!util.isWorkday(now)) {
+      console.log(
+        `Not processing stale issues on a weekend: ${now.toDateString()} @ ${now.toLocaleTimeString()} (${
+          Intl.DateTimeFormat().resolvedOptions().timeZone
+        })`
+      );
+      return actions;
+    }
+
+    const staleActions = await this.handleStaleIssues(org, name, issueConfig);
+    actions.push(...staleActions);
+
+    return actions;
   }
 
   async handleClosedIssues(
