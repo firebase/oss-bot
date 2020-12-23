@@ -80,7 +80,7 @@ export function getDateWorkingDaysBefore(start: Date, days: number): Date {
   let t = start.getTime();
   while (daysSubtracted < days) {
     const tDate = new Date(t);
-    if (tDate.getDay() !== 0 && tDate.getDay() !== 6) {
+    if (isWorkday(tDate)) {
       daysSubtracted += 1;
     }
 
@@ -100,12 +100,16 @@ export function workingDaysAgo(past: Date, future?: Date): number {
   while (t < now) {
     t += msInDay;
     const tDate = new Date(t);
-    if (tDate.getDay() !== 0 && tDate.getDay() !== 6) {
+    if (isWorkday(tDate)) {
       workingDays += 1;
     }
   }
 
   return workingDays;
+}
+
+export function isWorkday(date: Date): boolean {
+  return date.getDay() !== 0 && date.getDay() !== 6;
 }
 
 export function timeAgo(obj: types.internal.Timestamped): number {
