@@ -15,10 +15,7 @@ test-functions: build-functions
 		&& npm run test-ts \
 		&& cd -
 
-deploy-metrics-config:
-	firebase --project=$(PROJECT) database:set -y /metrics metrics-config.json
-
-deploy-hosting: deploy-metrics-config
+deploy-hosting:
 	firebase --project=$(PROJECT) deploy --only hosting
 
 deploy-functions-config:

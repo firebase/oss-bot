@@ -1,6 +1,7 @@
 import { snapshot } from "./types";
 import { database } from "./database";
 import * as util from "./util";
+import * as log from "./log";
 
 const IssueFilters = {
   isOpen: (x: snapshot.Issue) => {
@@ -56,13 +57,18 @@ export async function getRepoIssueStats(org: string, repo: string) {
     .once("value");
   const issueObj = issuesSnap.val() as snapshot.Map<snapshot.Issue>;
 
-  const contributorsSnap = await database()
+  const collaboratorsSnap = await database()
     .ref("repo-metadata")
     .child(org)
     .child(repo)
     .child("collaborators")
     .once("value");
-  const contributors = contributorsSnap.val() as snapshot.Map<boolean>;
+
+  let collaborators = collaboratorsSnap.val() as snapshot.Map<boolean> | null;
+  if (!collaborators) {
+    log.debug(`Unable to get collaborators for ${org}/${repo}`);
+    collaborators = {};
+  }
 
   // All issues and prs sorted by age
   const issuesAndPrs = Object.values(issueObj).sort((x, y) => {
@@ -72,7 +78,7 @@ export async function getRepoIssueStats(org: string, repo: string) {
   // Split into filed-by-googlers and not.
   const [internal, external] = util.split(
     issuesAndPrs,
-    IssueFilters.isInternal(contributors)
+    IssueFilters.isInternal(collaborators)
   );
 
   const [prs, issues] = util.split(issuesAndPrs, IssueFilters.isPullRequest);
@@ -87,12 +93,12 @@ export async function getRepoIssueStats(org: string, repo: string) {
   //  * Not a feature request
   const [internal_bugs, external_bugs] = util.split(
     bugs,
-    IssueFilters.isInternal(contributors)
+    IssueFilters.isInternal(collaborators)
   );
 
   const [internal_prs, external_prs] = util.split(
     prs,
-    IssueFilters.isInternal(contributors)
+    IssueFilters.isInternal(collaborators)
   );
 
   // TODO: Maybe exclude based on the repo's acual label config.

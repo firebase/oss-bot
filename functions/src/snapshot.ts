@@ -148,6 +148,9 @@ export async function GetRepoSnapshot(
       user: {
         login: issue.user.login
       },
+      assignee: {
+        login: issue.assignee?.login || ""
+      },
       labels: issue.labels.map(l => l.name),
       updated_at: issue.updated_at,
       created_at: issue.created_at
@@ -266,7 +269,9 @@ export const SaveRepoSnapshot = functions
     try {
       await repoIssueRef.set(issueData);
     } catch (e) {
-      log.warn(`Failed to save snapshot of issues for ${org}/${repoKey}: ${e}`);
+      throw new Error(
+        `Failed to save snapshot of issues for ${org}/${repoKey}: ${e}`
+      );
     }
 
     // Stream issues to BigQuery
@@ -285,20 +290,21 @@ export const SaveRepoSnapshot = functions
       .child(repoKey);
 
     // Store collaborators as a map of name --> true
+    const collabMap: { [s: string]: boolean } = {};
     try {
       const collabNames = await gh_client.getCollaboratorsForRepo(
         org,
         repoName
       );
-      const collabMap: { [s: string]: boolean } = {};
       collabNames.forEach((name: string) => {
         collabMap[name] = true;
       });
-
-      await repoMetaRef.child("collaborators").set(collabMap);
     } catch (e) {
       log.warn(`Failed to get collaborators for repo ${org}/${repoName}`, e);
     }
+
+    // Even if we fail to get the collaborators, set an empty map
+    await repoMetaRef.child("collaborators").set(collabMap);
   });
 
 export const SaveOrganizationSnapshot = functions

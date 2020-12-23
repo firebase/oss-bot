@@ -72,7 +72,6 @@ function selectAxis(field) {
   throw `No axis for field: ${field}`;
 }
 
-// TODO: DRY with stats.js
 function drawChart(ctx) {
   clearChart();
 

@@ -57,6 +57,18 @@ export function warn(message: any, ...args: any) {
   }
 }
 
+export function error(message: any, ...args: any) {
+  if (LOG_LEVEL > Level.ERROR) {
+    return;
+  }
+
+  if (args) {
+    console.error(message, ...args);
+  } else {
+    console.error(message);
+  }
+}
+
 /**
  * Log JSON data.
  */

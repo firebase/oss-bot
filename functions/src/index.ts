@@ -29,6 +29,10 @@ import * as log from "./log";
 import { database } from "./database";
 import { sendPubSub } from "./pubsub";
 
+// This makes console.log() work as it used to in Node 8
+// See: https://firebase.google.com/docs/functions/writing-and-viewing-logs#console-log
+require("firebase-functions/lib/logger/compat");
+
 export { SaveOrganizationSnapshot, SaveRepoSnapshot } from "./snapshot";
 
 export {
@@ -42,13 +46,6 @@ export {
   SendWeeklyEmail,
   SendWeeklyRepoEmails
 } from "./report";
-
-export {
-  BackfillMetrics,
-  UpdateMetricsWebhook,
-  UpdateMetrics,
-  UpdateAllMetrics
-} from "./metrics";
 
 // Config
 const bot_config = config.BotConfig.getDefault();

@@ -1,4 +1,4 @@
-import { BigQuery, TableSchema, ViewDefinition } from "@google-cloud/bigquery";
+import { BigQuery, TableSchema } from "@google-cloud/bigquery";
 import { snapshot, bigquery } from "./types";
 import * as log from "./log";
 
@@ -6,22 +6,29 @@ const ISSUES_DATASET = "github_issues";
 
 const ISSUES_SCHEMA: TableSchema = {
   fields: [
-    { name: "repo", type: "STRING" },
-    { name: "number", type: "INTEGER" },
-    { name: "title", type: "STRING" },
-    { name: "state", type: "STRING" },
-    { name: "pull_request", type: "BOOLEAN" },
-    { name: "locked", type: "BOOLEAN" },
-    { name: "comments", type: "INTEGER" },
+    { name: "repo", type: "STRING", mode: "NULLABLE" },
+    { name: "number", type: "INTEGER", mode: "NULLABLE" },
+    { name: "title", type: "STRING", mode: "NULLABLE" },
+    { name: "state", type: "STRING", mode: "NULLABLE" },
+    { name: "pull_request", type: "BOOLEAN", mode: "NULLABLE" },
+    { name: "locked", type: "BOOLEAN", mode: "NULLABLE" },
+    { name: "comments", type: "INTEGER", mode: "NULLABLE" },
     {
       name: "user",
       type: "RECORD",
-      fields: [{ name: "login", type: "STRING" }]
+      mode: "NULLABLE",
+      fields: [{ name: "login", type: "STRING", mode: "NULLABLE" }]
+    },
+    {
+      name: "assignee",
+      type: "RECORD",
+      mode: "NULLABLE",
+      fields: [{ name: "login", type: "STRING", mode: "NULLABLE" }]
     },
     { name: "labels", type: "STRING", mode: "REPEATED" },
-    { name: "created_at", type: "STRING" },
-    { name: "updated_at", type: "STRING" },
-    { name: "ingested", type: "TIMESTAMP" }
+    { name: "created_at", type: "STRING", mode: "NULLABLE" },
+    { name: "updated_at", type: "STRING", mode: "NULLABLE" },
+    { name: "ingested", type: "TIMESTAMP", mode: "NULLABLE" }
   ]
 };
 
