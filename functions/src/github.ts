@@ -177,15 +177,17 @@ export class GitHubClient {
     state?: IssueState,
     labels?: string[]
   ) {
-    const stateFilter = state || "all";
-    const labelsFilter = labels === undefined ? undefined : labels.join(",");
-
-    return paginate(this.api.issues.listForRepo, {
+    const opts: any = {
       owner,
       repo,
-      state: stateFilter,
-      labels: labelsFilter
-    });
+      state: state || "all"
+    };
+
+    if (labels && labels.length > 0) {
+      opts.labels = labels.join(",");
+    }
+
+    return paginate(this.api.issues.listForRepo, opts);
   }
 
   /**

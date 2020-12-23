@@ -61,6 +61,9 @@ export class CronHandler {
       [issueConfig.label_needs_info]
     );
 
+    log.debug(
+      `preProcessIssues: ${needsInfoIssues.length} issues witth label ${issueConfig.label_needs_info}`
+    );
     for (const issue of needsInfoIssues) {
       const issueActions = await this.doubleCheckNeedsInfo(
         org,
@@ -289,6 +292,11 @@ export class CronHandler {
     // does not guarantee an order.
     let comments = await this.gh_client.getCommentsForIssue(org, name, number);
     comments = comments.sort(util.compareTimestamps).reverse();
+
+    if (!comments || comments.length === 0) {
+      console.log(`Issue ${name}#${number} has no comments.`);
+      return actions;
+    }
 
     // When the issue was marked stale, the bot will have left a comment with certain metadata
     const markStaleComment = comments.find(comment => {
