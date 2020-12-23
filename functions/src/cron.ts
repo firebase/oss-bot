@@ -19,7 +19,6 @@ import * as github from "./github";
 import * as log from "./log";
 import * as util from "./util";
 import * as types from "./types";
-import { locale } from "moment";
 
 // Metadata the bot can leave in comments to mark its actions
 const EVT_MARK_STALE = "event: mark-stale";
