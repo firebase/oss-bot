@@ -19,7 +19,6 @@ import * as github from "./github";
 import * as log from "./log";
 import * as util from "./util";
 import * as types from "./types";
-import { issue } from "firebase-functions/lib/providers/crashlytics";
 
 // Metadata the bot can leave in comments to mark its actions
 const EVT_MARK_STALE = "event: mark-stale";
