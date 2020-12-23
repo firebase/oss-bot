@@ -293,4 +293,7 @@ Code is formatted using `prettier` so no bikeshedding allowed. Run
 
 ## Build Status
 
-[![Build Status](https://travis-ci.org/firebase/oss-bot.svg?branch=master)](https://travis-ci.org/firebase/oss-bot)
+[![Actions Status][gh-actions-badge]][gh-actions]
+
+[gh-actions]: https://github.com/firebase/oss-bot/actions
+[gh-actions-badge]: https://github.com/firebase/oss-bot/workflows/CI%20Tests/badge.svg
