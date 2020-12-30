@@ -321,7 +321,7 @@ export class IssueHandler {
     label: string
   ): types.Action[] {
     // Render the issue body
-    const body_html = marked(issue.body);
+    const body_html = marked(issue.body || "");
 
     // Send a new issue email
     const action = this.emailer.getIssueUpdateEmailAction(repo, issue, {

@@ -128,7 +128,7 @@ export class PullRequestHandler {
     label: string
   ): Promise<types.Action[]> {
     // Render the PR body
-    const body_html = marked(pr.body);
+    const body_html = marked(pr.body || "");
 
     // Send a new PR email
     const action = this.emailer.getIssueUpdateEmailAction(repo, pr, {
