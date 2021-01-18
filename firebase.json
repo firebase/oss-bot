@@ -5,6 +5,10 @@
       {
         "source": "/issuestats",
         "function": "RepoIssueStatistics"
+      },
+      {
+        "source": "/samscorebadge",
+        "function": "SamScoreBadge"
       }
     ]
   },

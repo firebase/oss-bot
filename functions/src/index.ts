@@ -47,6 +47,8 @@ export {
   SendWeeklyRepoEmails
 } from "./report";
 
+export { SamScoreBadge } from "./badge";
+
 // Config
 const bot_config = config.BotConfig.getDefault();
 

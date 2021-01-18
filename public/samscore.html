@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ossbot.computer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+
+    <!-- Styles -->
+    <link href="/assets/css/bootstrap.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/index.css" />
+
+    <style>
+      body {
+        padding-top: 60px;
+      }
+
+      pre {
+        padding: 16px;
+        color: rgba(255, 255, 255, 0.6)
+      }
+
+      pre .comment {
+        color: rgba(255, 255, 255, 0.4)
+      }
+
+      .container-narrow {
+        margin: 0 auto;
+        max-width: 960px;
+      }
+
+      #intro {
+        margin-bottom: 50px;
+      }
+
+      p {
+        margin-top: 16px;
+        margin-bottom: 16px;
+      }
+
+      li {
+        list-style-type: disc !important;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button
+            type="button"
+            class="btn btn-navbar"
+            data-toggle="collapse"
+            data-target=".nav-collapse"
+          >
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="#">ossbot.computer</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="active"><a href="#">Home</a></li>
+              <li><a href="#">Foo</a></li>
+              <li><a href="#">Bar</a></li>
+            </ul>
+          </div>
+          <!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="main container container-narrow">
+      <h1>What is "SAM Score"?</h1>
+
+      <p>
+        The suggested action metric (SAM) score is a single number meant to help maintainers of open-source repositories get an at-a-glance health check for their repo.
+      </p>
+      <p>
+        The formula for SAM score is simple:
+      </p>
+      <p>
+        <pre>
+<span class="comment">// Simple ratio: what percentage of all issues ever are still open?</span>
+let open_ratio = (open_issues / open_issues + closed_issues)
+
+<span class="comment">// Scale: how many total issues have you ever had?</span>
+let scale_factor = (open_issues + closed_issues)
+
+<span class="comment">// SAM score is the ratio of open to closed issues multiplied by a logarithmic</span>
+<span class="comment">// scale factor.</span>
+let score = open_ratio * Math.log(Math.E + scale_factor)</pre>
+      </p>
+      <p>
+        The goal is to get the lowest SAM score possible without "gaming" the system through bug bankruptcy or other developer-unfriendly processes.
+      </p>
+      <p>
+        The basic principles are:
+
+        <ul>
+          <li>Open issues are bad, closed issues are good.</li>
+          <li>100 out of 200 issues open is worse than having 1 out of 2.</li> 
+          <li>Repos with more issues require more attention, but not linearly so.</li>
+        </ul>
+      </p>
+
+      <p>
+        SAM Scores fall into the following buckets:
+
+        <ul>
+          <li><b>&lt; 0.5</b> - Excellent</li>
+          <li><b>&lt; 1.0</b> - Good</li>
+          <li><b>&lt; 2.0</b> - Okay</li>
+          <li><b>&gt; 2.0</b> - Poor</li>
+        </ul>
+      </p>
+
+    </div>
+    <!-- /container -->
+  </body>
+</html>
