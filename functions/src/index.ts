@@ -278,17 +278,6 @@ export const botCleanupRepo = functions
       return;
     }
 
-    // Pre-process issues on the repo to see if we missed any webhooks before moving on.
-    const preprocessActions = await cron_handler.preProcessIssues(
-      org,
-      repo,
-      cleanupConfig.issue
-    );
-    console.log(
-      `Taking ${preprocessActions.length} actions before cleaning up ${org}/${repo}`
-    );
-    await safeExecuteActions(preprocessActions);
-
     // Process all issues on the repo
     const actions = await cron_handler.processIssues(
       org,
