@@ -739,4 +739,38 @@ export namespace bigquery {
       this.ingested = ingested.toISOString();
     }
   }
+
+  export interface EventSender {
+    id?: number;
+    login?: string;
+  }
+
+  export interface EventRepository {
+    id?: number;
+    full_name?: string;
+  }
+
+  export class Event {
+    type?: string;
+    action?: string;
+    sender?: EventSender;
+    repository?: EventRepository;
+    payload?: string;
+    ingested?: string;
+
+    constructor(
+      type: string,
+      action: string,
+      sender: EventSender,
+      repository: EventRepository,
+      payload: string
+    ) {
+      this.type = type;
+      this.action = action;
+      this.sender = sender;
+      this.repository = repository;
+      this.payload = payload;
+      this.ingested = new Date().toISOString();
+    }
+  }
 }

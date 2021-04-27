@@ -5,7 +5,7 @@ import * as log from "./log";
 import * as util from "./util";
 import { snapshot } from "./types";
 import * as config from "./config";
-import { createIssuesTable, listIssuesTables, insertIssues } from "./bigquery";
+import { insertIssues } from "./bigquery";
 import { sendPubSub } from "./pubsub";
 
 // Config
@@ -318,15 +318,6 @@ export const SaveOrganizationSnapshot = functions
     for (const r of configRepos) {
       if (configOrgs.indexOf(r.org) < 0 && r.org !== "samtstern") {
         configOrgs.push(r.org);
-      }
-    }
-
-    // Make sure each org has a BQ table
-    const tableNames = await listIssuesTables();
-    for (const repo of configRepos) {
-      if (!tableNames.includes(repo.org)) {
-        log.debug("Creating table for org: ", repo.org);
-        await createIssuesTable(repo.org);
       }
     }
 
