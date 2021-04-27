@@ -134,6 +134,7 @@ export async function insertEvent(org: string, event: bigquery.Event) {
   log.debug(
     `Inserting event ${event.type}.${event.action} in org ${org} into BigQuery`
   );
+  log.debug('event', event);
   const insertRes = await bqClient
     .dataset(EVENTS_DATASET)
     .table(org)

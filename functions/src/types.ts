@@ -767,8 +767,14 @@ export namespace bigquery {
     ) {
       this.type = type;
       this.action = action;
-      this.sender = sender;
-      this.repository = repository;
+      this.sender = {
+        id: sender.id,
+        login: sender.login
+      };
+      this.repository = {
+        id: repository.id,
+        full_name: repository.full_name 
+      };
       this.payload = payload;
       this.ingested = new Date().toISOString();
     }
