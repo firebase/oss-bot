@@ -32,9 +32,62 @@ const ISSUES_SCHEMA: TableSchema = {
   ]
 };
 
+const EVENTS_DATASET = "github_events";
+
+// For common payloads see:
+// https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#webhook-payload-object-common-properties
+const EVENTS_SCHEMA: TableSchema = {
+  fields: [
+    // The event type: issue, issue_comment, etc
+    { name: "type", type: "STRING", mode: "NULLABLE" },
+
+    // The event action: created, opened, labeled, etc
+    { name: "action", type: "STRING", mode: "NULLABLE" },
+
+    // The user that triggered the event
+    {
+      name: "sender",
+      type: "RECORD",
+      mode: "NULLABLE",
+      fields: [
+        { name: "id", type: "INTEGER", mode: "NULLABLE" },
+        { name: "login", type: "STRING", mode: "NULLABLE" }
+      ]
+    },
+
+    // The repository where the event ocurred
+    {
+      name: "repository",
+      type: "RECORD",
+      mode: "NULLABLE",
+      fields: [
+        { name: "id", type: "INTEGER", mode: "NULLABLE" },
+        { name: "full_name", type: "STRING", mode: "NULLABLE" }
+      ]
+    },
+
+    // The full JSON payload of the event
+    { name: "payload", type: "STRING", mode: "NULLABLE" },
+
+    // The time the event was captured
+    { name: "ingested", type: "TIMESTAMP", mode: "NULLABLE" }
+  ]
+};
+
 const bqClient = new BigQuery({
   projectId: process.env.GCLOUD_PROJECT
 });
+
+export async function listEventsTables(): Promise<string[]> {
+  const [tables] = await bqClient.dataset(EVENTS_DATASET).getTables();
+  return tables.map(x => x.id || "");
+}
+
+export async function createEventsTable(org: string): Promise<void> {
+  await bqClient.dataset(EVENTS_DATASET).createTable(org, {
+    schema: EVENTS_SCHEMA
+  });
+}
 
 export async function listIssuesTables(): Promise<string[]> {
   const [tables] = await bqClient.dataset(ISSUES_DATASET).getTables();
@@ -71,9 +124,20 @@ export async function insertIssues(
 
   log.debug(`Inserting ${issues.length} issues into BigQuery`);
   const insertRes = await bqClient
-    .dataset("github_issues")
+    .dataset(ISSUES_DATASET)
     .table(org)
     .insert(issues);
+  log.debug(`Inserted: ${JSON.stringify(insertRes[0])}`);
+}
+
+export async function insertEvent(org: string, event: bigquery.Event) {
+  log.debug(
+    `Inserting event ${event.type}.${event.action} in org ${org} into BigQuery`
+  );
+  const insertRes = await bqClient
+    .dataset(EVENTS_DATASET)
+    .table(org)
+    .insert([event]);
   log.debug(`Inserted: ${JSON.stringify(insertRes[0])}`);
 }
 

@@ -28,6 +28,13 @@ import * as log from "./log";
 
 import { database } from "./database";
 import { sendPubSub } from "./pubsub";
+import {
+  createEventsTable,
+  createIssuesTable,
+  insertEvent,
+  listEventsTables,
+  listIssuesTables
+} from "./bigquery";
 
 // This makes console.log() work as it used to in Node 8
 // See: https://firebase.google.com/docs/functions/writing-and-viewing-logs#console-log
@@ -81,6 +88,36 @@ const pr_handler = new pullrequests.PullRequestHandler(bot_config);
 
 // Handler for Cron jobs
 const cron_handler = new cron.CronHandler(gh_client, bot_config);
+
+export const eventWebhook = functions
+  .runWith(util.FUNCTION_OPTS)
+  .https.onRequest(async (request, response) => {
+    const type = request.get("X-GitHub-Event");
+    if (!type) {
+      response.status(400).send("Must include type!");
+      return;
+    }
+
+    const action = request.body.action;
+    const sender = request.body.sender;
+    const repository = request.body.repository;
+    const payload = JSON.stringify(request.body);
+
+    const event = new types.bigquery.Event(
+      type,
+      action,
+      sender,
+      repository,
+      payload
+    );
+
+    const org = repository.owner.login;
+    await insertEvent(org, event);
+
+    response.json({
+      status: "ok"
+    });
+  });
 
 /**
  * Function that responds to GitHub events (HTTP webhook).
@@ -389,3 +426,28 @@ async function executeAction(action: types.Action): Promise<any> {
   // in case someone wants to chain from it.
   return actionPromise;
 }
+
+/**
+ * Manually run this function to create tables.
+ */
+export const ensureBigquery = functions
+  .runWith(util.FUNCTION_OPTS)
+  .pubsub.topic("ensure-bigquery")
+  .onPublish(async () => {
+    const repos = bot_config.getAllRepos();
+    const orgs = new Set<string>(repos.map(r => r.org));
+
+    // Make sure each org has all of the BQ tables
+    // TODO: Expand this to do migrations
+    const issueTableNames = await listIssuesTables();
+    const eventTableNames = await listEventsTables();
+    for (const org of orgs) {
+      if (!issueTableNames.includes(org)) {
+        await createIssuesTable(org);
+      }
+
+      if (!eventTableNames.includes(org)) {
+        await createEventsTable(org);
+      }
+    }
+  });
