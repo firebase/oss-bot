@@ -259,7 +259,7 @@ export interface ReportConfig {
 }
 
 export interface LabelConfig {
-  regex: string;
+  regex?: string;
   email?: string;
 }
 
