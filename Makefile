@@ -16,14 +16,18 @@ test-functions: build-functions
 		&& cd -
 
 deploy-hosting:
-	firebase --project=$(PROJECT) deploy --only hosting
+	cd functions \
+		&& npx firebase --project=$(PROJECT) deploy --only hosting \
+		&& cd -
 
 deploy-functions-config:
 	cd functions \
-		&& ./node_modules/.bin/ts-node src/scripts/deploy-config.ts config/config.json $(PROJECT)	\
+		&& npx ts-node src/scripts/deploy-config.ts config/config.json $(PROJECT)	\
 		&& cd -
 
 deploy-functions: test-functions
-	firebase --project=$(PROJECT) deploy --only functions
+	cd functions \
+		&& npx firebase --project=$(PROJECT) deploy --only functions \
+		&& cd -
 
 deploy: check-config deploy-functions-config deploy-functions deploy-hosting
