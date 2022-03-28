@@ -198,7 +198,7 @@ export class SendEmailAction extends Action {
   toString() {
     let subjectPreview = this.subject;
     if (subjectPreview.length > 20) {
-      subjectPreview = subjectPreview.substr(0, 17) + "...";
+      subjectPreview = subjectPreview.slice(0, 17) + "...";
     }
 
     return `SendEmailAction(${this.recipient}, ${subjectPreview})`;
