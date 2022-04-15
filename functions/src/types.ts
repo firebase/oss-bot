@@ -773,7 +773,7 @@ export namespace bigquery {
       };
       this.repository = {
         id: repository.id,
-        full_name: repository.full_name 
+        full_name: repository.full_name
       };
       this.payload = payload;
       this.ingested = new Date().toISOString();
