@@ -1,5 +1,4 @@
 import * as functions from "firebase-functions";
-import * as fetch from "node-fetch";
 import { Octokit } from "@octokit/rest";
 import * as util from "./util";
 
@@ -36,6 +35,7 @@ export const SamScoreBadge = functions.https.onRequest(async (req, res) => {
   const shieldURL = `https://img.shields.io/static/v1?label=SAM%20Score&message=${samScore}&color=${color}`;
 
   // Fetch the shield
+  const fetch = await import("node-fetch"); // tslint:disable-line
   const fetchRes = await fetch.default(shieldURL);
 
   // Set key headers
