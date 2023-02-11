@@ -36,7 +36,7 @@
     "@types/request": "^2.48.4",
     "@types/simple-mock": "^0.8.1",
     "chai": "^4.1.2",
-    "firebase-tools": "^10.6.0",
+    "firebase-tools": "^11.22.0",
     "mjml": "^3.3.3",
     "mocha": "^3.5.3",
     "prettier": "^1.15.3",
