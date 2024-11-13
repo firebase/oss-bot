@@ -379,6 +379,13 @@ async function executeAction(action: types.Action): Promise<any> {
       closeAction.name,
       closeAction.number
     );
+  } else if (action.type == types.ActionType.GITHUB_SPAM) {
+    const wipeAction = action as types.GitHubSpamAction;
+    actionPromise = gh_client.wipeIssue(
+      wipeAction.org,
+      wipeAction.name,
+      wipeAction.number
+    );
   } else if (action.type == types.ActionType.GITHUB_LOCK) {
     const lockAction = action as types.GitHubLockAction;
     actionPromise = gh_client.lockIssue(
