@@ -128,6 +128,20 @@ export class GitHubClient {
   }
 
   /**
+   * Closes an issue on a github repo and erases its content.
+   */
+  wipeIssue(org: string, name: string, issue_number: number): Promise<any> {
+    return this.api.issues.update({
+      owner: org,
+      repo: name,
+      issue_number,
+      state: "closed",
+      title: "Spam",
+      body: "This issue was filtered as spam."
+    });
+  }
+
+  /**
    * Get all comments on a GitHUb issue.
    */
   getCommentsForIssue(owner: string, repo: string, issue_number: number) {
