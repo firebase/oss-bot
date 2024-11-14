@@ -275,7 +275,8 @@ export class IssueHandler {
     });
 
     if (isSpam) {
-      // Discard other actions and wipe the issue.
+      // Discard other actions, wipe and lock the issue, and block
+      // the offending user.
       const reason = `Issue is believed to be spam: ${issue.title}`
       return [
         new types.GitHubSpamAction(
@@ -283,6 +284,9 @@ export class IssueHandler {
         ),
         new types.GitHubBlockAction(
           org, issue.user.login
+        ),
+        new types.GitHubLockAction(
+          org, name, issue.number
         )
       ];
     }

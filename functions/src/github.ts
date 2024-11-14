@@ -136,6 +136,7 @@ export class GitHubClient {
       repo: name,
       issue_number,
       state: "closed",
+      state_reason: "not_planned",
       title: "Spam",
       body: "This issue was filtered as spam."
     });
