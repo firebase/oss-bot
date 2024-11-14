@@ -138,7 +138,8 @@ export class GitHubClient {
       state: "closed",
       state_reason: "not_planned",
       title: "Spam",
-      body: "This issue was filtered as spam."
+      body:
+        "This issue was filtered as spam. If you believe this was in error, please file a support ticket."
     });
   }
 

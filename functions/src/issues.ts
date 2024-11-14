@@ -243,36 +243,72 @@ export class IssueHandler {
 
     // Filter spam from b/378634578. This can be removed in the future.
     const spamWords = [
-      'pemain',
-      'wallet wallet', // seems to be in most crypto issues
-      'minecraft',
-      'paybis',
-      'blockchain',
-      'official contact number',
-      'phantom wallet',
-      'defi wallet',
-      'dogecoin',
-      'crypto.com',
-      'moonpay',
-      'coinmama',
-      'daftar',
-      ['wallet', 'support'],
+      "pemain",
+      "wallet wallet", // seems to be in most crypto issues
+      "minecraft",
+      "paybis",
+      "blockchain",
+      "official contact number",
+      "phantom wallet",
+      "defi wallet",
+      "dogecoin",
+      "crypto.com",
+      "moonpay",
+      "coinmama",
+      "daftar",
+      "activation key",
+      "cracked version",
+      "download now",
+      "xnxx",
+      "sex@videos",
+      "freeplayer.one",
+      "movies7to.lol",
+      "inatogel",
+      'rel="nofollow"',
+      "ao vivo",
+      "click here to watch",
+      "diretta streaming",
+      "rijeka",
+      "social media x",
+      "live streams free",
+      ["situs", "slot"],
+      ["premier league", "live"],
+      ["live streams", "rugby"],
+      ["pro league", "tv"],
+      ["diretta", "le"],
+      ["en direct", "tv"],
+      ["direct streaming", "match", "tv"],
+      ["jogos", "direto"],
+      ["jogos", "directo"],
+      ["video viral", "x twitter"],
+      ["video", "viral", "trending now"],
+      ["autodesk", "login"],
+      ["films", "hd", "4k"],
+      ["free streaming", "tv shows"],
+      ["nfl", "live streams"],
+      ["free games", "unblocked"],
+      ["wallet", "support"],
+      ["download", "crack"],
+      ["download", "serial key"],
+      ["sex", "videos"]
     ];
-    const issueContent = ` ${issue.title} ${issue.body || ''} `.toLowerCase();
+    const issueContent = ` ${issue.title} ${issue.body || ""} `.toLowerCase();
     // Scope spam filtering to affected repos only.
-    const isAffectedRepo = org == "firebase" && (
-      name == "flutterfire" ||
-      name == "quickstart-android" ||
-      name == "quickstart-ios"
-    );
-    const isSpam = isAffectedRepo && spamWords.find((wordOrArray) => {
-      if (Array.isArray(wordOrArray)) {
-        return wordOrArray.every((word) => issueContent.includes(word));
-      } else {
-        const wordWithSpace = ` ${wordOrArray} `;
-        return issueContent.includes(wordWithSpace);
-      }
-    });
+    const isAffectedRepo =
+      org == "firebase" &&
+      (name == "flutterfire" ||
+        name == "quickstart-android" ||
+        name == "quickstart-ios");
+    const isSpam =
+      isAffectedRepo &&
+      spamWords.find(wordOrArray => {
+        if (Array.isArray(wordOrArray)) {
+          return wordOrArray.every(word => issueContent.includes(word));
+        } else {
+          const wordWithSpace = ` ${wordOrArray} `;
+          return issueContent.includes(wordWithSpace);
+        }
+      });
 
     if (isSpam) {
       // Discard other actions, wipe and lock the issue, and block
