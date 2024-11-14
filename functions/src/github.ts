@@ -162,6 +162,16 @@ export class GitHubClient {
   }
 
   /**
+   * Blocks the given user on behalf of the specified organization.
+   */
+  blockFromOrg(org: string, username: string) {
+    return this.api.request('PUT /orgs/' + org + '/blocks/' + username, {
+      org: org,
+      username: username,
+    });
+  }
+
+  /**
    * Gets information about a GitHub repo.
    */
   async getRepo(org: string, repo: string) {

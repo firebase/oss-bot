@@ -386,6 +386,12 @@ async function executeAction(action: types.Action): Promise<any> {
       wipeAction.name,
       wipeAction.number
     );
+  } else if (action.type == types.ActionType.GITHUB_BLOCK) {
+    const blockAction = action as types.GitHubBlockAction;
+    actionPromise = gh_client.blockFromOrg(
+      blockAction.org,
+      blockAction.username
+    );
   } else if (action.type == types.ActionType.GITHUB_LOCK) {
     const lockAction = action as types.GitHubLockAction;
     actionPromise = gh_client.lockIssue(

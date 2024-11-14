@@ -13,6 +13,7 @@ export enum ActionType {
   GITHUB_LOCK = "GITHUB_LOCK",
   GITHUB_NO_OP = "GITHUB_NO_OP",
   GITHUB_SPAM = "GITHUB_SPAM",
+  GITHUB_BLOCK = "GITHUB_BLOCK",
   EMAIL_SEND = "EMAIL_SEND"
 }
 
@@ -23,6 +24,7 @@ export const GITHUB_ISSUE_ACTIONS = [
   ActionType.GITHUB_CLOSE,
   ActionType.GITHUB_LOCK,
   ActionType.GITHUB_NO_OP,
+  ActionType.GITHUB_BLOCK,
   ActionType.GITHUB_SPAM
 ];
 
@@ -158,6 +160,17 @@ export class GitHubSpamAction extends GitHubIssueAction {
     if (reason) {
       this.reason = reason;
     }
+  }
+}
+
+export class GitHubBlockAction extends Action {
+  org: string;
+  username: string;
+
+  constructor(org: string, username: string) {
+    super(ActionType.GITHUB_BLOCK);
+    this.org = org;
+    this.username = username;
   }
 }
 
