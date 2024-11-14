@@ -280,6 +280,9 @@ export class IssueHandler {
       return [
         new types.GitHubSpamAction(
           org, name, issue.number, reason
+        ),
+        new types.GitHubBlockAction(
+          org, issue.user.login
         )
       ];
     }
