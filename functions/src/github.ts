@@ -167,9 +167,9 @@ export class GitHubClient {
    * Blocks the given user on behalf of the specified organization.
    */
   blockFromOrg(org: string, username: string) {
-    return this.api.request('PUT /orgs/' + org + '/blocks/' + username, {
+    return this.api.request("PUT /orgs/" + org + "/blocks/" + username, {
       org: org,
-      username: username,
+      username: username
     });
   }
 

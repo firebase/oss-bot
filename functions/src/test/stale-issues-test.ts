@@ -28,6 +28,10 @@ import * as util from "./test-util";
 import { workingDaysAgo, getDateWorkingDaysBefore } from "../util";
 import { get } from "https";
 
+// Stale issue from iOS SDK
+const issue_stale_ios_sdk = require("./mock_data/stale_issue.json");
+const issue_stale_comments = require("./mock_data/stale_issue_comments.json");
+
 // Bot configuration
 const config_json = require("./mock_data/config.json");
 const bot_config = new config.BotConfig(config_json);
@@ -238,21 +242,15 @@ describe("Stale issue handler", async () => {
   });
 
   it("should comment and close a stale issue after {X} days", async () => {
-    const issue = READY_TO_CLOSE_ISSUE;
-    const issueComments: types.internal.Comment[] = [
-      {
-        body: "My original comment",
-        user: issue.user,
-        created_at: SEVEN_WKD_AGO,
-        updated_at: SEVEN_WKD_AGO
-      },
-      {
-        body: cron_handler.getMarkStaleComment(issue.user.login, 7, 3),
-        user: { login: "google-oss-bot" },
-        created_at: SEVEN_WKD_AGO,
-        updated_at: SEVEN_WKD_AGO
-      }
-    ];
+    const issue = issue_stale_ios_sdk;
+    const issueComments = issue_stale_comments;
+
+    const config = DEFAULT_CONFIG;
+    config.auto_close_labels = {
+      add: ["closed-by-bot", "add-on-close"],
+      remove: ["needs-info"]
+    };
+    config.label_stale = "no-recent-activity";
 
     simple
       .mock(cron_handler.gh_client, "getCommentsForIssue")
@@ -261,36 +259,38 @@ describe("Stale issue handler", async () => {
       });
 
     const actions = await cron_handler.handleStaleIssue(
-      "samtstern",
-      "bottest",
+      "firebase",
+      "firebase-ios-sdk",
       issue,
       DEFAULT_CONFIG
     );
 
+    console.log(actions);
+
     util.actionsListEqual(actions, [
       new types.GitHubCommentAction(
-        "samtstern",
-        "bottest",
+        "firebase",
+        "firebase-ios-sdk",
         issue.number,
         cron_handler.getCloseComment(issue.user.login),
         false
       ),
-      new types.GitHubCloseAction("samtstern", "bottest", issue.number),
+      new types.GitHubCloseAction("firebase", "firebase-ios-sdk", issue.number),
       new types.GitHubAddLabelAction(
-        "samtstern",
-        "bottest",
+        "firebase",
+        "firebase-ios-sdk",
         issue.number,
         "closed-by-bot"
       ),
       new types.GitHubAddLabelAction(
-        "samtstern",
-        "bottest",
+        "firebase",
+        "firebase-ios-sdk",
         issue.number,
         "add-on-close"
       ),
       new types.GitHubRemoveLabelAction(
-        "samtstern",
-        "bottest",
+        "firebase",
+        "firebase-ios-sdk",
         issue.number,
         "remove-on-close"
       )

@@ -244,61 +244,33 @@ export class IssueHandler {
     // Filter spam from b/378634578. This can be removed in the future.
     const spamWords = [
       "pemain",
-      "wallet wallet", // seems to be in most crypto issues
-      "minecraft",
       "paybis",
-      "blockchain",
-      "official contact number",
-      "phantom wallet",
-      "defi wallet",
-      "dogecoin",
-      "crypto.com",
-      "moonpay",
-      "coinmama",
-      "daftar",
-      "activation key",
       "cracked version",
-      "download now",
       "xnxx",
       "sex@videos",
-      "freeplayer.one",
-      "movies7to.lol",
       "inatogel",
-      'rel="nofollow"',
       "ao vivo",
-      "click here to watch",
-      "diretta streaming",
-      "rijeka",
-      "social media x",
-      "live streams free",
+      ["cracktel.com"],
+      ["therealhax.net"],
+      ["## [", "download", "/dl/"],
+      ["changelly", "crypto"],
+      ["telegram leak"],
+      ["call +1", "contact"],
+      ["safepal", "support"],
+      ["recover", "account", "1-866-"],
+      ["1-866-409-9289"],
+      ["robinhood", "support"],
+      ["blockchain", "support"],
+      ["blogspot.com"],
+      ["wordpress.com/wp-content"],
       ["situs", "slot"],
-      ["premier league", "live"],
-      ["live streams", "rugby"],
-      ["pro league", "tv"],
-      ["diretta", "le"],
-      ["en direct", "tv"],
-      ["direct streaming", "match", "tv"],
       ["jogos", "direto"],
       ["jogos", "directo"],
-      ["video viral", "x twitter"],
-      ["video", "viral", "trending now"],
-      ["autodesk", "login"],
-      ["films", "hd", "4k"],
-      ["free streaming", "tv shows"],
-      ["nfl", "live streams"],
-      ["free games", "unblocked"],
-      ["wallet", "support"],
-      ["download", "crack"],
-      ["download", "serial key"],
-      ["sex", "videos"]
+      ["video viral", "x twitter"]
     ];
     const issueContent = ` ${issue.title} ${issue.body || ""} `.toLowerCase();
     // Scope spam filtering to affected repos only.
-    const isAffectedRepo =
-      org == "firebase" &&
-      (name == "flutterfire" ||
-        name == "quickstart-android" ||
-        name == "quickstart-ios");
+    const isAffectedRepo = org == "firebase";
     const isSpam =
       isAffectedRepo &&
       spamWords.find(wordOrArray => {
@@ -313,18 +285,13 @@ export class IssueHandler {
     if (isSpam) {
       // Discard other actions, wipe and lock the issue, and block
       // the offending user.
-      const reason = `Issue is believed to be spam: ${issue.title}`
-      return [
-        new types.GitHubSpamAction(
-          org, name, issue.number, reason
-        ),
-        new types.GitHubBlockAction(
-          org, issue.user.login
-        ),
-        new types.GitHubLockAction(
-          org, name, issue.number
-        )
-      ];
+      const reason = `Issue is believed to be spam: ${issue.title}`;
+      // Disabled for now. Can be re-enabled if spam reoccurs in the future.
+      // return [
+      //   new types.GitHubSpamAction(org, name, issue.number, reason),
+      //   new types.GitHubBlockAction(org, issue.user.login),
+      //   new types.GitHubLockAction(org, name, issue.number)
+      // ];
     }
 
     // Check if it matches the template. This feature is implicitly enabled by
