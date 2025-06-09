@@ -461,7 +461,7 @@ export namespace github {
     milestone: Milestone;
     locked: boolean;
     comments: number;
-    pull_request: boolean;
+    pull_request: PullRequest;
     closed_at?: string;
     created_at: string;
     updated_at: string;

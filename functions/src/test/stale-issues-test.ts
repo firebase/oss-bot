@@ -265,8 +265,6 @@ describe("Stale issue handler", async () => {
       DEFAULT_CONFIG
     );
 
-    console.log(actions);
-
     util.actionsListEqual(actions, [
       new types.GitHubCommentAction(
         "firebase",

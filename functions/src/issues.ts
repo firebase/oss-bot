@@ -241,59 +241,6 @@ export class IssueHandler {
       actions.push(...this.markNeedsTriage(repo, issue));
     }
 
-    // Filter spam from b/378634578. This can be removed in the future.
-    const spamWords = [
-      "pemain",
-      "paybis",
-      "cracked version",
-      "xnxx",
-      "sex@videos",
-      "inatogel",
-      "ao vivo",
-      ["cracktel.com"],
-      ["therealhax.net"],
-      ["## [", "download", "/dl/"],
-      ["changelly", "crypto"],
-      ["telegram leak"],
-      ["call +1", "contact"],
-      ["safepal", "support"],
-      ["recover", "account", "1-866-"],
-      ["1-866-409-9289"],
-      ["robinhood", "support"],
-      ["blockchain", "support"],
-      ["blogspot.com"],
-      ["wordpress.com/wp-content"],
-      ["situs", "slot"],
-      ["jogos", "direto"],
-      ["jogos", "directo"],
-      ["video viral", "x twitter"]
-    ];
-    const issueContent = ` ${issue.title} ${issue.body || ""} `.toLowerCase();
-    // Scope spam filtering to affected repos only.
-    const isAffectedRepo = org == "firebase";
-    const isSpam =
-      isAffectedRepo &&
-      spamWords.find(wordOrArray => {
-        if (Array.isArray(wordOrArray)) {
-          return wordOrArray.every(word => issueContent.includes(word));
-        } else {
-          const wordWithSpace = ` ${wordOrArray} `;
-          return issueContent.includes(wordWithSpace);
-        }
-      });
-
-    if (isSpam) {
-      // Discard other actions, wipe and lock the issue, and block
-      // the offending user.
-      const reason = `Issue is believed to be spam: ${issue.title}`;
-      // Disabled for now. Can be re-enabled if spam reoccurs in the future.
-      // return [
-      //   new types.GitHubSpamAction(org, name, issue.number, reason),
-      //   new types.GitHubBlockAction(org, issue.user.login),
-      //   new types.GitHubLockAction(org, name, issue.number)
-      // ];
-    }
-
     // Check if it matches the template. This feature is implicitly enabled by
     // the template having "matchable" structure so there is no need to check
     // the repo's configuration.

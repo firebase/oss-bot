@@ -273,33 +273,35 @@ async function paginate<S extends PageParams, T>(
   fn: GitHubFn<S, Array<T>>,
   options: S
 ): Promise<T[]> {
-  const per_page = 100;
-  let pagesRemaining = true;
-  let page = 0;
+  return this.api.paginate(options);
 
-  let allData = [] as T[];
-  while (pagesRemaining) {
-    page++;
+  // const per_page = 100;
+  // let pagesRemaining = true;
+  // let page = 0;
 
-    // Merge pagination options with the options passed in
-    const pageOptions = Object.assign(
-      {
-        per_page,
-        page
-      },
-      options
-    );
+  // let allData = [] as T[];
+  // while (pagesRemaining) {
+  //   page++;
 
-    const res = await fn(pageOptions);
-    allData = allData.concat(res.data);
+  //   // Merge pagination options with the options passed in
+  //   const pageOptions = Object.assign(
+  //     {
+  //       per_page,
+  //       page
+  //     },
+  //     options
+  //   );
 
-    // We assume another page remaining if we got exactly as many
-    // issues as we asked for.
-    pagesRemaining = res.data.length == per_page;
+  //   const res = await fn(pageOptions);
+  //   allData = allData.concat(res.data);
 
-    // Wait 0.5s between pages
-    await util.delay(0.5);
-  }
+  //   // We assume another page remaining if we got exactly as many
+  //   // issues as we asked for.
+  //   pagesRemaining = res.data.length == per_page;
 
-  return allData;
+  //   // Wait 0.5s between pages
+  //   await util.delay(0.5);
+  // }
+
+  // return allData;
 }
