@@ -241,6 +241,52 @@ export class IssueHandler {
       actions.push(...this.markNeedsTriage(repo, issue));
     }
 
+    // Filter spam from b/378634578. This can be removed in the future.
+    const spamWords = [
+      "pemain",
+      "wallet wallet", // seems to be in most crypto issues
+      "minecraft",
+      "paybis",
+      "blockchain",
+      "official contact number",
+      "phantom wallet",
+      "defi wallet",
+      "dogecoin",
+      "crypto.com",
+      "moonpay",
+      "coinmama",
+      "daftar",
+      ["wallet", "support"]
+    ];
+    const issueContent = ` ${issue.title} ${issue.body || ""} `.toLowerCase();
+    // Scope spam filtering to affected repos only.
+    const isAffectedRepo =
+      org == "firebase" &&
+      (name == "flutterfire" ||
+        name == "quickstart-android" ||
+        name == "quickstart-ios");
+    const isSpam =
+      isAffectedRepo &&
+      spamWords.find(wordOrArray => {
+        if (Array.isArray(wordOrArray)) {
+          return wordOrArray.every(word => issueContent.includes(word));
+        } else {
+          const wordWithSpace = ` ${wordOrArray} `;
+          return issueContent.includes(wordWithSpace);
+        }
+      });
+
+    if (isSpam) {
+      // Discard other actions, wipe and lock the issue, and block
+      // the offending user.
+      const reason = `Issue is believed to be spam: ${issue.title}`;
+      return [
+        new types.GitHubSpamAction(org, name, issue.number, reason),
+        new types.GitHubBlockAction(org, issue.user.login),
+        new types.GitHubLockAction(org, name, issue.number)
+      ];
+    }
+
     // Check if it matches the template. This feature is implicitly enabled by
     // the template having "matchable" structure so there is no need to check
     // the repo's configuration.
