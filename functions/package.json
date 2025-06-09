@@ -2,7 +2,7 @@
   "name": "oss-bot",
   "description": "GitHub monitoring robot.",
   "engines": {
-    "node": "16"
+    "node": "20"
   },
   "main": "dist/index.js",
   "dependencies": {
