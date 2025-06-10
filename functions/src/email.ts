@@ -43,7 +43,7 @@ export class EmailClient {
       from: "Firebase OSS Bot <firebase-oss-bot@ossbot.computer>",
       to: recipient,
       subject: subject,
-      html: body
+      html: body,
     };
 
     log.debug("Sending email: ", JSON.stringify(data));
@@ -73,7 +73,7 @@ export class EmailClient {
     header: string,
     body_html: string,
     link: string,
-    action: string
+    action: string,
   ): Promise<any> {
     const smartmail_markup = this.getSmartmailMarkup(link, action);
 
@@ -127,7 +127,7 @@ export class EmailClient {
     if (!this.sender) {
       this.sender = mailgun({
         apiKey: this.apiKey,
-        domain: this.domain
+        domain: this.domain,
       });
     }
 
@@ -150,7 +150,7 @@ export class EmailUtils {
   getIssueUpdateEmailAction(
     repo: types.internal.Repository,
     issue: types.internal.IssueOrPullRequest,
-    opts: SendIssueUpdateEmailOpts
+    opts: SendIssueUpdateEmailOpts,
   ): types.SendEmailAction | undefined {
     // Get basic issue information
     const org = repo.owner.login;
@@ -200,7 +200,7 @@ export class EmailUtils {
       opts.header,
       opts.body,
       issue_url,
-      "Open Issue"
+      "Open Issue",
     );
   }
 
@@ -212,7 +212,7 @@ export class EmailUtils {
     title: string,
     org: string,
     name: string,
-    label: string
+    label: string,
   ): string {
     return `[${org}/${name}][${label}] ${title}`;
   }

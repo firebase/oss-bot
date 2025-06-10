@@ -5,13 +5,13 @@ const ESCAPES: StringMap = {
   " ": "0spc0",
   "/": "0sls0",
   ".github": "0dgh0",
-  ".md": "0dmd0"
+  ".md": "0dmd0",
 };
 
 export enum Direction {
   ENCODE = "ENCODE",
   DECODE = "DECODE",
-  NONE = "NONE"
+  NONE = "NONE",
 }
 
 /**
@@ -28,7 +28,7 @@ export function encodeKey(key: string): string {
   let encoded = key;
 
   // Replace some bad characters with made up 'escapes'
-  Object.keys(ESCAPES).forEach(char => {
+  Object.keys(ESCAPES).forEach((char) => {
     encoded = replaceAll(encoded, char, ESCAPES[char]);
   });
 
@@ -44,7 +44,7 @@ export function encodeKey(key: string): string {
 export function decodeKey(key: string): string {
   let decoded = key;
 
-  Object.keys(ESCAPES).forEach(char => {
+  Object.keys(ESCAPES).forEach((char) => {
     decoded = replaceAll(decoded, ESCAPES[char], char);
   });
 

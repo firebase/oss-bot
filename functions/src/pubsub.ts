@@ -3,7 +3,7 @@ import * as log from "./log";
 
 // Just #pubsubthings
 const pubsubClient = new PubSub({
-  projectId: process.env.GCLOUD_PROJECT
+  projectId: process.env.GCLOUD_PROJECT,
 });
 
 export function sendPubSub(topic: string, data: any): Promise<any> {

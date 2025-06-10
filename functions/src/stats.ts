@@ -22,7 +22,7 @@ const IssueFilters = {
 
   isInternal: (c: snapshot.Map<boolean>) => (x: snapshot.Issue) => {
     return c[x.user.login];
-  }
+  },
 };
 
 function calculateStats(issues: Array<snapshot.Issue>): IssueStats {
@@ -38,7 +38,7 @@ function calculateStats(issues: Array<snapshot.Issue>): IssueStats {
     open,
     closed,
     percent_closed,
-    sam_score
+    sam_score,
   };
 }
 
@@ -78,13 +78,13 @@ export async function getRepoIssueStats(org: string, repo: string) {
   // Split into filed-by-googlers and not.
   const [internal, external] = util.split(
     issuesAndPrs,
-    IssueFilters.isInternal(collaborators)
+    IssueFilters.isInternal(collaborators),
   );
 
   const [prs, issues] = util.split(issuesAndPrs, IssueFilters.isPullRequest);
   const [feature_requests, bugs] = util.split(
     issues,
-    IssueFilters.isFeatureRequest
+    IssueFilters.isFeatureRequest,
   );
 
   // external_bugs are the issues we care about:
@@ -93,12 +93,12 @@ export async function getRepoIssueStats(org: string, repo: string) {
   //  * Not a feature request
   const [internal_bugs, external_bugs] = util.split(
     bugs,
-    IssueFilters.isInternal(collaborators)
+    IssueFilters.isInternal(collaborators),
   );
 
   const [internal_prs, external_prs] = util.split(
     prs,
-    IssueFilters.isInternal(collaborators)
+    IssueFilters.isInternal(collaborators),
   );
 
   // TODO: Maybe exclude based on the repo's acual label config.
@@ -112,7 +112,9 @@ export async function getRepoIssueStats(org: string, repo: string) {
     }
 
     for (const label of issue.labels) {
-      if (labelBlacklist.some(prefix => label.toLowerCase().includes(prefix))) {
+      if (
+        labelBlacklist.some((prefix) => label.toLowerCase().includes(prefix))
+      ) {
         continue;
       }
 
@@ -126,7 +128,7 @@ export async function getRepoIssueStats(org: string, repo: string) {
 
   // Get stats per label
   const labelStats: { [label: string]: IssueStats } = {};
-  Object.keys(labelIssues).forEach(label => {
+  Object.keys(labelIssues).forEach((label) => {
     labelStats[label] = calculateStats(labelIssues[label]);
   });
 
@@ -134,20 +136,20 @@ export async function getRepoIssueStats(org: string, repo: string) {
     combined: {
       all: calculateStats(issuesAndPrs),
       internal: calculateStats(internal),
-      external: calculateStats(external)
+      external: calculateStats(external),
     },
     issues: {
       all: calculateStats(issues),
       feature_requests: calculateStats(feature_requests),
       bugs: calculateStats(bugs),
-      external_bugs: calculateStats(external_bugs)
+      external_bugs: calculateStats(external_bugs),
     },
     prs: {
       all: calculateStats(prs),
       internal: calculateStats(internal_prs),
-      external: calculateStats(external_prs)
+      external: calculateStats(external_prs),
     },
-    labelStats
+    labelStats,
   };
 
   return counts;

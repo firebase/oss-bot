@@ -42,7 +42,7 @@ export class CronHandler {
   async processIssues(
     org: string,
     name: string,
-    issueConfig: types.IssueCleanupConfig
+    issueConfig: types.IssueCleanupConfig,
   ): Promise<types.Action[]> {
     log.debug(`processIssues(${org}/${name})`);
 
@@ -56,7 +56,7 @@ export class CronHandler {
       console.log(
         `Not processing stale issues on a weekend: ${now.toDateString()} @ ${now.toLocaleTimeString()} (${
           Intl.DateTimeFormat().resolvedOptions().timeZone
-        })`
+        })`,
       );
       return actions;
     }
@@ -70,7 +70,7 @@ export class CronHandler {
   async handleClosedIssues(
     org: string,
     name: string,
-    issueConfig: types.IssueCleanupConfig
+    issueConfig: types.IssueCleanupConfig,
   ): Promise<types.Action[]> {
     if (!issueConfig.lock_days) {
       log.debug(`No issue locking config for ${org}/${name}`);
@@ -85,13 +85,13 @@ export class CronHandler {
         org,
         name,
         issue,
-        issueConfig
+        issueConfig,
       );
       actions.push(...issueActions);
 
       if (actions.length >= 100) {
         console.warn(
-          `Found >100 (${actions.length} issues to perform when checking closed issues for ${org}/${name}, will do the rest tomorrow.`
+          `Found >100 (${actions.length} issues to perform when checking closed issues for ${org}/${name}, will do the rest tomorrow.`,
         );
         return actions;
       }
@@ -104,7 +104,7 @@ export class CronHandler {
     org: string,
     name: string,
     issue: types.internal.Issue,
-    issueConfig: types.IssueCleanupConfig
+    issueConfig: types.IssueCleanupConfig,
   ): Promise<types.Action[]> {
     const actions: types.Action[] = [];
 
@@ -135,8 +135,8 @@ export class CronHandler {
           org,
           name,
           issue.number,
-          `Issue was closed at ${closedAtStr} which is more than ${lockDays} ago`
-        )
+          `Issue was closed at ${closedAtStr} which is more than ${lockDays} ago`,
+        ),
       );
     }
 
@@ -146,7 +146,7 @@ export class CronHandler {
   async handleStaleIssues(
     org: string,
     name: string,
-    issueConfig: types.IssueCleanupConfig
+    issueConfig: types.IssueCleanupConfig,
   ): Promise<types.Action[]> {
     const actions: types.Action[] = [];
 
@@ -156,7 +156,7 @@ export class CronHandler {
         org,
         name,
         issue,
-        issueConfig
+        issueConfig,
       );
       actions.push(...issueActions);
     }
@@ -168,12 +168,12 @@ export class CronHandler {
     org: string,
     name: string,
     issue: types.internal.Issue,
-    issueConfig: types.IssueCleanupConfig
+    issueConfig: types.IssueCleanupConfig,
   ): Promise<types.Action[]> {
     const actions: types.Action[] = [];
 
     const number = issue.number;
-    const labelNames = issue.labels.map(label => label.name);
+    const labelNames = issue.labels.map((label) => label.name);
 
     const stateNeedsInfo = labelNames.includes(issueConfig.label_needs_info);
     const stateStale = labelNames.includes(issueConfig.label_stale);
@@ -188,15 +188,15 @@ export class CronHandler {
     // never mark it as stale or close it automatically.
     let hasIgnoredLabel = false;
     const ignoredLabels = issueConfig.ignore_labels || [];
-    ignoredLabels.forEach(label => {
+    ignoredLabels.forEach((label) => {
       hasIgnoredLabel = hasIgnoredLabel || labelNames.includes(label);
     });
 
     if (hasIgnoredLabel) {
       log.debug(
         `Issue ${name}#${number} is ignored due to labels: ${JSON.stringify(
-          labelNames
-        )}`
+          labelNames,
+        )}`,
       );
       return actions;
     }
@@ -213,21 +213,21 @@ export class CronHandler {
     }
 
     // When the issue was marked stale, the bot will have left a comment with certain metadata
-    const markStaleComment = comments.find(comment => {
+    const markStaleComment = comments.find((comment) => {
       return comment.body.includes(EVT_MARK_STALE);
     });
 
     if (stateStale && !markStaleComment) {
       log.warn(
-        `Issue ${name}/${number} is stale but no relevant comment was found.`
+        `Issue ${name}/${number} is stale but no relevant comment was found.`,
       );
     }
 
     if (stateNeedsInfo || stateStale) {
       log.debug(
         `Processing ${name}#${number} as needs-info or stale, labels=${JSON.stringify(
-          labelNames
-        )}`
+          labelNames,
+        )}`,
       );
     }
 
@@ -256,8 +256,8 @@ export class CronHandler {
         this.getCloseComment(issue.user.login),
         false,
         `Comment after closing issue for being stale (comment at ${util.createdDate(
-          markStaleComment!
-        )}).`
+          markStaleComment!,
+        )}).`,
       );
       actions.push(addClosingComment);
 
@@ -266,7 +266,7 @@ export class CronHandler {
         org,
         name,
         number,
-        `Closing issue for being stale.`
+        `Closing issue for being stale.`,
       );
       actions.push(closeIssue);
 
@@ -281,7 +281,7 @@ export class CronHandler {
       } else {
         // Default is to add 'closed-by-bot'
         actions.push(
-          new types.GitHubAddLabelAction(org, name, number, "closed-by-bot")
+          new types.GitHubAddLabelAction(org, name, number, "closed-by-bot"),
         );
       }
     } else if (shouldMarkStale) {
@@ -294,8 +294,8 @@ export class CronHandler {
         number,
         issueConfig.label_stale,
         `Last comment was ${util.workingDaysAgo(
-          lastCommentTime
-        )} working days ago (${lastCommentTime}).`
+          lastCommentTime,
+        )} working days ago (${lastCommentTime}).`,
       );
       const addStaleComment = new types.GitHubCommentAction(
         org,
@@ -304,10 +304,10 @@ export class CronHandler {
         this.getMarkStaleComment(
           issue.user.login,
           issueConfig.needs_info_days,
-          issueConfig.stale_days
+          issueConfig.stale_days,
         ),
         false,
-        `Comment that goes alongside the stale label.`
+        `Comment that goes alongside the stale label.`,
       );
       actions.push(addStaleLabel, addStaleComment);
     }
@@ -318,7 +318,7 @@ export class CronHandler {
   getMarkStaleComment(
     author: string,
     needsInfoDays: number,
-    staleDays: number
+    staleDays: number,
   ): string {
     return `<!-- ${EVT_MARK_STALE} -->
 Hey @${author}. We need more information to resolve this issue but there hasn't been an update in ${needsInfoDays} weekdays. I'm marking the issue as stale and if there are no new updates in the next ${staleDays} days I will close it automatically.

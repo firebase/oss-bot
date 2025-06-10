@@ -9,10 +9,10 @@ const METADATA = {
     type: "cloud_function",
     labels: {
       function_name: "CustomMetrics",
-      region: "us-central1"
-    }
+      region: "us-central1",
+    },
   },
-  severity: "DEBUG"
+  severity: "DEBUG",
 };
 
 // The Logging instance detects the project ID from the environment
@@ -25,7 +25,7 @@ export enum Level {
   DEBUG = 1,
   WARN = 2,
   ERROR = 3,
-  NONE = 4
+  NONE = 4,
 }
 
 let LOG_LEVEL = Level.ALL;

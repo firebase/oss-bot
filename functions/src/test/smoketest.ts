@@ -72,7 +72,7 @@ const bot_config = new config.BotConfig(config_json);
 // Issue event handler
 const issue_handler = new issues.IssueHandler(
   new mocks.MockGitHubClient("abc1234"),
-  bot_config
+  bot_config,
 );
 
 // Issue event handler
@@ -82,70 +82,70 @@ const pr_handler = new pullrequests.PullRequestHandler(bot_config);
 const test_repo = new SimpleRepo({
   name: "BotTest",
   owner: {
-    login: "samtstern"
-  }
+    login: "samtstern",
+  },
 });
 
 // Issue with the template properly filled in
 const good_issue = new SimpleIssue({
   title: "A good issue",
   user: {
-    login: "samtstern"
+    login: "samtstern",
   },
   body: fs
     .readFileSync(path.join(__dirname, "mock_data", "issue_template_filled.md"))
-    .toString()
+    .toString(),
 });
 
 // Good issue with headers slightly modified
 const good_issue_no_required = new SimpleIssue({
   title: "A good issue",
   user: {
-    login: "samtstern"
+    login: "samtstern",
   },
   body: fs
     .readFileSync(
-      path.join(__dirname, "mock_data", "issue_template_filled_no_required.md")
+      path.join(__dirname, "mock_data", "issue_template_filled_no_required.md"),
     )
-    .toString()
+    .toString(),
 });
 
 // Issue that is just the empty template
 const empty_issue = new SimpleIssue({
   body: fs
     .readFileSync(path.join(__dirname, "mock_data", "issue_template_empty.md"))
-    .toString()
+    .toString(),
 });
 
 // Issue that is partially filled out
 const partial_issue = new SimpleIssue({
   body: fs
     .readFileSync(
-      path.join(__dirname, "mock_data", "issue_template_partial.md")
+      path.join(__dirname, "mock_data", "issue_template_partial.md"),
     )
-    .toString()
+    .toString(),
 });
 
 // Issue with options, empty
 const issue_with_opts_empty = new SimpleIssue({
   body: fs
     .readFileSync(
-      path.join(__dirname, "mock_data", "issue_template_empty_with_opts.md")
+      path.join(__dirname, "mock_data", "issue_template_empty_with_opts.md"),
     )
-    .toString()
+    .toString(),
 });
 
 // Issue with options, bad
 const issue_with_opts_bad = new SimpleIssue({
   body: fs
     .readFileSync(path.join(__dirname, "mock_data", "issue_with_opts_bad.md"))
-    .toString()
+    .toString(),
 });
 
 // Issue that is really a feature request
 const fr_issue = new SimpleIssue({
   title: "FR: I want to change the Firebase",
-  body: empty_issue.body
+  body: empty_issue.body,
 });
 
 // Issue opened on the BotTest repo
@@ -183,7 +183,7 @@ function assertSameActions(actual: types.Action[], expected: any[]) {
     expected.length,
     `Actions array has the same length (${actual.length}) as expected (${
       expected.length
-    }): ${JSON.stringify(actual)}`
+    }): ${JSON.stringify(actual)}`,
   );
 
   for (const e of expected) {
@@ -194,7 +194,7 @@ function assertSameActions(actual: types.Action[], expected: any[]) {
 function assertMatchingAction(actions: types.Action[], props: any): void {
   assert.ok(
     hasMatchingAction(actions, props),
-    `Actions: ${JSON.stringify(actions)}\nExpected: ${JSON.stringify(props)}`
+    `Actions: ${JSON.stringify(actions)}\nExpected: ${JSON.stringify(props)}`,
   );
 }
 
@@ -253,7 +253,7 @@ describe("The OSS Robot", () => {
       "cleanup",
       "templates",
       "reports",
-      "validation"
+      "validation",
     ];
     const prod_config = require("../../config/config.json");
 
@@ -267,8 +267,8 @@ describe("The OSS Robot", () => {
           assert.ok(
             valid_keys.indexOf(key) >= 0,
             `${key} is not a valid key, repo ${repo} has config ${JSON.stringify(
-              repo_config
-            )}`
+              repo_config,
+            )}`,
           );
         }
       }
@@ -281,14 +281,14 @@ describe("The OSS Robot", () => {
       issues.IssueAction.OPENED,
       issue_opened_bot_test_full.issue,
       issue_opened_bot_test_full.repository,
-      issue_opened_bot_test_full.sender
+      issue_opened_bot_test_full.sender,
     );
 
     assert.equal(actions.length, 1, "Should be one action");
 
     assertMatchingAction(actions, {
       type: types.ActionType.GITHUB_ADD_LABEL,
-      label: "database"
+      label: "database",
     });
   });
 
@@ -299,7 +299,7 @@ describe("The OSS Robot", () => {
       comment_created_bot_test.issue,
       comment_created_bot_test.comment,
       comment_created_bot_test.repository,
-      comment_created_bot_test.sender
+      comment_created_bot_test.sender,
     );
 
     assert.equal(actions.length, 0, "Should be no actions.");
@@ -317,7 +317,7 @@ describe("The OSS Robot", () => {
       comment_created_bot_test.issue,
       comment_created_bot_test.comment,
       comment_created_bot_test.repository,
-      comment_created_bot_test.sender
+      comment_created_bot_test.sender,
     );
 
     const issueActions = await issue_handler.handleIssueEvent(
@@ -325,7 +325,7 @@ describe("The OSS Robot", () => {
       issues.IssueAction.UNASSIGNED,
       comment_created_bot_test.issue,
       comment_created_bot_test.repository,
-      comment_created_bot_test.sender
+      comment_created_bot_test.sender,
     );
 
     assert.equal(commentActions.length, 0, "Should be no comment actions.");
@@ -370,24 +370,24 @@ describe("The OSS Robot", () => {
       issues.IssueAction.OPENED,
       issue_opened_bot_test_empty.issue,
       test_repo,
-      sender
+      sender,
     );
 
     assert.equal(actions.length, 3, "Should be three actions");
 
     assertMatchingAction(actions, {
       type: types.ActionType.GITHUB_COMMENT,
-      message: issues.MSG_MISSING_INFO
+      message: issues.MSG_MISSING_INFO,
     });
 
     assertMatchingAction(actions, {
       type: types.ActionType.GITHUB_COMMENT,
-      message: issues.MSG_NEEDS_TRIAGE
+      message: issues.MSG_NEEDS_TRIAGE,
     });
 
     assertMatchingAction(actions, {
       type: types.ActionType.GITHUB_ADD_LABEL,
-      label: "needs-triage"
+      label: "needs-triage",
     });
   });
 
@@ -400,13 +400,13 @@ describe("The OSS Robot", () => {
       issues.IssueAction.OPENED,
       issue_opened_bot_test_empty.issue,
       test_repo,
-      sender
+      sender,
     );
 
     assert.equal(actions.length, 1, "Should be one action");
 
     assertMatchingAction(actions, {
-      type: types.ActionType.GITHUB_NO_OP
+      type: types.ActionType.GITHUB_NO_OP,
     });
   });
 
@@ -415,17 +415,17 @@ describe("The OSS Robot", () => {
       samtstern: {
         bottest: {
           templates: {
-            issue: ".github/ISSUE_TEMPLATE.md"
+            issue: ".github/ISSUE_TEMPLATE.md",
           },
           validation: {
             templates: {
               ".github/ISSUE_TEMPLATE.md": {
-                validation_failed_label: "validation-failed"
-              }
-            }
-          }
-        }
-      }
+                validation_failed_label: "validation-failed",
+              },
+            },
+          },
+        },
+      },
     });
 
     issue_handler.setConfig(newConfig);
@@ -435,12 +435,12 @@ describe("The OSS Robot", () => {
       issues.IssueAction.OPENED,
       issue_opened_bot_test_empty.issue,
       test_repo,
-      sender
+      sender,
     );
 
     assertMatchingAction(actions, {
       type: types.ActionType.GITHUB_ADD_LABEL,
-      label: "validation-failed"
+      label: "validation-failed",
     });
   });
 
@@ -451,17 +451,17 @@ describe("The OSS Robot", () => {
       samtstern: {
         bottest: {
           templates: {
-            issue: ".github/ISSUE_TEMPLATE.md"
+            issue: ".github/ISSUE_TEMPLATE.md",
           },
           validation: {
             templates: {
               ".github/ISSUE_TEMPLATE.md": {
-                required_section_validation: "relaxed"
-              }
-            }
-          }
-        }
-      }
+                required_section_validation: "relaxed",
+              },
+            },
+          },
+        },
+      },
     });
 
     issue_handler.setConfig(relaxedConfig);
@@ -470,7 +470,7 @@ describe("The OSS Robot", () => {
       issues.IssueAction.OPENED,
       issue_opened_bot_test_partial.issue,
       test_repo,
-      sender
+      sender,
     );
     assertSameActions(relaxedActions, []);
 
@@ -479,17 +479,17 @@ describe("The OSS Robot", () => {
       samtstern: {
         bottest: {
           templates: {
-            issue: ".github/ISSUE_TEMPLATE.md"
+            issue: ".github/ISSUE_TEMPLATE.md",
           },
           validation: {
             templates: {
               ".github/ISSUE_TEMPLATE.md": {
-                required_section_validation: "strict"
-              }
-            }
-          }
-        }
-      }
+                required_section_validation: "strict",
+              },
+            },
+          },
+        },
+      },
     });
 
     issue_handler.setConfig(strictConfig);
@@ -498,10 +498,10 @@ describe("The OSS Robot", () => {
       issues.IssueAction.OPENED,
       issue_opened_bot_test_partial.issue,
       test_repo,
-      sender
+      sender,
     );
     assertMatchingAction(strictActions, {
-      type: types.ActionType.GITHUB_COMMENT
+      type: types.ActionType.GITHUB_COMMENT,
     });
   });
 
@@ -512,15 +512,17 @@ describe("The OSS Robot", () => {
     const labelRes = issue_handler.config.getRelevantLabel(
       "samtstern",
       "BotTest",
-      issue
+      issue,
     );
     assert.equal(labelRes.label, "auth", "Label is auth.");
 
     // Should fail the tempalte check for not filling out all sections
-    return issue_handler.checkMatchesTemplate("foo", "bar", issue).then(res => {
-      assert.ok(!res.matches, "Does not fully match template.");
-      assert.equal(res.message, issues.MSG_MISSING_INFO);
-    });
+    return issue_handler
+      .checkMatchesTemplate("foo", "bar", issue)
+      .then((res) => {
+        assert.ok(!res.matches, "Does not fully match template.");
+        assert.equal(res.message, issues.MSG_MISSING_INFO);
+      });
   });
 
   it("should get the right template config when unspecified", () => {
@@ -530,7 +532,7 @@ describe("The OSS Robot", () => {
     const path = bot_config.getRepoTemplateConfig(
       "samtstern",
       "BotTest",
-      "issue"
+      "issue",
     );
 
     assert.ok(opts.validate, "Default is to validate.");
@@ -549,29 +551,33 @@ describe("The OSS Robot", () => {
   it("should ignore validation when the opts say not to", () => {
     const issue = issue_with_opts_empty;
 
-    return issue_handler.checkMatchesTemplate("foo", "bar", issue).then(res => {
-      assert.ok(res.matches, "Matches because there was no validation");
-    });
+    return issue_handler
+      .checkMatchesTemplate("foo", "bar", issue)
+      .then((res) => {
+        assert.ok(res.matches, "Matches because there was no validation");
+      });
   });
 
   it("should validate against the right template", () => {
     const issue = issue_with_opts_bad;
 
-    return issue_handler.checkMatchesTemplate("foo", "bar", issue).then(res => {
-      assert.ok(!res.matches, "Matches because there was no validation");
-      assert.equal(
-        res.message,
-        issues.MSG_MISSING_INFO,
-        `Message contains required: ${res.message}`
-      );
-    });
+    return issue_handler
+      .checkMatchesTemplate("foo", "bar", issue)
+      .then((res) => {
+        assert.ok(!res.matches, "Matches because there was no validation");
+        assert.equal(
+          res.message,
+          issues.MSG_MISSING_INFO,
+          `Message contains required: ${res.message}`,
+        );
+      });
   });
 
   it("should correctly identify a feature request", () => {
     assert.ok(issue_handler.isFeatureRequest(fr_issue), "Is a feature request");
     assert.ok(
       !issue_handler.isFeatureRequest(empty_issue),
-      "Is not a feature request"
+      "Is not a feature request",
     );
   });
 
@@ -581,7 +587,7 @@ describe("The OSS Robot", () => {
 
     assertMatchingAction(actions, {
       type: types.ActionType.GITHUB_ADD_LABEL,
-      label: "auth"
+      label: "auth",
     });
   });
 
@@ -590,7 +596,7 @@ describe("The OSS Robot", () => {
     const labelRes = issue_handler.config.getRelevantLabel(
       "samtstern",
       "BotTest",
-      issue
+      issue,
     );
     assert.ok(labelRes.label == "database", "Is a database issue");
   });
@@ -600,7 +606,7 @@ describe("The OSS Robot", () => {
     const labelRes = issue_handler.config.getRelevantLabel(
       "samtstern",
       "BotTest",
-      issue
+      issue,
     );
     assert.ok(labelRes.label == "messaging", "Is a messaging issue");
   });
@@ -614,7 +620,7 @@ describe("The OSS Robot", () => {
     const labelRes = issue_handler.config.getRelevantLabel(
       "samtstern",
       "BotTest",
-      issue
+      issue,
     );
     assert.equal(labelRes.label, dbLabel.name, "Is a database issue");
   });
@@ -623,11 +629,11 @@ describe("The OSS Robot", () => {
     const custom = bot_config.getRepoTemplateConfig(
       "samtstern",
       "BotTest",
-      "issue"
+      "issue",
     );
     assert.ok(
       custom == ".github/ISSUE_TEMPLATE.md",
-      "Finds the custom template"
+      "Finds the custom template",
     );
 
     const regular = bot_config.getRepoTemplateConfig("foo", "bar", "issue");
@@ -638,11 +644,11 @@ describe("The OSS Robot", () => {
     const actions = await issue_handler.onIssueLabeled(
       test_repo,
       good_issue,
-      "auth"
+      "auth",
     );
 
     assertMatchingAction(actions, {
-      type: types.ActionType.EMAIL_SEND
+      type: types.ActionType.EMAIL_SEND,
     });
   });
 
@@ -652,14 +658,14 @@ describe("The OSS Robot", () => {
       new SimplePullRequest({
         body: "Hey this is an auth issue!",
         user: {
-          login: "samtstern"
-        }
+          login: "samtstern",
+        },
       }),
-      "auth"
+      "auth",
     );
 
     assertMatchingAction(actions, {
-      type: types.ActionType.EMAIL_SEND
+      type: types.ActionType.EMAIL_SEND,
     });
   });
 
@@ -667,7 +673,7 @@ describe("The OSS Robot", () => {
     const actions = await issue_handler.onIssueLabeled(
       test_repo,
       good_issue,
-      "foo"
+      "foo",
     );
 
     assert.equal(actions.length, 0, "Should take no action.");
@@ -675,45 +681,44 @@ describe("The OSS Robot", () => {
 
   it("should detect issue link in a PR", () => {
     const pr_none = new SimplePullRequest({
-      body: "Hey this is bad!"
+      body: "Hey this is bad!",
     });
 
     assert.ok(!pr_handler.hasIssueLink(test_repo, pr_none), "Has no link.");
 
     const pr_shortlink = new SimplePullRequest({
-      body: "Hey this is in reference to #4"
+      body: "Hey this is in reference to #4",
     });
 
     assert.ok(
       pr_handler.hasIssueLink(test_repo, pr_shortlink),
-      "Has short link."
+      "Has short link.",
     );
 
     const pr_longlink = new SimplePullRequest({
-      body:
-        "Hey this is in reference to https://github.com/samtstern/BotTest/issues/4"
+      body: "Hey this is in reference to https://github.com/samtstern/BotTest/issues/4",
     });
 
     assert.ok(
       pr_handler.hasIssueLink(test_repo, pr_longlink),
-      "Has long link."
+      "Has long link.",
     );
   });
 
   it("should skip some PRs", () => {
     const pr_skip = new SimplePullRequest({
-      title: "[triage-skip] Don't triage me"
+      title: "[triage-skip] Don't triage me",
     });
 
     assert.ok(pr_handler.hasSkipTag(test_repo, pr_skip), "Has skip tag");
 
     const pr_triage = new SimplePullRequest({
-      title: "Hey whatever"
+      title: "Hey whatever",
     });
 
     assert.ok(
       !pr_handler.hasSkipTag(test_repo, pr_triage),
-      "Does not have skip tag"
+      "Does not have skip tag",
     );
   });
 });

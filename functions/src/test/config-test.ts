@@ -32,28 +32,28 @@ describe("Configuration", async () => {
     const cases = [
       {
         original: "a",
-        encoded: "a"
+        encoded: "a",
       },
       {
         original: "a:b",
-        encoded: "a0col0b"
+        encoded: "a0col0b",
       },
       {
         original: "a b",
-        encoded: "a0spc0b"
+        encoded: "a0spc0b",
       },
       {
         original: "a: b",
-        encoded: "a0col00spc0b"
+        encoded: "a0col00spc0b",
       },
       {
         original: "a  b",
-        encoded: "a0spc00spc0b"
+        encoded: "a0spc00spc0b",
       },
       {
         original: ".github/foo.md",
-        encoded: "0dgh00sls0foo0dmd0"
-      }
+        encoded: "0dgh00sls0foo0dmd0",
+      },
     ];
 
     for (const c of cases) {
@@ -69,19 +69,19 @@ describe("Configuration", async () => {
       a: 1,
       b: {
         x: 2,
-        "y: z": 3
-      }
+        "y: z": 3,
+      },
     };
 
     const flat = {
       a: 1,
       "b.x": 2,
-      "b.y0col00spc0z": 3
+      "b.y0col00spc0z": 3,
     };
 
     assert.deepEqual(
       encoding.flattenConfig(deep, encoding.Direction.ENCODE),
-      flat
+      flat,
     );
   });
 
@@ -91,9 +91,9 @@ describe("Configuration", async () => {
       b: {
         c0col0d: 2,
         e0spc0f: {
-          g0spc0h: 3
-        }
-      }
+          g0spc0h: 3,
+        },
+      },
     };
 
     const decoded = {
@@ -101,9 +101,9 @@ describe("Configuration", async () => {
       b: {
         "c:d": 2,
         "e f": {
-          "g h": 3
-        }
-      }
+          "g h": 3,
+        },
+      },
     };
 
     assert.deepEqual(encoding.deepDecodeObject(encoded), decoded);

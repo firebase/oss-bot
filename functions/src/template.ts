@@ -64,7 +64,7 @@ export class TemplateChecker {
   constructor(
     sectionPrefix: string,
     requiredMarker: string,
-    templateText: string
+    templateText: string,
   ) {
     // String prefix for a section (normally ###)
     this.sectionPrefix = sectionPrefix;
@@ -120,7 +120,7 @@ export class TemplateChecker {
       }
     }
 
-    const all = templateSections.sections.map(x => x.name);
+    const all = templateSections.sections.map((x) => x.name);
     const invalid = missingSections;
     return { all, invalid };
   }
@@ -133,7 +133,7 @@ export class TemplateChecker {
     const templateContent = this.extractSections(this.templateText);
     const emptySections: string[] = [];
 
-    const requiredSections = templateContent.sections.filter(x => x.required);
+    const requiredSections = templateContent.sections.filter((x) => x.required);
 
     for (const section of requiredSections) {
       // For a required section, we want to make sure that the user
@@ -152,7 +152,7 @@ export class TemplateChecker {
       }
     }
 
-    const all = requiredSections.map(x => x.name);
+    const all = requiredSections.map((x) => x.name);
     const invalid = emptySections;
     return { all, invalid };
   }

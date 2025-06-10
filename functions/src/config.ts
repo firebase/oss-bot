@@ -80,7 +80,7 @@ export class BotConfig {
       for (const name in this.config[org]) {
         repos.push({
           org: org,
-          name: name
+          name: name,
         });
       }
     }
@@ -96,7 +96,7 @@ export class BotConfig {
       custom_emails: false,
       issue_labels: false,
       issue_cleanup: false,
-      repo_reports: false
+      repo_reports: false,
     };
 
     const config = this.getRepoConfig(org, name);
@@ -150,7 +150,7 @@ export class BotConfig {
   getRepoLabelConfig(
     org: string,
     name: string,
-    label: string
+    label: string,
   ): types.LabelConfig | undefined {
     const repoConfig = this.getRepoConfig(org, name);
 
@@ -166,7 +166,7 @@ export class BotConfig {
   getRepoTemplateConfig(
     org: string,
     name: string,
-    template: string
+    template: string,
   ): string | undefined {
     const repoConfig = this.getRepoConfig(org, name);
 
@@ -185,7 +185,7 @@ export class BotConfig {
    */
   getRepoReportingConfig(
     org: string,
-    name: string
+    name: string,
   ): types.ReportConfig | undefined {
     const repoConfig = this.getRepoConfig(org, name);
 
@@ -199,7 +199,7 @@ export class BotConfig {
    */
   getRepoCleanupConfig(
     org: string,
-    name: string
+    name: string,
   ): types.CleanupConfig | undefined {
     const repoConfig = this.getRepoConfig(org, name);
     if (repoConfig && repoConfig.cleanup) {
@@ -213,7 +213,7 @@ export class BotConfig {
   getRepoTemplateValidationConfig(
     org: string,
     name: string,
-    templatePath: string
+    templatePath: string,
   ): types.TemplateValidationConfig | undefined {
     const repoConfig = this.getRepoConfig(org, name);
     if (repoConfig && repoConfig.validation) {
@@ -227,7 +227,7 @@ export class BotConfig {
   getRelevantLabel(
     org: string,
     name: string,
-    issue: types.internal.IssueOrPullRequest
+    issue: types.internal.IssueOrPullRequest,
   ): RelevantLabelResponse {
     // Make sure we at least have configuration for this repository
     const repo_mapping = this.getRepoConfig(org, name);
@@ -235,7 +235,7 @@ export class BotConfig {
       log.debug(`No config for ${org}/${name} in: `, this.config);
 
       return {
-        error: "No config found"
+        error: "No config found",
       };
     }
 
@@ -244,7 +244,7 @@ export class BotConfig {
 
     // Iterate through issue labels, see if one of the existing ones works
     // TODO(samstern): Deal with needs_triage separately
-    const issueLabelNames: string[] = issue.labels.map(label => {
+    const issueLabelNames: string[] = issue.labels.map((label) => {
       return label.name;
     });
 
@@ -253,7 +253,7 @@ export class BotConfig {
       if (label_mapping) {
         return {
           label: key,
-          new: false
+          new: false,
         };
       }
     }
@@ -279,7 +279,7 @@ export class BotConfig {
         return {
           label,
           new: true,
-          matchedRegex: regex.source
+          matchedRegex: regex.source,
         };
       } else {
         log.debug(`Did not match regex for ${label}: ${labelInfo.regex}`);
@@ -289,7 +289,7 @@ export class BotConfig {
     // Return undefined if none found
     log.debug("No relevant label found");
     return {
-      label: undefined
+      label: undefined,
     };
   }
 

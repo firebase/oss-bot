@@ -38,28 +38,28 @@ describe("Configuration", async () => {
     assert.equal(
       util.workingDaysAgo(tueDec31, wedJan1),
       1,
-      "workingDaysAgo Tues --> Weds"
+      "workingDaysAgo Tues --> Weds",
     );
 
     assert.equal(util.daysAgo(wedJan1, friJan3), 2, "daysAgo Weds --> Fri");
     assert.equal(
       util.workingDaysAgo(wedJan1, friJan3),
       2,
-      "workingDaysAgo Weds --> Fri"
+      "workingDaysAgo Weds --> Fri",
     );
 
     assert.equal(util.daysAgo(wedJan1, monJan6), 5, "daysAgo Weds --> Mon");
     assert.equal(
       util.workingDaysAgo(wedJan1, monJan6),
       3,
-      "workingDaysAgo Weds --> Mon"
+      "workingDaysAgo Weds --> Mon",
     );
 
     assert.equal(util.daysAgo(friJan3, monJan6), 3, "daysAgo Fri --> Mon");
     assert.equal(
       util.workingDaysAgo(friJan3, monJan6),
       1,
-      "workingDaysAgo Fri --> Mon"
+      "workingDaysAgo Fri --> Mon",
     );
   });
 });

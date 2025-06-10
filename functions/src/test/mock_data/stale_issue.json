@@ -1,0 +1,98 @@
+{
+    "url": "https://api.github.com/repos/firebase/firebase-ios-sdk/issues/14624",
+    "repository_url": "https://api.github.com/repos/firebase/firebase-ios-sdk",
+    "labels_url": "https://api.github.com/repos/firebase/firebase-ios-sdk/issues/14624/labels{/name}",
+    "comments_url": "https://api.github.com/repos/firebase/firebase-ios-sdk/issues/14624/comments",
+    "events_url": "https://api.github.com/repos/firebase/firebase-ios-sdk/issues/14624/events",
+    "html_url": "https://github.com/firebase/firebase-ios-sdk/issues/14624",
+    "id": 2955590098,
+    "node_id": "I_kwDOBU6LVM6wKrnS",
+    "number": 14624,
+    "title": "Unable to add Firebase through SPM in xcode 16",
+    "user": {
+      "login": "shilpa12233",
+      "id": 139213207,
+      "node_id": "U_kgDOCEw5lw",
+      "avatar_url": "https://avatars.githubusercontent.com/u/139213207?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/shilpa12233",
+      "html_url": "https://github.com/shilpa12233",
+      "followers_url": "https://api.github.com/users/shilpa12233/followers",
+      "following_url": "https://api.github.com/users/shilpa12233/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shilpa12233/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/shilpa12233/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shilpa12233/subscriptions",
+      "organizations_url": "https://api.github.com/users/shilpa12233/orgs",
+      "repos_url": "https://api.github.com/users/shilpa12233/repos",
+      "events_url": "https://api.github.com/users/shilpa12233/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/shilpa12233/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "labels": [
+      {
+        "id": 1290843477,
+        "node_id": "MDU6TGFiZWwxMjkwODQzNDc3",
+        "url": "https://api.github.com/repos/firebase/firebase-ios-sdk/labels/needs-info",
+        "name": "needs-info",
+        "color": "d93f0b",
+        "default": false,
+        "description": ""
+      },
+      {
+        "id": 1290843946,
+        "node_id": "MDU6TGFiZWwxMjkwODQzOTQ2",
+        "url": "https://api.github.com/repos/firebase/firebase-ios-sdk/labels/no-recent-activity",
+        "name": "no-recent-activity",
+        "color": "eaeaea",
+        "default": false,
+        "description": ""
+      },
+      {
+        "id": 2273899029,
+        "node_id": "MDU6TGFiZWwyMjczODk5MDI5",
+        "url": "https://api.github.com/repos/firebase/firebase-ios-sdk/labels/Swift%20Package%20Manager",
+        "name": "Swift Package Manager",
+        "color": "eaa364",
+        "default": false,
+        "description": ""
+      }
+    ],
+    "state": "open",
+    "locked": false,
+    "assignee": null,
+    "assignees": [
+  
+    ],
+    "milestone": null,
+    "comments": 3,
+    "created_at": "2025-03-28T09:52:25Z",
+    "updated_at": "2025-04-04T01:05:31Z",
+    "closed_at": null,
+    "author_association": "NONE",
+    "type": null,
+    "active_lock_reason": null,
+    "sub_issues_summary": {
+      "total": 0,
+      "completed": 0,
+      "percent_completed": 0
+    },
+    "body": "### Description\n\nI am trying to add firebase through SPM , swift 5 , with firebase latest version 11.10.0, but it's giving a lot of errors.\n\n<img width=\"353\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/54b446aa-0a44-4e59-b910-36cd207f23a3\" />\n\n@paulb777 , can you please suggest any solution.\n\n### Reproducing the issue\n\n_No response_\n\n### Firebase SDK Version\n\n11.10.0\n\n### Xcode Version\n\n16\n\n### Installation Method\n\nSwift Package Manager\n\n### Firebase Product(s)\n\nAnalytics, All\n\n### Targeted Platforms\n\niOS\n\n### Relevant Log Output\n\n```shell\n\n```\n\n### If using Swift Package Manager, the project's Package.resolved\n\n<!--- Look below for instructions on how to share your Package.resolved. --->\n\n<details>\n<summary>Expand <code>Package.resolved</code> snippet</summary>\n<br>\n\n```json\n\nReplace this line with the contents of your Package.resolved.\n\n```\n\n</details>\n\n\n### If using CocoaPods, the project's Podfile.lock\n\n<!--- Look below for instructions on how to share your Podfile.lock. --->\n\n<details>\n<summary>Expand <code>Podfile.lock</code> snippet</summary>\n<br>\n\n```yml\n\nReplace this line with the contents of your Podfile.lock!\n\n```\n\n</details>\n",
+    "closed_by": null,
+    "reactions": {
+      "url": "https://api.github.com/repos/firebase/firebase-ios-sdk/issues/14624/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "timeline_url": "https://api.github.com/repos/firebase/firebase-ios-sdk/issues/14624/timeline",
+    "performed_via_github_app": null,
+    "state_reason": null
+  }
