@@ -51,7 +51,7 @@ export enum IssueAction {
   OPENED = "opened",
   EDITED = "edited",
   CLOSED = "closed",
-  REOPENED = "reopened"
+  REOPENED = "reopened",
 }
 // Event: issue_comment
 // https://developer.github.com/v3/activity/events/types/#issuecommentevent
@@ -62,12 +62,12 @@ export enum IssueAction {
 export enum CommentAction {
   CREATED = "created",
   EDITED = "edited",
-  DELETED = "deleted"
+  DELETED = "deleted",
 }
 
 export enum IssueStatus {
   CLOSED = "closed",
-  OPEN = "open"
+  OPEN = "open",
 }
 
 class CheckMatchesTemplateResult {
@@ -125,7 +125,7 @@ export class IssueHandler {
     action: IssueAction,
     issue: types.internal.Issue,
     repo: types.internal.Repository,
-    sender: types.github.Sender
+    sender: types.github.Sender,
   ): Promise<types.Action[]> {
     switch (action) {
       case IssueAction.OPENED:
@@ -163,7 +163,7 @@ export class IssueHandler {
     issue: types.internal.Issue,
     comment: types.internal.Comment,
     repo: types.internal.Repository,
-    sender: types.github.Sender
+    sender: types.github.Sender,
   ): Promise<types.Action[]> {
     switch (action) {
       case CommentAction.CREATED:
@@ -190,7 +190,7 @@ export class IssueHandler {
    */
   async onNewIssue(
     repo: types.internal.Repository,
-    issue: types.internal.Issue
+    issue: types.internal.Issue,
   ): Promise<types.Action[]> {
     const actions: types.Action[] = [];
     const org = repo.owner.login;
@@ -200,14 +200,14 @@ export class IssueHandler {
     // event but we shouldn't process it like that, a human has already looked at it.
     if (issue.changes && issue.changes.old_issue) {
       log.debug(
-        `onNewIssue: ignoring issue transferred from ${issue.changes.old_issue.url}`
+        `onNewIssue: ignoring issue transferred from ${issue.changes.old_issue.url}`,
       );
       return actions;
     }
 
     const repoFeatures = this.config.getRepoFeatures(org, name);
     log.debug(
-      `onNewIssue: ${name} has features ${JSON.stringify(repoFeatures)}`
+      `onNewIssue: ${name} has features ${JSON.stringify(repoFeatures)}`,
     );
 
     // Basic issue categorization, which involves adding labels
@@ -221,7 +221,7 @@ export class IssueHandler {
     const isCollaborator = await snapshot.userIsCollaborator(
       org,
       name,
-      issue.user.login
+      issue.user.login,
     );
     if (isCollaborator) {
       actions.push(
@@ -229,8 +229,8 @@ export class IssueHandler {
           org,
           name,
           issue.number,
-          `No further action taken on this issue because it was filed by repo collaborator: ${issue.user.login}`
-        )
+          `No further action taken on this issue because it was filed by repo collaborator: ${issue.user.login}`,
+        ),
       );
 
       return actions;
@@ -256,7 +256,7 @@ export class IssueHandler {
       "moonpay",
       "coinmama",
       "daftar",
-      ["wallet", "support"]
+      ["wallet", "support"],
     ];
     const issueContent = ` ${issue.title} ${issue.body || ""} `.toLowerCase();
     // Scope spam filtering to affected repos only.
@@ -267,9 +267,9 @@ export class IssueHandler {
         name == "quickstart-ios");
     const isSpam =
       isAffectedRepo &&
-      spamWords.find(wordOrArray => {
+      spamWords.find((wordOrArray) => {
         if (Array.isArray(wordOrArray)) {
-          return wordOrArray.every(word => issueContent.includes(word));
+          return wordOrArray.every((word) => issueContent.includes(word));
         } else {
           const wordWithSpace = ` ${wordOrArray} `;
           return issueContent.includes(wordWithSpace);
@@ -283,7 +283,7 @@ export class IssueHandler {
       return [
         new types.GitHubSpamAction(org, name, issue.number, reason),
         new types.GitHubBlockAction(org, issue.user.login),
-        new types.GitHubLockAction(org, name, issue.number)
+        new types.GitHubLockAction(org, name, issue.number),
       ];
     }
 
@@ -311,11 +311,11 @@ export class IssueHandler {
    */
   onIssueAssigned(
     repo: types.internal.Repository,
-    issue: types.internal.Issue
+    issue: types.internal.Issue,
   ): types.Action[] {
     if (!issue.assignee) {
       log.warn(
-        `onIssueAssigned called for an issue with no assignee: ${repo.name}#${issue.number}`
+        `onIssueAssigned called for an issue with no assignee: ${repo.name}#${issue.number}`,
       );
       return [];
     }
@@ -325,7 +325,7 @@ export class IssueHandler {
 
     const action = this.emailer.getIssueUpdateEmailAction(repo, issue, {
       header: "Changed: Assignee",
-      body: body
+      body: body,
     });
 
     if (!action) {
@@ -342,13 +342,13 @@ export class IssueHandler {
   onIssueStatusChanged(
     repo: types.internal.Repository,
     issue: types.internal.Issue,
-    new_status: IssueStatus
+    new_status: IssueStatus,
   ): types.Action[] {
     const body = "New status: " + new_status;
 
     const action = this.emailer.getIssueUpdateEmailAction(repo, issue, {
       header: "Changed: Status",
-      body: body
+      body: body,
     });
 
     if (!action) {
@@ -364,7 +364,7 @@ export class IssueHandler {
   onIssueLabeled(
     repo: types.internal.Repository,
     issue: types.internal.Issue,
-    label: string
+    label: string,
   ): types.Action[] {
     // Render the issue body
     const body_html = marked(issue.body || "");
@@ -373,7 +373,7 @@ export class IssueHandler {
     const action = this.emailer.getIssueUpdateEmailAction(repo, issue, {
       header: `New Issue from ${issue.user.login} in label ${label}`,
       body: body_html,
-      label: label
+      label: label,
     });
 
     if (!action) {
@@ -389,7 +389,7 @@ export class IssueHandler {
   async onCommentCreated(
     repo: types.internal.Repository,
     issue: types.internal.Issue,
-    comment: types.internal.Comment
+    comment: types.internal.Comment,
   ): Promise<types.Action[]> {
     // Trick for testing
     if (comment.body == "eval") {
@@ -408,7 +408,7 @@ export class IssueHandler {
     const comment_html = marked(comment.body);
     const emailAction = this.emailer.getIssueUpdateEmailAction(repo, issue, {
       header: `New Comment by ${comment.user.login}`,
-      body: comment_html
+      body: comment_html,
     });
 
     if (emailAction) {
@@ -418,7 +418,7 @@ export class IssueHandler {
     // Check for staleness things
     const cleanupConfig = this.config.getRepoCleanupConfig(
       repo.owner.login,
-      repo.name
+      repo.name,
     );
 
     const isBotComment = comment.user.login === "google-oss-bot";
@@ -426,7 +426,7 @@ export class IssueHandler {
 
     if (cleanupConfig && cleanupConfig.issue && !isBotComment && !isClosed) {
       const issueConfig = cleanupConfig.issue;
-      const labelNames = issue.labels.map(label => label.name);
+      const labelNames = issue.labels.map((label) => label.name);
 
       const isNeedsInfo = labelNames.includes(issueConfig.label_needs_info);
       const isStale = labelNames.includes(issueConfig.label_stale);
@@ -441,8 +441,8 @@ export class IssueHandler {
             name,
             number,
             issueConfig.label_stale,
-            `Comment by ${comment.user.login} on stale issues remove the stale state.`
-          )
+            `Comment by ${comment.user.login} on stale issues remove the stale state.`,
+          ),
         );
 
         // An author comment on a stale issue moves this to "needs attention",
@@ -457,7 +457,7 @@ export class IssueHandler {
 
         if (isAuthorComment && !issueConfig.label_needs_attention) {
           log.debug(
-            "Not adding 'needs-attention' label because it is not specified."
+            "Not adding 'needs-attention' label because it is not specified.",
           );
         }
 
@@ -468,8 +468,8 @@ export class IssueHandler {
               name,
               number,
               labelToAdd,
-              reason
-            )
+              reason,
+            ),
           );
         }
       }
@@ -483,8 +483,8 @@ export class IssueHandler {
             name,
             number,
             issueConfig.label_needs_info,
-            reason
-          )
+            reason,
+          ),
         );
 
         if (issueConfig.label_needs_attention) {
@@ -494,12 +494,12 @@ export class IssueHandler {
               name,
               number,
               issueConfig.label_needs_attention,
-              reason
-            )
+              reason,
+            ),
           );
         } else {
           log.debug(
-            "Config does not specifiy 'label_needs_attention' so not adding any label"
+            "Config does not specifiy 'label_needs_attention' so not adding any label",
           );
         }
       }
@@ -510,7 +510,7 @@ export class IssueHandler {
 
   markNeedsTriage(
     repo: types.internal.Repository,
-    issue: types.internal.Issue
+    issue: types.internal.Issue,
   ): types.Action[] {
     log.debug("Issue needs triage, adding label and comment");
     const org = repo.owner.login;
@@ -523,7 +523,7 @@ export class IssueHandler {
         name,
         number,
         LABEL_NEEDS_TRIAGE,
-        "Issue did not match any label regexes"
+        "Issue did not match any label regexes",
       ),
       new types.GitHubCommentAction(
         org,
@@ -531,8 +531,8 @@ export class IssueHandler {
         number,
         MSG_NEEDS_TRIAGE,
         true,
-        "Friendly comment added when an issue is labeled needs-triage"
-      )
+        "Friendly comment added when an issue is labeled needs-triage",
+      ),
     ];
   }
 
@@ -542,7 +542,7 @@ export class IssueHandler {
    */
   categorizeNewIssue(
     repo: types.internal.Repository,
-    issue: types.internal.Issue
+    issue: types.internal.Issue,
   ): CategorizeIssueResult {
     const org = repo.owner.login;
     const name = repo.name;
@@ -556,7 +556,7 @@ export class IssueHandler {
       is_fr: this.isFeatureRequest(issue),
       matched_label: labelResult.label,
       needs_triage: false,
-      actions: []
+      actions: [],
     };
 
     // Choose new label
@@ -568,8 +568,8 @@ export class IssueHandler {
           name,
           number,
           LABEL_FR,
-          "Matched the template for a feature request"
-        )
+          "Matched the template for a feature request",
+        ),
       );
     } else if (!labelResult.error && labelResult.label) {
       const newLabel = labelResult.label;
@@ -580,8 +580,8 @@ export class IssueHandler {
           name,
           number,
           newLabel,
-          `Issue matched regex for label "${newLabel}" (${labelResult.matchedRegex})`
-        )
+          `Issue matched regex for label "${newLabel}" (${labelResult.matchedRegex})`,
+        ),
       );
     } else {
       // Mark the issue as needs triage
@@ -597,7 +597,7 @@ export class IssueHandler {
    */
   async checkNewIssueTemplate(
     repo: types.internal.Repository,
-    issue: types.internal.Issue
+    issue: types.internal.Issue,
   ): Promise<types.Action[]> {
     const actions: types.Action[] = [];
     const org = repo.owner.login;
@@ -610,7 +610,7 @@ export class IssueHandler {
     const validationConfig = this.config.getRepoTemplateValidationConfig(
       repo.owner.login,
       repo.name,
-      res.templatePath
+      res.templatePath,
     );
 
     if (!res.matches) {
@@ -637,7 +637,7 @@ export class IssueHandler {
         number,
         res.message,
         true,
-        reason
+        reason,
       );
       actions.push(template_action);
 
@@ -648,7 +648,7 @@ export class IssueHandler {
           repo.name,
           issue.number,
           label,
-          "Template validation failed, adding specified label."
+          "Template validation failed, adding specified label.",
         );
         actions.push(label_action);
       }
@@ -670,7 +670,7 @@ export class IssueHandler {
   async checkMatchesTemplate(
     org: string,
     name: string,
-    issue: types.internal.Issue
+    issue: types.internal.Issue,
   ): Promise<CheckMatchesTemplateResult> {
     const result = new CheckMatchesTemplateResult();
     const templateOpts = this.parseIssueOptions(org, name, issue);
@@ -688,7 +688,7 @@ export class IssueHandler {
     const validationConfig = this.config.getRepoTemplateValidationConfig(
       org,
       name,
-      templatePath
+      templatePath,
     );
     log.debug("Validation config: ", validationConfig);
 
@@ -698,14 +698,14 @@ export class IssueHandler {
       data = await this.gh_client.getIssueTemplate(
         org,
         name,
-        templateOpts.path
+        templateOpts.path,
       );
     } catch (e) {
       const err = `failed to get issue template for ${org}/${name} at ${templateOpts.path};`;
       log.warn(`checkMatchesTemplate: ${err}: ${JSON.stringify(e)}`);
 
       result.failure = {
-        otherError: err
+        otherError: err,
       };
       return result;
     }
@@ -716,12 +716,12 @@ export class IssueHandler {
     const missingSections = checker.matchesTemplateSections(issueBody);
     if (missingSections.invalid.length > 0) {
       log.debug(
-        `checkMatchesTemplate: missing ${missingSections.invalid.length} sections from the template.`
+        `checkMatchesTemplate: missing ${missingSections.invalid.length} sections from the template.`,
       );
       result.matches = false;
       result.message = MSG_FOLLOW_TEMPLATE;
       result.failure = {
-        missingSections: missingSections.invalid
+        missingSections: missingSections.invalid,
       };
       return result;
     }
@@ -748,16 +748,16 @@ export class IssueHandler {
     const numEmptySections = emptySections.invalid.length;
     if (numEmptySections > maxEmptySections) {
       log.debug(
-        `checkMatchesTemplate: ${numEmptySections} required sections are empty, which is greater than ${maxEmptySections}.`
+        `checkMatchesTemplate: ${numEmptySections} required sections are empty, which is greater than ${maxEmptySections}.`,
       );
       result.matches = false;
       result.message = MSG_MISSING_INFO;
       result.failure = {
-        emptySections: emptySections.invalid
+        emptySections: emptySections.invalid,
       };
     } else if (numEmptySections > 0) {
       log.debug(
-        `checkMatchesTemplate: ${numEmptySections} required sections are empty but max was ${maxEmptySections}.`
+        `checkMatchesTemplate: ${numEmptySections} required sections are empty but max was ${maxEmptySections}.`,
       );
     }
 
@@ -772,7 +772,7 @@ export class IssueHandler {
   parseIssueOptions(
     org: string,
     name: string,
-    issue: types.internal.Issue
+    issue: types.internal.Issue,
   ): types.TemplateOptions {
     let templatePath = this.config.getRepoTemplateConfig(org, name, "issue");
     if (!templatePath) {

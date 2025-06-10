@@ -2,7 +2,7 @@ import { IssueStats } from "./stats";
 
 export enum ActionService {
   GITHUB = "GITHUB",
-  EMAIL = "EMAIL"
+  EMAIL = "EMAIL",
 }
 
 export enum ActionType {
@@ -14,7 +14,7 @@ export enum ActionType {
   GITHUB_NO_OP = "GITHUB_NO_OP",
   GITHUB_SPAM = "GITHUB_SPAM",
   GITHUB_BLOCK = "GITHUB_BLOCK",
-  EMAIL_SEND = "EMAIL_SEND"
+  EMAIL_SEND = "EMAIL_SEND",
 }
 
 export const GITHUB_ISSUE_ACTIONS = [
@@ -25,7 +25,7 @@ export const GITHUB_ISSUE_ACTIONS = [
   ActionType.GITHUB_LOCK,
   ActionType.GITHUB_NO_OP,
   ActionType.GITHUB_BLOCK,
-  ActionType.GITHUB_SPAM
+  ActionType.GITHUB_SPAM,
 ];
 
 export class Action {
@@ -74,7 +74,7 @@ export class GitHubCommentAction extends GitHubIssueAction {
     number: number,
     message: string,
     collapse: boolean,
-    reason?: string
+    reason?: string,
   ) {
     super(ActionType.GITHUB_COMMENT, org, name, number);
 
@@ -88,7 +88,7 @@ export class GitHubCommentAction extends GitHubIssueAction {
 
   details() {
     return {
-      message: this.message
+      message: this.message,
     };
   }
 }
@@ -101,7 +101,7 @@ export class GitHubAddLabelAction extends GitHubIssueAction {
     name: string,
     number: number,
     label: string,
-    reason?: string
+    reason?: string,
   ) {
     super(ActionType.GITHUB_ADD_LABEL, org, name, number);
 
@@ -113,7 +113,7 @@ export class GitHubAddLabelAction extends GitHubIssueAction {
 
   details() {
     return {
-      label: this.label
+      label: this.label,
     };
   }
 }
@@ -126,7 +126,7 @@ export class GitHubRemoveLabelAction extends GitHubIssueAction {
     name: string,
     number: number,
     label: string,
-    reason?: string
+    reason?: string,
   ) {
     super(ActionType.GITHUB_REMOVE_LABEL, org, name, number);
 
@@ -138,7 +138,7 @@ export class GitHubRemoveLabelAction extends GitHubIssueAction {
 
   details() {
     return {
-      label: this.label
+      label: this.label,
     };
   }
 }
@@ -208,7 +208,7 @@ export class SendEmailAction extends Action {
     header: string,
     body: string,
     link: string,
-    action: string
+    action: string,
   ) {
     super(ActionType.EMAIL_SEND);
 
@@ -753,10 +753,10 @@ export namespace bigquery {
       this.locked = issue.locked;
       this.comments = issue.comments;
       this.user = {
-        login: issue.user.login
+        login: issue.user.login,
       };
       this.assignee = {
-        login: issue.assignee.login
+        login: issue.assignee.login,
       };
       this.labels = issue.labels || [];
       this.updated_at = issue.updated_at;
@@ -788,17 +788,17 @@ export namespace bigquery {
       action: string,
       sender: EventSender,
       repository: EventRepository,
-      payload: string
+      payload: string,
     ) {
       this.type = type;
       this.action = action;
       this.sender = {
         id: sender.id,
-        login: sender.login
+        login: sender.login,
       };
       this.repository = {
         id: repository.id,
-        full_name: repository.full_name
+        full_name: repository.full_name,
       };
       this.payload = payload;
       this.ingested = new Date().toISOString();

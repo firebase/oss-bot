@@ -4,7 +4,7 @@ import * as types from "./types";
 
 export const FUNCTION_OPTS = {
   timeoutSeconds: 540,
-  memory: "2GB" as "2GB"
+  memory: "2GB" as "2GB",
 };
 
 export async function delay(seconds: number) {
@@ -46,7 +46,7 @@ export function endTimer(label: string) {
     event: "timer",
     label: label,
     val: diff,
-    message: `Operation "${label}" took ${diff}ms`
+    message: `Operation "${label}" took ${diff}ms`,
   });
 
   delete timers[label];
@@ -118,11 +118,11 @@ export function timeAgo(obj: types.internal.Timestamped): number {
 
 export function split<T>(arr: T[], fn: (arg: T) => boolean) {
   const yes = arr.filter(fn);
-  const no = arr.filter(x => !fn(x));
+  const no = arr.filter((x) => !fn(x));
 
   if (yes.length + no.length !== arr.length) {
     console.warn(
-      `util.split() split ${arr.length} into ${yes.length} and ${no.length}`
+      `util.split() split ${arr.length} into ${yes.length} and ${no.length}`,
     );
   }
 
@@ -131,7 +131,7 @@ export function split<T>(arr: T[], fn: (arg: T) => boolean) {
 
 export function compareTimestamps(
   a: types.internal.Timestamped,
-  b: types.internal.Timestamped
+  b: types.internal.Timestamped,
 ) {
   const aTime = Date.parse(a.created_at);
   const bTime = Date.parse(b.created_at);

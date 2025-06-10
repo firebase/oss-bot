@@ -36,7 +36,7 @@ export class GitHubClient {
     // Underlying GitHub API client
     this.api = new GitHubApi({
       auth: this.token,
-      timeout: 10000
+      timeout: 10000,
     });
   }
 
@@ -47,13 +47,13 @@ export class GitHubClient {
     org: string,
     name: string,
     number: number,
-    label: string
+    label: string,
   ): Promise<any> {
     return this.api.issues.addLabels({
       owner: org,
       repo: name,
       issue_number: number,
-      labels: [label]
+      labels: [label],
     });
   }
 
@@ -64,13 +64,13 @@ export class GitHubClient {
     org: string,
     name: string,
     number: number,
-    label: string
+    label: string,
   ): Promise<any> {
     return this.api.issues.removeLabel({
       owner: org,
       repo: name,
       issue_number: number,
-      name: label
+      name: label,
     });
   }
 
@@ -81,13 +81,13 @@ export class GitHubClient {
     org: string,
     name: string,
     number: number,
-    body: string
+    body: string,
   ): Promise<any> {
     return this.api.issues.createComment({
       owner: org,
       repo: name,
       issue_number: number,
-      body: body
+      body: body,
     });
   }
 
@@ -107,9 +107,9 @@ export class GitHubClient {
       .getContent({
         owner: org,
         repo: name,
-        path: file
+        path: file,
       })
-      .then(function(res) {
+      .then(function (res) {
         // Content is encoded as base64, we need to decode it
         return new Buffer(res.data.content, "base64").toString();
       });
@@ -123,7 +123,7 @@ export class GitHubClient {
       owner: org,
       repo: name,
       issue_number,
-      state: "closed"
+      state: "closed",
     });
   }
 
@@ -138,8 +138,7 @@ export class GitHubClient {
       state: "closed",
       state_reason: "not_planned",
       title: "Spam",
-      body:
-        "This issue was filtered as spam. If you believe this was in error, please file a support ticket."
+      body: "This issue was filtered as spam. If you believe this was in error, please file a support ticket.",
     });
   }
 
@@ -150,7 +149,7 @@ export class GitHubClient {
     return paginate(this.api.issues.listComments, {
       owner,
       repo,
-      issue_number
+      issue_number,
     });
   }
 
@@ -159,7 +158,7 @@ export class GitHubClient {
    */
   getOrg(org: string) {
     return this.api.orgs.get({
-      org
+      org,
     });
   }
 
@@ -169,7 +168,7 @@ export class GitHubClient {
   blockFromOrg(org: string, username: string) {
     return this.api.request("PUT /orgs/" + org + "/blocks/" + username, {
       org: org,
-      username: username
+      username: username,
     });
   }
 
@@ -179,7 +178,7 @@ export class GitHubClient {
   async getRepo(org: string, repo: string) {
     const res = await this.api.repos.get({
       owner: org,
-      repo
+      repo,
     });
 
     return res.data;
@@ -190,7 +189,7 @@ export class GitHubClient {
    */
   getReposInOrg(org: string) {
     return paginate(this.api.repos.listForOrg, {
-      org
+      org,
     });
   }
 
@@ -201,12 +200,16 @@ export class GitHubClient {
     owner: string,
     repo: string,
     state?: IssueState,
-    labels?: string[]
+    labels?: string[],
   ) {
+    // Only run on issues that have been updated within the last year.
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
     const opts: any = {
       owner,
       repo,
-      state: state || "all"
+      state: state || "all",
+      since: oneYearAgo.toISOString(),
     };
 
     if (labels && labels.length > 0) {
@@ -223,9 +226,9 @@ export class GitHubClient {
     return paginate(this.api.repos.listCollaborators, {
       owner,
       repo,
-      affiliation: "all"
-    }).then(collabs => {
-      return collabs.map(c => c.login);
+      affiliation: "all",
+    }).then((collabs) => {
+      return collabs.map((c) => c.login);
     });
   }
 
@@ -236,7 +239,7 @@ export class GitHubClient {
     return this.api.issues.lock({
       owner,
       repo,
-      issue_number
+      issue_number,
     });
   }
 }
@@ -271,37 +274,35 @@ interface PageParams {
  */
 async function paginate<S extends PageParams, T>(
   fn: GitHubFn<S, Array<T>>,
-  options: S
+  options: S,
 ): Promise<T[]> {
-  return this.api.paginate(options);
+  const per_page = 100;
+  let pagesRemaining = true;
+  let page = 0;
 
-  // const per_page = 100;
-  // let pagesRemaining = true;
-  // let page = 0;
+  let allData = [] as T[];
+  while (pagesRemaining) {
+    page++;
 
-  // let allData = [] as T[];
-  // while (pagesRemaining) {
-  //   page++;
+    // Merge pagination options with the options passed in
+    const pageOptions = Object.assign(
+      {
+        per_page,
+        page,
+      },
+      options,
+    );
 
-  //   // Merge pagination options with the options passed in
-  //   const pageOptions = Object.assign(
-  //     {
-  //       per_page,
-  //       page
-  //     },
-  //     options
-  //   );
+    const res = await fn(pageOptions);
+    allData = allData.concat(res.data);
 
-  //   const res = await fn(pageOptions);
-  //   allData = allData.concat(res.data);
+    // We assume another page remaining if we got exactly as many
+    // issues as we asked for.
+    pagesRemaining = res.data.length == per_page;
 
-  //   // We assume another page remaining if we got exactly as many
-  //   // issues as we asked for.
-  //   pagesRemaining = res.data.length == per_page;
+    // Wait 0.5s between pages
+    await util.delay(0.5);
+  }
 
-  //   // Wait 0.5s between pages
-  //   await util.delay(0.5);
-  // }
-
-  // return allData;
+  return allData;
 }

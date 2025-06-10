@@ -10,8 +10,8 @@ async function deployConfig(configFile: string, project: string) {
   const configFileString = fs.readFileSync(configFile).toString();
   const config = {
     runtime: {
-      config: JSON.parse(configFileString)
-    }
+      config: JSON.parse(configFileString),
+    },
   };
 
   // Encode the proposed config into a flat map of dot-separated values
@@ -19,15 +19,15 @@ async function deployConfig(configFile: string, project: string) {
 
   // Get the current runtime config from Firebase as a giant object
   const current = await firebase.functions.config.get("runtime", {
-    project: project
+    project: project,
   });
 
   // Decode the config into a flat map of dot-separated values.
   const currentConfig = encoding.flattenConfig(
     {
-      runtime: current
+      runtime: current,
     },
-    encoding.Direction.NONE
+    encoding.Direction.NONE,
   );
 
   const keysRemoved: string[] = [];
@@ -63,7 +63,7 @@ async function deployConfig(configFile: string, project: string) {
 
     // Unset the 'runtime' config variable and all children
     await firebase.functions.config.unset(["runtime"], {
-      project: project
+      project: project,
     });
   } else {
     // Otherwise we can just update what changed
@@ -84,7 +84,7 @@ async function deployConfig(configFile: string, project: string) {
 
   // Set the new config
   await firebase.functions.config.set(args, {
-    project: project
+    project: project,
   });
 }
 
@@ -95,7 +95,7 @@ async function deployConfig(configFile: string, project: string) {
 // Validate command-line arguments
 if (process.argv.length < 4) {
   console.log(
-    "Please specify a config file and project: ts-node deploy-config.ts $FILE $PROJECT"
+    "Please specify a config file and project: ts-node deploy-config.ts $FILE $PROJECT",
   );
   process.exit(1);
 }
@@ -103,10 +103,10 @@ if (process.argv.length < 4) {
 const configFile = process.argv[2];
 const project = process.argv[3];
 deployConfig(configFile, project)
-  .then(function() {
+  .then(function () {
     console.log("Deployed.");
   })
-  .catch(function(e) {
+  .catch(function (e) {
     console.warn(e);
     if (e.context && e.context.body) {
       console.warn(JSON.stringify(e.context.body));

@@ -33,7 +33,7 @@ import {
   createIssuesTable,
   insertEvent,
   listEventsTables,
-  listIssuesTables
+  listIssuesTables,
 } from "./bigquery";
 
 // This makes console.log() work as it used to in Node 8
@@ -51,7 +51,7 @@ export {
   SaveWeeklyReport,
   GetWeeklyEmail,
   SendWeeklyEmail,
-  SendWeeklyRepoEmails
+  SendWeeklyRepoEmails,
 } from "./report";
 
 export { SamScoreBadge } from "./badge";
@@ -63,7 +63,7 @@ const bot_config = config.BotConfig.getDefault();
 enum GitHubEvent {
   ISSUE = "issues",
   ISSUE_COMMENT = "issue_comment",
-  PULL_REQUEST = "pull_request"
+  PULL_REQUEST = "pull_request",
 }
 
 // 15 days, in milliseconds
@@ -71,13 +71,13 @@ const PR_EXPIRY_MS = 15 * 24 * 60 * 60 * 1000;
 
 // GitHub API client
 const gh_client: github.GitHubClient = new github.GitHubClient(
-  config.getFunctionsConfig("github.token")
+  config.getFunctionsConfig("github.token"),
 );
 
 // Mailgun Email client
 const email_client: email.EmailClient = new email.EmailClient(
   config.getFunctionsConfig("mailgun.key"),
-  config.getFunctionsConfig("mailgun.domain")
+  config.getFunctionsConfig("mailgun.domain"),
 );
 
 // Handler for GitHub issues
@@ -108,14 +108,14 @@ export const eventWebhook = functions
       action,
       sender,
       repository,
-      payload
+      payload,
     );
 
     const org = repository.owner.login;
     await insertEvent(org, event);
 
     response.json({
-      status: "ok"
+      status: "ok",
     });
   });
 
@@ -141,7 +141,7 @@ export const githubWebhook = functions
     } else {
       // Log some basic info
       console.log(
-        "===========================START============================"
+        "===========================START============================",
       );
       console.log(`Event: ${event}/${action}`);
       if (repo) {
@@ -154,7 +154,7 @@ export const githubWebhook = functions
         console.log(`Issue: ${issue.number}`);
       }
       console.log(
-        "===========================END============================="
+        "===========================END=============================",
       );
     }
 
@@ -164,7 +164,7 @@ export const githubWebhook = functions
     log.logData({
       event: "github",
       type: event,
-      message: `Receiving event type ${event}`
+      message: `Receiving event type ${event}`,
     });
 
     switch (event) {
@@ -174,7 +174,7 @@ export const githubWebhook = functions
           action,
           issue,
           repo,
-          sender
+          sender,
         );
         break;
       case GitHubEvent.ISSUE_COMMENT:
@@ -185,7 +185,7 @@ export const githubWebhook = functions
           issue,
           comment,
           repo,
-          sender
+          sender,
         );
         break;
       case GitHubEvent.PULL_REQUEST:
@@ -195,7 +195,7 @@ export const githubWebhook = functions
           action,
           pr,
           repo,
-          sender
+          sender,
         );
         break;
       default:
@@ -257,19 +257,19 @@ export const githubWebhook = functions
             firstComment.number,
             msg,
             false,
-            reason
-          )
-        )
+            reason,
+          ),
+        ),
       );
     }
 
     // Wait for the promise to resolve the HTTP request
     console.log(`Total actions taken: ${promises.length}`);
     Promise.all(promises)
-      .then(res => {
+      .then((res) => {
         response.send("OK!");
       })
-      .catch(e => {
+      .catch((e) => {
         response.send("Error!");
       });
   });
@@ -319,10 +319,10 @@ export const botCleanupRepo = functions
     const actions = await cron_handler.processIssues(
       org,
       repo,
-      cleanupConfig.issue
+      cleanupConfig.issue,
     );
     console.log(
-      `Taking ${actions.length} actions when cleaning up ${org}/${repo}`
+      `Taking ${actions.length} actions when cleaning up ${org}/${repo}`,
     );
     await safeExecuteActions(actions);
 
@@ -344,7 +344,7 @@ async function executeAction(action: types.Action): Promise<any> {
     event: "github_action",
     type: action.type,
     action: action,
-    message: `Executing: ${action.toString()}}`
+    message: `Executing: ${action.toString()}}`,
   });
 
   let actionPromise: Promise<any> | undefined;
@@ -354,7 +354,7 @@ async function executeAction(action: types.Action): Promise<any> {
       commentAction.org,
       commentAction.name,
       commentAction.number,
-      commentAction.message
+      commentAction.message,
     );
   } else if (action.type == types.ActionType.GITHUB_ADD_LABEL) {
     const addLabelAction = action as types.GitHubAddLabelAction;
@@ -362,7 +362,7 @@ async function executeAction(action: types.Action): Promise<any> {
       addLabelAction.org,
       addLabelAction.name,
       addLabelAction.number,
-      addLabelAction.label
+      addLabelAction.label,
     );
   } else if (action.type == types.ActionType.GITHUB_REMOVE_LABEL) {
     const removeLabelAction = action as types.GitHubRemoveLabelAction;
@@ -370,34 +370,34 @@ async function executeAction(action: types.Action): Promise<any> {
       removeLabelAction.org,
       removeLabelAction.name,
       removeLabelAction.number,
-      removeLabelAction.label
+      removeLabelAction.label,
     );
   } else if (action.type == types.ActionType.GITHUB_CLOSE) {
     const closeAction = action as types.GitHubCloseAction;
     actionPromise = gh_client.closeIssue(
       closeAction.org,
       closeAction.name,
-      closeAction.number
+      closeAction.number,
     );
   } else if (action.type == types.ActionType.GITHUB_SPAM) {
     const wipeAction = action as types.GitHubSpamAction;
     actionPromise = gh_client.wipeIssue(
       wipeAction.org,
       wipeAction.name,
-      wipeAction.number
+      wipeAction.number,
     );
   } else if (action.type == types.ActionType.GITHUB_BLOCK) {
     const blockAction = action as types.GitHubBlockAction;
     actionPromise = gh_client.blockFromOrg(
       blockAction.org,
-      blockAction.username
+      blockAction.username,
     );
   } else if (action.type == types.ActionType.GITHUB_LOCK) {
     const lockAction = action as types.GitHubLockAction;
     actionPromise = gh_client.lockIssue(
       lockAction.org,
       lockAction.name,
-      lockAction.number
+      lockAction.number,
     );
   } else if (action.type == types.ActionType.EMAIL_SEND) {
     const emailAction = action as types.SendEmailAction;
@@ -407,7 +407,7 @@ async function executeAction(action: types.Action): Promise<any> {
       emailAction.header,
       emailAction.body,
       emailAction.link,
-      emailAction.action
+      emailAction.action,
     );
   } else if (action.type === types.ActionType.GITHUB_NO_OP) {
     actionPromise = Promise.resolve();
@@ -448,7 +448,7 @@ export const ensureBigquery = functions
   .pubsub.topic("ensure-bigquery")
   .onPublish(async () => {
     const repos = bot_config.getAllRepos();
-    const orgs = new Set<string>(repos.map(r => r.org));
+    const orgs = new Set<string>(repos.map((r) => r.org));
 
     // Make sure each org has all of the BQ tables
     // TODO: Expand this to do migrations
