@@ -135,6 +135,10 @@ export async function GetRepoSnapshot(
   // We're going to keep a copy of all issues for a given repo
   const issueData: snapshot.Map<snapshot.Issue> = {};
   for (const issue of issues) {
+    const labels: string[] = [];
+    for (const label in issue.labels) {
+      labels.push(label);
+    }
     issueData[`id_${issue.number}`] = {
       number: issue.number,
       title: issue.title,
@@ -143,12 +147,12 @@ export async function GetRepoSnapshot(
       pull_request: !!issue.pull_request,
       comments: issue.comments,
       user: {
-        login: issue.user.login,
+        login: issue.user?.login ?? "ghost",
       },
       assignee: {
         login: issue.assignee?.login || "",
       },
-      labels: issue.labels.map((l) => l.name),
+      labels: labels,
       updated_at: issue.updated_at,
       created_at: issue.created_at,
     };
@@ -202,15 +206,14 @@ export async function FetchRepoSnapshot(
   return data;
 }
 
-export const SaveRepoSnapshot = functions
-  .runWith(util.FUNCTION_OPTS)
-  .pubsub.topic("repo_snapshot")
-  .onPublish(async (event) => {
+export const SaveRepoSnapshot = functions.pubsub.onMessagePublished(
+  "repo_snapshot",
+  async (event) => {
     // Date for ingestion
     const now = new Date();
 
     // TODO: Enable retry, using retry best practices
-    const data = event.json;
+    const data = event.data.message.json;
     const org = data.org;
 
     const repoName = data.repo;
@@ -252,12 +255,12 @@ export const SaveRepoSnapshot = functions
     );
     util.endTimer("GetRepoSnapshot");
 
-    log.debug(`Saving repo snapshot to ${repoSnapRef.path}`);
+    log.debug(`Saving repo snapshot to ${repoSnapRef.toString()}`);
     await repoSnapRef.set(repoData);
 
     const repoIssueRef = database().ref("issues").child(org).child(repoKey);
 
-    log.debug(`Saving issue snapshot to ${repoIssueRef.path}`);
+    log.debug(`Saving issue snapshot to ${repoIssueRef.toString()}`);
     try {
       await repoIssueRef.set(issueData);
     } catch (e) {
@@ -297,12 +300,12 @@ export const SaveRepoSnapshot = functions
 
     // Even if we fail to get the collaborators, set an empty map
     await repoMetaRef.child("collaborators").set(collabMap);
-  });
+  },
+);
 
-export const SaveOrganizationSnapshot = functions
-  .runWith(util.FUNCTION_OPTS)
-  .pubsub.schedule("every day 12:00")
-  .onRun(async () => {
+export const SaveOrganizationSnapshot = functions.scheduler.onSchedule(
+  "every day 12:00",
+  async () => {
     const configRepos = bot_config.getAllRepos();
 
     // Gather all the unique orgs from the configured repos
@@ -357,7 +360,8 @@ export const SaveOrganizationSnapshot = functions
       util.delay(1.0);
       await sendPubSub("repo_snapshot", r);
     }
-  });
+  },
+);
 
 interface OrgRepo {
   org: string;

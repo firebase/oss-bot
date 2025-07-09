@@ -4,7 +4,7 @@ import * as types from "./types";
 
 export const FUNCTION_OPTS = {
   timeoutSeconds: 540,
-  memory: "2GB" as "2GB",
+  memory: "2GiB" as "2GiB",
 };
 
 export async function delay(seconds: number) {

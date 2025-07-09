@@ -244,11 +244,22 @@ export class BotConfig {
 
     // Iterate through issue labels, see if one of the existing ones works
     // TODO(samstern): Deal with needs_triage separately
-    const issueLabelNames: string[] = issue.labels.map((label) => {
-      return label.name;
-    });
+    const issueLabelNames: (string | undefined)[] = issue.labels
+      .filter((label) => {
+        return label !== undefined;
+      })
+      .map((label) => {
+        if (typeof label === "string") {
+          return label;
+        }
+        return label.name;
+      });
 
     for (const key of issueLabelNames) {
+      if (!key) {
+        // After typescript 5.5 this check can be removed?
+        continue;
+      }
       const label_mapping = this.getRepoLabelConfig(org, name, key);
       if (label_mapping) {
         return {
@@ -274,7 +285,7 @@ export class BotConfig {
       const regex = new RegExp(labelInfo.regex);
 
       // If the regex matches, choose the label and email then break out
-      if (regex.test(issue.body)) {
+      if (regex.test(issue.body ?? "")) {
         log.debug("Matched label: " + label, JSON.stringify(labelInfo));
         return {
           label,

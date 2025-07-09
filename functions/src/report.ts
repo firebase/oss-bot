@@ -493,9 +493,9 @@ export async function MakeRepoTimeSeries(
 /**
  * HTTP function for experimenting with a new SAM score.
  */
-export const RepoIssueStatistics = functions
-  .runWith(util.FUNCTION_OPTS)
-  .https.onRequest(async (req, res) => {
+export const RepoIssueStatistics = functions.https.onRequest(
+  util.FUNCTION_OPTS,
+  async (req, res) => {
     const org = (req.query["org"] as string) || "firebase";
     const repo = req.query["repo"] as string;
     if (!repo) {
@@ -505,14 +505,15 @@ export const RepoIssueStatistics = functions
 
     const counts = await stats.getRepoIssueStats(org, repo);
     res.json(counts);
-  });
+  },
+);
 
 /**
  * HTTP Function to get a JSON report on a repo.
  */
-export const GetRepoReport = functions
-  .runWith(util.FUNCTION_OPTS)
-  .https.onRequest(async (req, res) => {
+export const GetRepoReport = functions.https.onRequest(
+  util.FUNCTION_OPTS,
+  async (req, res) => {
     // TODO: Allow passing in the 'start' date to get historical data.
 
     const org = (req.query["org"] as string) || "firebase";
@@ -528,14 +529,15 @@ export const GetRepoReport = functions
     } catch (e) {
       res.status(500).send(e);
     }
-  });
+  },
+);
 
 /**
  * Preview the email for a repo
  */
-export const GetRepoReportHTML = functions
-  .runWith(util.FUNCTION_OPTS)
-  .https.onRequest(async (req, res) => {
+export const GetRepoReportHTML = functions.https.onRequest(
+  util.FUNCTION_OPTS,
+  async (req, res) => {
     const org = (req.query["org"] as string) || "firebase";
     const repo = req.query["repo"] as string;
     if (!repo) {
@@ -549,14 +551,15 @@ export const GetRepoReportHTML = functions
     } catch (e) {
       res.status(500).send(e);
     }
-  });
+  },
+);
 
 /**
  * HTTP Function to get a JSON report on a repo.
  */
-export const GetRepoTimeSeries = functions
-  .runWith(util.FUNCTION_OPTS)
-  .https.onRequest(async (req, res) => {
+export const GetRepoTimeSeries = functions.https.onRequest(
+  util.FUNCTION_OPTS,
+  async (req, res) => {
     // CORS-hack
     res.set("Access-Control-Allow-Origin", "*");
 
@@ -588,15 +591,15 @@ export const GetRepoTimeSeries = functions
     } catch (e) {
       res.status(500).send(e);
     }
-  });
+  },
+);
 
 /**
  * PubSub function that saves the weekly report to RTDB.
  */
-export const SaveWeeklyReport = functions
-  .runWith(util.FUNCTION_OPTS)
-  .pubsub.schedule("every wednesday 09:00")
-  .onRun(async () => {
+export const SaveWeeklyReport = functions.scheduler.onSchedule(
+  "every wednesday 09:00",
+  async () => {
     const now = new Date();
 
     // Save firebase report to the DB
@@ -606,15 +609,15 @@ export const SaveWeeklyReport = functions
       .child("github")
       .child(util.DateSlug(now))
       .set(report);
-  });
+  },
+);
 
 /**
  * PubSub function that sends the GitHub email based on the latest weekly report.
  */
-export const SendWeeklyEmail = functions
-  .runWith(util.FUNCTION_OPTS)
-  .pubsub.schedule("every wednesday 09:30")
-  .onRun(async () => {
+export const SendWeeklyEmail = functions.scheduler.onSchedule(
+  "every wednesday 09:30",
+  async () => {
     const emailText = await GetWeeklyEmail("firebase");
     const now = new Date();
 
@@ -622,15 +625,15 @@ export const SendWeeklyEmail = functions
     const subject = `Firebase GitHub Summary for ${dateString}`;
 
     await email_client.sendEmail(EMAIL_GROUP, subject, emailText);
-  });
+  },
+);
 
 /**
  * PubSub function that sends the GitHub email based on the latest weekly report.
  */
-export const SendWeeklyRepoEmails = functions
-  .runWith(util.FUNCTION_OPTS)
-  .pubsub.schedule("every wednesday 10:00")
-  .onRun(async () => {
+export const SendWeeklyRepoEmails = functions.scheduler.onSchedule(
+  "every wednesday 10:00",
+  async () => {
     const allRepos = bot_config.getAllRepos();
     for (const repo of allRepos) {
       const reportConfig = bot_config.getRepoReportingConfig(
@@ -658,7 +661,8 @@ export const SendWeeklyRepoEmails = functions
         log.error(`Failed to send email for ${repo.name}`, e);
       }
     }
-  });
+  },
+);
 
 export async function GetWeeklyRepoEmail(org: string, repo: string) {
   const report = await MakeRepoReport(org, repo);

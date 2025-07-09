@@ -331,7 +331,7 @@ describe("Stale issue handler", async () => {
     };
 
     const comment: types.internal.Comment = {
-      user: STALE_ISSUE.user,
+      user: STALE_ISSUE.user!,
       body: "New comment by the author",
       created_at: SEVEN_WKD_AGO,
       updated_at: SEVEN_WKD_AGO,
@@ -367,7 +367,7 @@ describe("Stale issue handler", async () => {
     };
 
     const comment: types.internal.Comment = {
-      user: NEEDS_INFO_ISSUE.user,
+      user: NEEDS_INFO_ISSUE.user!,
       body: "New comment by the author",
       created_at: JUST_NOW,
       updated_at: JUST_NOW,

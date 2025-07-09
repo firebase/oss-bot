@@ -173,7 +173,12 @@ export class CronHandler {
     const actions: types.Action[] = [];
 
     const number = issue.number;
-    const labelNames = issue.labels.map((label) => label.name);
+    const labelNames = issue.labels.map((label) => {
+      if (typeof label === "string") {
+        return label;
+      }
+      return label.name;
+    });
 
     const stateNeedsInfo = labelNames.includes(issueConfig.label_needs_info);
     const stateStale = labelNames.includes(issueConfig.label_stale);
@@ -214,7 +219,7 @@ export class CronHandler {
 
     // When the issue was marked stale, the bot will have left a comment with certain metadata
     const markStaleComment = comments.find((comment) => {
-      return comment.body.includes(EVT_MARK_STALE);
+      return comment.body?.includes(EVT_MARK_STALE);
     });
 
     if (stateStale && !markStaleComment) {
@@ -253,7 +258,7 @@ export class CronHandler {
         org,
         name,
         number,
-        this.getCloseComment(issue.user.login),
+        this.getCloseComment(issue.user?.login ?? "ghost"),
         false,
         `Comment after closing issue for being stale (comment at ${util.createdDate(
           markStaleComment!,
@@ -302,7 +307,7 @@ export class CronHandler {
         name,
         number,
         this.getMarkStaleComment(
-          issue.user.login,
+          issue.user?.login ?? "ghost",
           issueConfig.needs_info_days,
           issueConfig.stale_days,
         ),

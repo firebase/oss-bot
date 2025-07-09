@@ -337,11 +337,13 @@ export namespace github {
   }
 
   export class Label {
-    id: number;
-    url: string;
-    name: string;
-    color: string;
-    default: boolean;
+    id?: number;
+    node_id?: string;
+    url?: string;
+    name?: string;
+    description?: string | null;
+    color?: string | null;
+    default?: boolean;
   }
 
   export class Milestone {
@@ -454,10 +456,10 @@ export namespace github {
     number: number;
     state: string;
     title: string;
-    body: string;
-    user: User;
-    labels: Label[];
-    assignee: User;
+    body?: string | null | undefined;
+    user?: User | null;
+    labels: (string | Label)[];
+    assignee?: User | null;
     milestone: Milestone;
     locked: boolean;
     comments: number;
@@ -561,7 +563,7 @@ export namespace github {
     base: Commit;
     _links: Links;
     user: User;
-    labels: Label[];
+    labels: (string | Label)[];
   }
 }
 
@@ -677,14 +679,14 @@ export namespace internal {
     state: string;
     locked: boolean;
     title: string;
-    body: string;
-    user: User;
-    labels: Label[];
+    body?: string | null | undefined;
+    user?: User | null;
+    labels: (string | Label)[];
     created_at: string;
     updated_at: string;
 
     closed_at?: string | null;
-    assignee?: User;
+    assignee?: User | null;
     html_url?: string;
     changes?: {
       old_issue?: {
@@ -696,9 +698,9 @@ export namespace internal {
   export interface IssueOrPullRequest {
     number: number;
     title: string;
-    body: string;
-    labels: Label[];
-    user: User;
+    body?: string | null | undefined;
+    labels: (string | Label)[];
+    user?: User | null;
 
     html_url?: string;
   }
@@ -715,7 +717,7 @@ export namespace internal {
   }
 
   export interface Label {
-    name: string;
+    name?: string;
   }
 
   export interface Timestamped {

@@ -109,9 +109,13 @@ export class GitHubClient {
         repo: name,
         path: file,
       })
-      .then(function (res) {
-        // Content is encoded as base64, we need to decode it
-        return new Buffer(res.data.content, "base64").toString();
+      .then((res) => {
+        if ("content" in res.data) {
+          // Content is encoded as base64, we need to decode it
+          return Buffer.from(res.data.content, "base64").toString();
+        }
+        log.warn(`Tried to get file content from non-file path ${file}`);
+        return "";
       });
   }
 

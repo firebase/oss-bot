@@ -25,9 +25,9 @@ import * as config from "./config";
 import * as types from "./types";
 import * as util from "./util";
 import * as log from "./log";
+import * as pubsub from "./pubsub";
 
 import { database } from "./database";
-import { sendPubSub } from "./pubsub";
 import {
   createEventsTable,
   createIssuesTable,
@@ -89,9 +89,9 @@ const pr_handler = new pullrequests.PullRequestHandler(bot_config);
 // Handler for Cron jobs
 const cron_handler = new cron.CronHandler(gh_client, bot_config);
 
-export const eventWebhook = functions
-  .runWith(util.FUNCTION_OPTS)
-  .https.onRequest(async (request, response) => {
+export const eventWebhook = functions.https.onRequest(
+  util.FUNCTION_OPTS,
+  async (request, response) => {
     const type = request.get("X-GitHub-Event");
     if (!type) {
       response.status(400).send("Must include type!");
@@ -117,14 +117,15 @@ export const eventWebhook = functions
     response.json({
       status: "ok",
     });
-  });
+  },
+);
 
 /**
  * Function that responds to GitHub events (HTTP webhook).
  */
-export const githubWebhook = functions
-  .runWith(util.FUNCTION_OPTS)
-  .https.onRequest(async (request, response) => {
+export const githubWebhook = functions.https.onRequest(
+  util.FUNCTION_OPTS,
+  async (request, response) => {
     // Get event and action;
     const event = request.get("X-GitHub-Event");
     const action = request.body.action;
@@ -272,29 +273,30 @@ export const githubWebhook = functions
       .catch((e) => {
         response.send("Error!");
       });
-  });
+  },
+);
 
 /**
- * Function that responds to pubsub events sent via an AppEngine crojob.
+ * Function that responds to pubsub events sent via an AppEngine cronjob.
  */
-export const botCleanup = functions
-  .runWith(util.FUNCTION_OPTS)
-  .pubsub.schedule("every day 18:00")
-  .onRun(async () => {
+export const botCleanup = functions.scheduler.onSchedule(
+  "every day 18:00",
+  async () => {
     console.log("The cleanup job is running!");
     const repos = bot_config.getAllRepos();
     for (const repo of repos) {
-      await sendPubSub("bot-cleanup-repo", { org: repo.org, repo: repo.name });
+      await pubsub.sendPubSub("bot-cleanup-repo", {
+        org: repo.org,
+        repo: repo.name,
+      });
     }
+  },
+);
 
-    return true;
-  });
-
-export const botCleanupRepo = functions
-  .runWith(util.FUNCTION_OPTS)
-  .pubsub.topic("bot-cleanup-repo")
-  .onPublish(async (event, ctx) => {
-    const data = event.json;
+export const botCleanupRepo = functions.pubsub.onMessagePublished(
+  "bot-cleanup-repo",
+  async (event) => {
+    const data = event.data.message.json;
 
     const org = data.org;
     const repo = data.repo;
@@ -327,7 +329,8 @@ export const botCleanupRepo = functions
     await safeExecuteActions(actions);
 
     return true;
-  });
+  },
+);
 
 async function safeExecuteActions(actions: types.Action[]): Promise<void> {
   for (const action of actions) {
@@ -443,10 +446,9 @@ async function executeAction(action: types.Action): Promise<any> {
 /**
  * Manually run this function to create tables.
  */
-export const ensureBigquery = functions
-  .runWith(util.FUNCTION_OPTS)
-  .pubsub.topic("ensure-bigquery")
-  .onPublish(async () => {
+export const ensureBigquery = functions.pubsub.onMessagePublished(
+  "ensure-bigquery",
+  async () => {
     const repos = bot_config.getAllRepos();
     const orgs = new Set<string>(repos.map((r) => r.org));
 
@@ -463,4 +465,5 @@ export const ensureBigquery = functions
         await createEventsTable(org);
       }
     }
-  });
+  },
+);

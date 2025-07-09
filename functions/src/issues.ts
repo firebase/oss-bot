@@ -137,7 +137,9 @@ export class IssueHandler {
       case IssueAction.REOPENED:
         return this.onIssueStatusChanged(repo, issue, IssueStatus.OPEN);
       case IssueAction.LABELED:
-        return this.onIssueLabeled(repo, issue, event.label.name);
+        if (event.label.name) {
+          return this.onIssueLabeled(repo, issue, event.label.name);
+        }
       case IssueAction.UNASSIGNED:
       /* falls through */
       case IssueAction.UNLABELED:
@@ -218,18 +220,16 @@ export class IssueHandler {
     }
 
     // If the issue is filed by a collaborator, we stop here.
-    const isCollaborator = await snapshot.userIsCollaborator(
-      org,
-      name,
-      issue.user.login,
-    );
+    const isCollaborator = issue.user
+      ? await snapshot.userIsCollaborator(org, name, issue.user.login)
+      : false;
     if (isCollaborator) {
       actions.push(
         new types.GitHubNoOpAction(
           org,
           name,
           issue.number,
-          `No further action taken on this issue because it was filed by repo collaborator: ${issue.user.login}`,
+          `No further action taken on this issue because it was filed by repo collaborator: ${issue.user!.login}`,
         ),
       );
 
@@ -244,7 +244,6 @@ export class IssueHandler {
     // Filter spam from b/378634578. This can be removed in the future.
     const spamWords = [
       "pemain",
-      "wallet wallet", // seems to be in most crypto issues
       "minecraft",
       "paybis",
       "blockchain",
@@ -256,7 +255,6 @@ export class IssueHandler {
       "moonpay",
       "coinmama",
       "daftar",
-      ["wallet", "support"],
     ];
     const issueContent = ` ${issue.title} ${issue.body || ""} `.toLowerCase();
     // Scope spam filtering to affected repos only.
@@ -277,12 +275,12 @@ export class IssueHandler {
       });
 
     if (isSpam) {
-      // Discard other actions, wipe and lock the issue, and block
-      // the offending user.
+      // Discard other actions, wipe and lock the issue.
+      // This function used to block the user during a major spam incident
+      // but since then blocking has been removed.
       const reason = `Issue is believed to be spam: ${issue.title}`;
       return [
         new types.GitHubSpamAction(org, name, issue.number, reason),
-        new types.GitHubBlockAction(org, issue.user.login),
         new types.GitHubLockAction(org, name, issue.number),
       ];
     }
@@ -367,11 +365,11 @@ export class IssueHandler {
     label: string,
   ): types.Action[] {
     // Render the issue body
-    const body_html = marked(issue.body || "");
+    const body_html = marked.parse(issue.body || "", { async: false });
 
     // Send a new issue email
     const action = this.emailer.getIssueUpdateEmailAction(repo, issue, {
-      header: `New Issue from ${issue.user.login} in label ${label}`,
+      header: `New Issue from ${issue.user?.login ?? "ghost"} in label ${label}`,
       body: body_html,
       label: label,
     });
@@ -405,7 +403,7 @@ export class IssueHandler {
     const actions: types.Action[] = [];
 
     // Send an email to subscribers
-    const comment_html = marked(comment.body);
+    const comment_html = marked.parse(comment.body, { async: false });
     const emailAction = this.emailer.getIssueUpdateEmailAction(repo, issue, {
       header: `New Comment by ${comment.user.login}`,
       body: comment_html,
@@ -426,12 +424,19 @@ export class IssueHandler {
 
     if (cleanupConfig && cleanupConfig.issue && !isBotComment && !isClosed) {
       const issueConfig = cleanupConfig.issue;
-      const labelNames = issue.labels.map((label) => label.name);
+      const labelNames = issue.labels.map((label) => {
+        if (typeof label === "string") {
+          return label;
+        }
+        return label.name;
+      });
 
       const isNeedsInfo = labelNames.includes(issueConfig.label_needs_info);
       const isStale = labelNames.includes(issueConfig.label_stale);
 
-      const isAuthorComment = comment.user.login === issue.user.login;
+      const isAuthorComment = issue.user
+        ? comment.user.login === issue.user.login
+        : false;
 
       if (isStale) {
         // Any comment on a stale issue removes the stale flag
@@ -452,7 +457,7 @@ export class IssueHandler {
           : issueConfig.label_needs_info;
 
         const reason = isAuthorComment
-          ? `Comment by the author (${issue.user.login}) on a stale issue moves this to needs_attention`
+          ? `Comment by the author (${issue.user?.login ?? "ghost"}) on a stale issue moves this to needs_attention`
           : `Comment by a non-author (${comment.user.login}) on a stale issue moves this to needs_info`;
 
         if (isAuthorComment && !issueConfig.label_needs_attention) {
@@ -476,7 +481,7 @@ export class IssueHandler {
 
       if (isNeedsInfo && isAuthorComment) {
         // An author comment on a needs-info issue moves it to needs-attention.
-        const reason = `Comment by the author (${issue.user.login}) moves this from needs_info to needs_attention.`;
+        const reason = `Comment by the author (${issue.user?.login ?? "ghost"}) moves this from needs_info to needs_attention.`;
         actions.push(
           new types.GitHubRemoveLabelAction(
             org,
@@ -785,7 +790,7 @@ export class IssueHandler {
     const path_re = /template_path=(.*)/;
     const validate_re = /validate_template=(.*)/;
 
-    const body = issue.body;
+    const body = issue.body ?? "";
 
     const path_match = body.match(path_re);
     if (path_match) {

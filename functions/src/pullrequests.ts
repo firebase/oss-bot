@@ -71,7 +71,9 @@ export class PullRequestHandler {
       case PullRequestAction.OPENED:
         return this.onNewPullRequest(repo, pr);
       case PullRequestAction.LABELED:
-        return this.onPullRequestLabeled(repo, pr, event.label.name);
+        if (event.label.name) {
+          return this.onPullRequestLabeled(repo, pr, event.label.name);
+        }
       case PullRequestAction.ASSIGNED:
       /* falls through */
       case PullRequestAction.UNASSIGNED:
@@ -128,7 +130,7 @@ export class PullRequestHandler {
     label: string,
   ): Promise<types.Action[]> {
     // Render the PR body
-    const body_html = marked(pr.body || "");
+    const body_html = marked.parse(pr.body || "", { async: false });
 
     // Send a new PR email
     const action = this.emailer.getIssueUpdateEmailAction(repo, pr, {
