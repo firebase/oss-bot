@@ -27,6 +27,7 @@
   "devDependencies": {
     "@types/chai": "^5.2.2",
     "@types/duplexify": "^3.6.4",
+    "@types/express": "^5.0.3",
     "@types/mocha": "^10.0.10",
     "@types/mustache": "^4.2.6",
     "@types/node": "^22.15.30",
