@@ -12,7 +12,7 @@ import { sendPubSub } from "./pubsub";
 const bot_config = config.BotConfig.getDefault();
 
 const gh_client = new github.GitHubClient(
-  config.getFunctionsConfig("github.token")
+  config.getFunctionsConfig("github.token"),
 );
 
 function cleanRepoName(name: string): string {
@@ -30,14 +30,14 @@ function scrubArray(obj: any[], fieldsToScrub: string[]) {
 
 function scrubObject(obj: any, fieldsToScrub: string[]) {
   Object.keys(obj)
-    .filter(key => {
-      const isValid = fieldsToScrub.filter(fieldMatch => {
+    .filter((key) => {
+      const isValid = fieldsToScrub.filter((fieldMatch) => {
         return key.match(new RegExp(fieldMatch));
       });
 
       return isValid.length;
     })
-    .forEach(key => {
+    .forEach((key) => {
       delete obj[key];
     });
 
@@ -63,13 +63,10 @@ function RepoSnapshotPath(org: string, repo: string, date: Date) {
 export async function userIsCollaborator(
   org: string,
   repo: string,
-  user: string
+  user: string,
 ): Promise<boolean> {
   const repoKey = cleanRepoName(repo);
-  const repoMetaRef = database()
-    .ref("repo-metadata")
-    .child(org)
-    .child(repoKey);
+  const repoMetaRef = database().ref("repo-metadata").child(org).child(repoKey);
 
   const userSnap = await repoMetaRef
     .child("collaborators")
@@ -118,7 +115,7 @@ export async function GetOrganizationSnapshot(org: string, deep: boolean) {
 export async function GetRepoSnapshot(
   owner: string,
   repo: string,
-  repoData: any
+  repoData: any,
 ): Promise<{ repoData: any; issueData: snapshot.Map<snapshot.Issue> }> {
   if (!repoData) {
     log.warn(`GetRepoSnapshot called with null data for ${owner}/${repo}`);
@@ -138,6 +135,10 @@ export async function GetRepoSnapshot(
   // We're going to keep a copy of all issues for a given repo
   const issueData: snapshot.Map<snapshot.Issue> = {};
   for (const issue of issues) {
+    const labels: string[] = [];
+    for (const label in issue.labels) {
+      labels.push(label);
+    }
     issueData[`id_${issue.number}`] = {
       number: issue.number,
       title: issue.title,
@@ -146,14 +147,14 @@ export async function GetRepoSnapshot(
       pull_request: !!issue.pull_request,
       comments: issue.comments,
       user: {
-        login: issue.user.login
+        login: issue.user?.login ?? "ghost",
       },
       assignee: {
-        login: issue.assignee?.login || ""
+        login: issue.assignee?.login || "",
       },
-      labels: issue.labels.map(l => l.name),
+      labels: labels,
       updated_at: issue.updated_at,
-      created_at: issue.created_at
+      created_at: issue.created_at,
     };
   }
 
@@ -197,25 +198,22 @@ export async function GetRepoSnapshot(
 export async function FetchRepoSnapshot(
   org: string,
   repo: string,
-  date: Date
+  date: Date,
 ): Promise<snapshot.Repo | undefined> {
   const path = RepoSnapshotPath(org, repo, date);
-  const snap = await database()
-    .ref(path)
-    .once("value");
+  const snap = await database().ref(path).once("value");
   const data = snap.val();
   return data;
 }
 
-export const SaveRepoSnapshot = functions
-  .runWith(util.FUNCTION_OPTS)
-  .pubsub.topic("repo_snapshot")
-  .onPublish(async event => {
+export const SaveRepoSnapshot = functions.pubsub.onMessagePublished(
+  "repo_snapshot",
+  async (event) => {
     // Date for ingestion
     const now = new Date();
 
     // TODO: Enable retry, using retry best practices
-    const data = event.json;
+    const data = event.data.message.json;
     const org = data.org;
 
     const repoName = data.repo;
@@ -233,7 +231,7 @@ export const SaveRepoSnapshot = functions
     let baseRepoData = (await repoSnapRef.once("value")).val();
     if (!baseRepoData) {
       log.debug(
-        `Couldn't get base repo data for ${org}/${repoName}, getting from GitHub`
+        `Couldn't get base repo data for ${org}/${repoName}, getting from GitHub`,
       );
 
       // Get the repo data from GitHub API directly
@@ -241,7 +239,7 @@ export const SaveRepoSnapshot = functions
       const cleanRepoData = scrubObject(repoData, [
         "owner",
         "organization",
-        "url"
+        "url",
       ]);
 
       repoSnapRef.set(cleanRepoData);
@@ -253,24 +251,21 @@ export const SaveRepoSnapshot = functions
     const { repoData, issueData } = await GetRepoSnapshot(
       org,
       repoName,
-      baseRepoData
+      baseRepoData,
     );
     util.endTimer("GetRepoSnapshot");
 
-    log.debug(`Saving repo snapshot to ${repoSnapRef.path}`);
+    log.debug(`Saving repo snapshot to ${repoSnapRef.toString()}`);
     await repoSnapRef.set(repoData);
 
-    const repoIssueRef = database()
-      .ref("issues")
-      .child(org)
-      .child(repoKey);
+    const repoIssueRef = database().ref("issues").child(org).child(repoKey);
 
-    log.debug(`Saving issue snapshot to ${repoIssueRef.path}`);
+    log.debug(`Saving issue snapshot to ${repoIssueRef.toString()}`);
     try {
       await repoIssueRef.set(issueData);
     } catch (e) {
       throw new Error(
-        `Failed to save snapshot of issues for ${org}/${repoKey}: ${e}`
+        `Failed to save snapshot of issues for ${org}/${repoKey}: ${e}`,
       );
     }
 
@@ -294,7 +289,7 @@ export const SaveRepoSnapshot = functions
     try {
       const collabNames = await gh_client.getCollaboratorsForRepo(
         org,
-        repoName
+        repoName,
       );
       collabNames.forEach((name: string) => {
         collabMap[name] = true;
@@ -305,12 +300,12 @@ export const SaveRepoSnapshot = functions
 
     // Even if we fail to get the collaborators, set an empty map
     await repoMetaRef.child("collaborators").set(collabMap);
-  });
+  },
+);
 
-export const SaveOrganizationSnapshot = functions
-  .runWith(util.FUNCTION_OPTS)
-  .pubsub.schedule("every day 12:00")
-  .onRun(async () => {
+export const SaveOrganizationSnapshot = functions.scheduler.onSchedule(
+  "every day 12:00",
+  async () => {
     const configRepos = bot_config.getAllRepos();
 
     // Gather all the unique orgs from the configured repos
@@ -332,9 +327,7 @@ export const SaveOrganizationSnapshot = functions
       if (org !== "firebase") {
         log.debug(`Taking snapshot of org: ${org}`);
         const orgSnap = await GetOrganizationSnapshot(org, false);
-        await database()
-          .ref(DateSnapshotPath(org, new Date()))
-          .set(orgSnap);
+        await database().ref(DateSnapshotPath(org, new Date())).set(orgSnap);
       }
     }
 
@@ -347,7 +340,7 @@ export const SaveOrganizationSnapshot = functions
       const repoName = firebaseOrgSnap.repos[repoKey].name;
       reposToSnapshot.push({
         org: "firebase",
-        repo: repoName
+        repo: repoName,
       });
     }
 
@@ -356,7 +349,7 @@ export const SaveOrganizationSnapshot = functions
       if (r.org !== "firebase") {
         reposToSnapshot.push({
           org: r.org,
-          repo: r.name
+          repo: r.name,
         });
       }
     }
@@ -367,7 +360,8 @@ export const SaveOrganizationSnapshot = functions
       util.delay(1.0);
       await sendPubSub("repo_snapshot", r);
     }
-  });
+  },
+);
 
 interface OrgRepo {
   org: string;

@@ -17,7 +17,7 @@ export const SamScoreBadge = functions.https.onRequest(async (req, res) => {
   const openIssues = repoResp.data.open_issues_count;
 
   const searchResp = await api.search.issuesAndPullRequests({
-    q: `repo:${org}/${repo} type:issue state:closed`
+    q: `repo:${org}/${repo} type:issue state:closed`,
   });
   const closedIssues = searchResp.data.total_count;
 
@@ -26,10 +26,10 @@ export const SamScoreBadge = functions.https.onRequest(async (req, res) => {
     samScore < 0.5
       ? "brightgreen"
       : samScore < 1.0
-      ? "green"
-      : samScore < 2.0
-      ? "yellow"
-      : "red";
+        ? "green"
+        : samScore < 2.0
+          ? "yellow"
+          : "red";
 
   // Construct the Shield URL
   const shieldURL = `https://img.shields.io/static/v1?label=SAM%20Score&message=${samScore}&color=${color}`;

@@ -36,7 +36,7 @@ enum PullRequestAction {
   OPENED = "opened",
   EDITED = "edited",
   CLOSED = "closed",
-  REOPENED = "reopened"
+  REOPENED = "reopened",
 }
 
 // Label for issues that confuse the bot
@@ -65,13 +65,15 @@ export class PullRequestHandler {
     action: PullRequestAction,
     pr: types.github.PullRequest,
     repo: types.github.Repository,
-    sender: types.github.Sender
+    sender: types.github.Sender,
   ): Promise<types.Action[]> {
     switch (action) {
       case PullRequestAction.OPENED:
         return this.onNewPullRequest(repo, pr);
       case PullRequestAction.LABELED:
-        return this.onPullRequestLabeled(repo, pr, event.label.name);
+        if (event.label.name) {
+          return this.onPullRequestLabeled(repo, pr, event.label.name);
+        }
       case PullRequestAction.ASSIGNED:
       /* falls through */
       case PullRequestAction.UNASSIGNED:
@@ -103,7 +105,7 @@ export class PullRequestHandler {
    */
   async onNewPullRequest(
     repo: types.github.Repository,
-    pr: types.github.PullRequest
+    pr: types.github.PullRequest,
   ): Promise<types.Action[]> {
     const actions: types.Action[] = [];
 
@@ -125,16 +127,16 @@ export class PullRequestHandler {
   async onPullRequestLabeled(
     repo: types.github.Repository,
     pr: types.github.PullRequest,
-    label: string
+    label: string,
   ): Promise<types.Action[]> {
     // Render the PR body
-    const body_html = marked(pr.body || "");
+    const body_html = marked.parse(pr.body || "", { async: false });
 
     // Send a new PR email
     const action = this.emailer.getIssueUpdateEmailAction(repo, pr, {
       header: `New Pull Request from ${pr.user.login} in label ${label}`,
       body: body_html,
-      label: label
+      label: label,
     });
 
     if (!action) {

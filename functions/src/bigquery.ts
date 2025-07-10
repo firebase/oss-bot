@@ -17,19 +17,19 @@ const ISSUES_SCHEMA: TableSchema = {
       name: "user",
       type: "RECORD",
       mode: "NULLABLE",
-      fields: [{ name: "login", type: "STRING", mode: "NULLABLE" }]
+      fields: [{ name: "login", type: "STRING", mode: "NULLABLE" }],
     },
     {
       name: "assignee",
       type: "RECORD",
       mode: "NULLABLE",
-      fields: [{ name: "login", type: "STRING", mode: "NULLABLE" }]
+      fields: [{ name: "login", type: "STRING", mode: "NULLABLE" }],
     },
     { name: "labels", type: "STRING", mode: "REPEATED" },
     { name: "created_at", type: "STRING", mode: "NULLABLE" },
     { name: "updated_at", type: "STRING", mode: "NULLABLE" },
-    { name: "ingested", type: "TIMESTAMP", mode: "NULLABLE" }
-  ]
+    { name: "ingested", type: "TIMESTAMP", mode: "NULLABLE" },
+  ],
 };
 
 const EVENTS_DATASET = "github_events";
@@ -51,8 +51,8 @@ const EVENTS_SCHEMA: TableSchema = {
       mode: "NULLABLE",
       fields: [
         { name: "id", type: "INTEGER", mode: "NULLABLE" },
-        { name: "login", type: "STRING", mode: "NULLABLE" }
-      ]
+        { name: "login", type: "STRING", mode: "NULLABLE" },
+      ],
     },
 
     // The repository where the event ocurred
@@ -62,48 +62,48 @@ const EVENTS_SCHEMA: TableSchema = {
       mode: "NULLABLE",
       fields: [
         { name: "id", type: "INTEGER", mode: "NULLABLE" },
-        { name: "full_name", type: "STRING", mode: "NULLABLE" }
-      ]
+        { name: "full_name", type: "STRING", mode: "NULLABLE" },
+      ],
     },
 
     // The full JSON payload of the event
     { name: "payload", type: "STRING", mode: "NULLABLE" },
 
     // The time the event was captured
-    { name: "ingested", type: "TIMESTAMP", mode: "NULLABLE" }
-  ]
+    { name: "ingested", type: "TIMESTAMP", mode: "NULLABLE" },
+  ],
 };
 
 const bqClient = new BigQuery({
-  projectId: process.env.GCLOUD_PROJECT
+  projectId: process.env.GCLOUD_PROJECT,
 });
 
 export async function listEventsTables(): Promise<string[]> {
   const [tables] = await bqClient.dataset(EVENTS_DATASET).getTables();
-  return tables.map(x => x.id || "");
+  return tables.map((x) => x.id || "");
 }
 
 export async function createEventsTable(org: string): Promise<void> {
   await bqClient.dataset(EVENTS_DATASET).createTable(org, {
-    schema: EVENTS_SCHEMA
+    schema: EVENTS_SCHEMA,
   });
 }
 
 export async function listIssuesTables(): Promise<string[]> {
   const [tables] = await bqClient.dataset(ISSUES_DATASET).getTables();
-  return tables.map(x => x.id || "");
+  return tables.map((x) => x.id || "");
 }
 
 export async function createIssuesTable(org: string): Promise<void> {
   await bqClient.dataset(ISSUES_DATASET).createTable(org, {
-    schema: ISSUES_SCHEMA
+    schema: ISSUES_SCHEMA,
   });
 
   await bqClient.dataset(ISSUES_DATASET).createTable(`${org}_view`, {
     view: {
       query: getIssuesViewSql(org),
-      useLegacySql: false
-    }
+      useLegacySql: false,
+    },
   });
 }
 
@@ -111,10 +111,10 @@ export async function insertIssues(
   org: string,
   repo: string,
   issueData: snapshot.Issue[],
-  ingested: Date
+  ingested: Date,
 ) {
   const issues = Object.values(issueData).map(
-    i => new bigquery.Issue(i, repo, ingested)
+    (i) => new bigquery.Issue(i, repo, ingested),
   );
 
   if (issues.length === 0) {
@@ -132,7 +132,7 @@ export async function insertIssues(
 
 export async function insertEvent(org: string, event: bigquery.Event) {
   log.debug(
-    `Inserting event ${event.type}.${event.action} in org ${org} into BigQuery`
+    `Inserting event ${event.type}.${event.action} in org ${org} into BigQuery`,
   );
   log.debug("event", event);
   const insertRes = await bqClient

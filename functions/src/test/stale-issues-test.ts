@@ -28,6 +28,10 @@ import * as util from "./test-util";
 import { workingDaysAgo, getDateWorkingDaysBefore } from "../util";
 import { get } from "https";
 
+// Stale issue from iOS SDK
+const issue_stale_ios_sdk = require("./mock_data/stale_issue.json");
+const issue_stale_comments = require("./mock_data/stale_issue_comments.json");
+
 // Bot configuration
 const config_json = require("./mock_data/config.json");
 const bot_config = new config.BotConfig(config_json);
@@ -49,7 +53,7 @@ const FOURTEEN_WKD_AGO = getDateWorkingDaysBefore(NOW_TIME, 14).toISOString();
 const NINETY_WKD_AGO = getDateWorkingDaysBefore(NOW_TIME, 90).toISOString();
 const HUNDREDTWENTY_WKD_AGO = getDateWorkingDaysBefore(
   NOW_TIME,
-  120
+  120,
 ).toISOString();
 
 const DEFAULT_CONFIG: types.IssueCleanupConfig = {
@@ -58,11 +62,11 @@ const DEFAULT_CONFIG: types.IssueCleanupConfig = {
   label_stale: "stale",
   auto_close_labels: {
     add: ["closed-by-bot", "add-on-close"],
-    remove: ["remove-on-close"]
+    remove: ["remove-on-close"],
   },
   ignore_labels: ["feature-request"],
   needs_info_days: 7,
-  stale_days: 3
+  stale_days: 3,
 };
 
 const LOCKING_CONFIG = Object.assign({}, DEFAULT_CONFIG);
@@ -77,7 +81,7 @@ const STALE_ISSUE: types.internal.Issue = {
   labels: [{ name: "stale" }],
   created_at: FOURTEEN_WKD_AGO,
   updated_at: FOURTEEN_WKD_AGO,
-  locked: false
+  locked: false,
 };
 
 const READY_TO_CLOSE_ISSUE: types.internal.Issue = {
@@ -86,12 +90,12 @@ const READY_TO_CLOSE_ISSUE: types.internal.Issue = {
   title: "Issue that is stale",
   body: "foo bar",
   user: {
-    login: "some-user"
+    login: "some-user",
   },
   labels: [{ name: "stale" }, { name: "needs-info" }],
   created_at: FOURTEEN_WKD_AGO,
   updated_at: FOURTEEN_WKD_AGO,
-  locked: false
+  locked: false,
 };
 
 const NEEDS_INFO_ISSUE: types.internal.Issue = {
@@ -103,7 +107,7 @@ const NEEDS_INFO_ISSUE: types.internal.Issue = {
   labels: [{ name: "needs-info" }],
   created_at: SEVEN_WKD_AGO,
   updated_at: SEVEN_WKD_AGO,
-  locked: false
+  locked: false,
 };
 
 const NEW_CLOSED_ISSUE: types.internal.Issue = {
@@ -116,7 +120,7 @@ const NEW_CLOSED_ISSUE: types.internal.Issue = {
   created_at: FOURTEEN_WKD_AGO,
   updated_at: FOURTEEN_WKD_AGO,
   closed_at: SEVEN_WKD_AGO,
-  locked: false
+  locked: false,
 };
 
 const OLD_CLOSED_ISSUE: types.internal.Issue = {
@@ -129,7 +133,7 @@ const OLD_CLOSED_ISSUE: types.internal.Issue = {
   created_at: HUNDREDTWENTY_WKD_AGO,
   updated_at: HUNDREDTWENTY_WKD_AGO,
   closed_at: NINETY_WKD_AGO,
-  locked: false
+  locked: false,
 };
 
 describe("Stale issue handler", async () => {
@@ -157,12 +161,12 @@ describe("Stale issue handler", async () => {
       title: "Issue that needs info",
       body: "foo bar",
       user: {
-        login: "some-user"
+        login: "some-user",
       },
       labels: [{ name: "needs-info" }],
       created_at: JUST_NOW,
       updated_at: JUST_NOW,
-      locked: false
+      locked: false,
     };
 
     const issueComments: types.internal.Comment[] = [
@@ -170,8 +174,8 @@ describe("Stale issue handler", async () => {
         body: "My comment",
         user: { login: "some-user" },
         created_at: JUST_NOW,
-        updated_at: JUST_NOW
-      }
+        updated_at: JUST_NOW,
+      },
     ];
 
     simple
@@ -184,7 +188,7 @@ describe("Stale issue handler", async () => {
       "samtstern",
       "bottest",
       needsInfo,
-      DEFAULT_CONFIG
+      DEFAULT_CONFIG,
     );
     assert.deepEqual(actions, []);
   });
@@ -196,12 +200,12 @@ describe("Stale issue handler", async () => {
       title: "Issue that needs info",
       body: "foo bar",
       user: {
-        login: "some-user"
+        login: "some-user",
       },
       labels: [{ name: "needs-info" }],
       created_at: FOURTEEN_WKD_AGO,
       updated_at: FOURTEEN_WKD_AGO,
-      locked: false
+      locked: false,
     };
 
     const issueComments: types.internal.Comment[] = [
@@ -209,8 +213,8 @@ describe("Stale issue handler", async () => {
         body: "My comment",
         user: { login: "some-user" },
         created_at: FOURTEEN_WKD_AGO,
-        updated_at: FOURTEEN_WKD_AGO
-      }
+        updated_at: FOURTEEN_WKD_AGO,
+      },
     ];
 
     simple
@@ -223,7 +227,7 @@ describe("Stale issue handler", async () => {
       "samtstern",
       "bottest",
       needsInfo,
-      DEFAULT_CONFIG
+      DEFAULT_CONFIG,
     );
 
     util.actionsEqual(
@@ -232,27 +236,21 @@ describe("Stale issue handler", async () => {
         "samtstern",
         "bottest",
         needsInfo.number,
-        DEFAULT_CONFIG.label_stale
-      )
+        DEFAULT_CONFIG.label_stale,
+      ),
     );
   });
 
   it("should comment and close a stale issue after {X} days", async () => {
-    const issue = READY_TO_CLOSE_ISSUE;
-    const issueComments: types.internal.Comment[] = [
-      {
-        body: "My original comment",
-        user: issue.user,
-        created_at: SEVEN_WKD_AGO,
-        updated_at: SEVEN_WKD_AGO
-      },
-      {
-        body: cron_handler.getMarkStaleComment(issue.user.login, 7, 3),
-        user: { login: "google-oss-bot" },
-        created_at: SEVEN_WKD_AGO,
-        updated_at: SEVEN_WKD_AGO
-      }
-    ];
+    const issue = issue_stale_ios_sdk;
+    const issueComments = issue_stale_comments;
+
+    const config = DEFAULT_CONFIG;
+    config.auto_close_labels = {
+      add: ["closed-by-bot", "add-on-close"],
+      remove: ["needs-info"],
+    };
+    config.label_stale = "no-recent-activity";
 
     simple
       .mock(cron_handler.gh_client, "getCommentsForIssue")
@@ -261,39 +259,39 @@ describe("Stale issue handler", async () => {
       });
 
     const actions = await cron_handler.handleStaleIssue(
-      "samtstern",
-      "bottest",
+      "firebase",
+      "firebase-ios-sdk",
       issue,
-      DEFAULT_CONFIG
+      DEFAULT_CONFIG,
     );
 
     util.actionsListEqual(actions, [
       new types.GitHubCommentAction(
-        "samtstern",
-        "bottest",
+        "firebase",
+        "firebase-ios-sdk",
         issue.number,
         cron_handler.getCloseComment(issue.user.login),
-        false
+        false,
       ),
-      new types.GitHubCloseAction("samtstern", "bottest", issue.number),
+      new types.GitHubCloseAction("firebase", "firebase-ios-sdk", issue.number),
       new types.GitHubAddLabelAction(
-        "samtstern",
-        "bottest",
+        "firebase",
+        "firebase-ios-sdk",
         issue.number,
-        "closed-by-bot"
+        "closed-by-bot",
       ),
       new types.GitHubAddLabelAction(
-        "samtstern",
-        "bottest",
+        "firebase",
+        "firebase-ios-sdk",
         issue.number,
-        "add-on-close"
+        "add-on-close",
       ),
       new types.GitHubRemoveLabelAction(
-        "samtstern",
-        "bottest",
+        "firebase",
+        "firebase-ios-sdk",
         issue.number,
-        "remove-on-close"
-      )
+        "remove-on-close",
+      ),
     ]);
   });
 
@@ -304,23 +302,23 @@ describe("Stale issue handler", async () => {
       title: "Issue that should be ignored",
       body: "foo bar",
       user: {
-        login: "some-user"
+        login: "some-user",
       },
       labels: [
         { name: "feature-request" },
         { name: "needs-info" },
-        { name: "stale" }
+        { name: "stale" },
       ],
       created_at: FOURTEEN_WKD_AGO,
       updated_at: FOURTEEN_WKD_AGO,
-      locked: false
+      locked: false,
     };
 
     const actions = await cron_handler.handleStaleIssue(
       "samtstern",
       "bottest",
       toIgnore,
-      DEFAULT_CONFIG
+      DEFAULT_CONFIG,
     );
 
     assert.deepEqual(actions, []);
@@ -329,20 +327,20 @@ describe("Stale issue handler", async () => {
   it("should move a stale issue to needs-attention after an author comment", async () => {
     const repo: types.internal.Repository = {
       owner: { login: "samtstern" },
-      name: "bottest"
+      name: "bottest",
     };
 
     const comment: types.internal.Comment = {
-      user: STALE_ISSUE.user,
+      user: STALE_ISSUE.user!,
       body: "New comment by the author",
       created_at: SEVEN_WKD_AGO,
-      updated_at: SEVEN_WKD_AGO
+      updated_at: SEVEN_WKD_AGO,
     };
 
     const actions = await issue_handler.onCommentCreated(
       repo,
       STALE_ISSUE,
-      comment
+      comment,
     );
 
     util.actionsListEqual(actions, [
@@ -350,14 +348,14 @@ describe("Stale issue handler", async () => {
         repo.owner.login,
         repo.name,
         STALE_ISSUE.number,
-        "stale"
+        "stale",
       ),
       new types.GitHubAddLabelAction(
         repo.owner.login,
         repo.name,
         STALE_ISSUE.number,
-        "needs-attention"
-      )
+        "needs-attention",
+      ),
     ]);
   });
 
@@ -365,20 +363,20 @@ describe("Stale issue handler", async () => {
     // This repo does not have a label_needs_attention config
     const repo: types.internal.Repository = {
       owner: { login: "google" },
-      name: "exoplayer"
+      name: "exoplayer",
     };
 
     const comment: types.internal.Comment = {
-      user: NEEDS_INFO_ISSUE.user,
+      user: NEEDS_INFO_ISSUE.user!,
       body: "New comment by the author",
       created_at: JUST_NOW,
-      updated_at: JUST_NOW
+      updated_at: JUST_NOW,
     };
 
     const actions = await issue_handler.onCommentCreated(
       repo,
       NEEDS_INFO_ISSUE,
-      comment
+      comment,
     );
 
     util.actionsListEqual(actions, [
@@ -386,28 +384,28 @@ describe("Stale issue handler", async () => {
         repo.owner.login,
         repo.name,
         NEEDS_INFO_ISSUE.number,
-        "needs-info"
-      )
+        "needs-info",
+      ),
     ]);
   });
 
   it("should move a stale issue to needs-info after a non-author comment", async () => {
     const repo: types.internal.Repository = {
       owner: { login: "samtstern" },
-      name: "bottest"
+      name: "bottest",
     };
 
     const comment: types.internal.Comment = {
       user: { login: "someone-else" },
       body: "New comment by someone else",
       created_at: SEVEN_WKD_AGO,
-      updated_at: SEVEN_WKD_AGO
+      updated_at: SEVEN_WKD_AGO,
     };
 
     const actions = await issue_handler.onCommentCreated(
       repo,
       STALE_ISSUE,
-      comment
+      comment,
     );
 
     util.actionsListEqual(actions, [
@@ -415,50 +413,50 @@ describe("Stale issue handler", async () => {
         repo.owner.login,
         repo.name,
         STALE_ISSUE.number,
-        "stale"
+        "stale",
       ),
       new types.GitHubAddLabelAction(
         repo.owner.login,
         repo.name,
         STALE_ISSUE.number,
-        "needs-info"
-      )
+        "needs-info",
+      ),
     ]);
   });
 
   it("should lock a very old closed issue", async () => {
     const repo: types.internal.Repository = {
       owner: { login: "samtstern" },
-      name: "bottest"
+      name: "bottest",
     };
 
     const actions = await cron_handler.handleClosedIssue(
       repo.owner.login,
       repo.name,
       OLD_CLOSED_ISSUE,
-      LOCKING_CONFIG
+      LOCKING_CONFIG,
     );
 
     util.actionsListEqual(actions, [
       new types.GitHubLockAction(
         repo.owner.login,
         repo.name,
-        OLD_CLOSED_ISSUE.number
-      )
+        OLD_CLOSED_ISSUE.number,
+      ),
     ]);
   });
 
   it("should not lock a newly closed issue", async () => {
     const repo: types.internal.Repository = {
       owner: { login: "samtstern" },
-      name: "bottest"
+      name: "bottest",
     };
 
     const actions = await cron_handler.handleClosedIssue(
       repo.owner.login,
       repo.name,
       NEW_CLOSED_ISSUE,
-      LOCKING_CONFIG
+      LOCKING_CONFIG,
     );
 
     util.actionsListEqual(actions, []);

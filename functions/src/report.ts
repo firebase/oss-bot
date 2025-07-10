@@ -39,7 +39,7 @@ interface RepoFilter {
 
 const email_client = new email.EmailClient(
   getFunctionsConfig("mailgun.key"),
-  getFunctionsConfig("mailgun.domain")
+  getFunctionsConfig("mailgun.domain"),
 );
 
 // Config
@@ -63,12 +63,12 @@ export async function GetWeeklyReport(org: string) {
     recentEntry,
     (repo: snapshot.Repo) => {
       return !repo.private;
-    }
+    },
   );
 
   if (totalPublicRepos != publicReposInSnapshot) {
     log.warn(
-      `API says ${totalPublicRepos} but there are ${publicReposInSnapshot} in snapshot.`
+      `API says ${totalPublicRepos} but there are ${publicReposInSnapshot} in snapshot.`,
     );
   } else {
     log.debug(`Total public repos: ${totalPublicRepos}`);
@@ -87,9 +87,8 @@ export async function GetWeeklyReport(org: string) {
   const totalOpenIssues = GetTotalOpenIssues(recentEntry);
 
   // Issues with no comments at all
-  const totalOpenIssuesWithNoComments = GetTotalOpenIssuesWithNoComments(
-    recentEntry
-  );
+  const totalOpenIssuesWithNoComments =
+    GetTotalOpenIssuesWithNoComments(recentEntry);
 
   // Total stars for the org and total SAM score for the org
   const totalStars = GetTotalStars(recentEntry);
@@ -109,7 +108,7 @@ export async function GetWeeklyReport(org: string) {
     totalPublicRepos,
     totalStars,
     totalSAM,
-    averageIssuesPerRepo
+    averageIssuesPerRepo,
   };
 }
 
@@ -146,13 +145,13 @@ function GetTotalSamScore(org: snapshot.Org) {
 
       return {
         open_issues_count: repo.open_issues_count || 0,
-        closed_issues_count: repo.closed_issues_count || 0
+        closed_issues_count: repo.closed_issues_count || 0,
       };
     })
     .reduce((a: SAMScoreable, b: SAMScoreable) => {
       return {
         open_issues_count: a.open_issues_count + b.open_issues_count,
-        closed_issues_count: a.closed_issues_count + b.closed_issues_count
+        closed_issues_count: a.closed_issues_count + b.closed_issues_count,
       };
     });
 
@@ -161,7 +160,7 @@ function GetTotalSamScore(org: snapshot.Org) {
 
 function CountReposWithFilter(org: snapshot.Org, filter: RepoFilter): number {
   let count = 0;
-  Object.keys(org.repos).forEach(repoKey => {
+  Object.keys(org.repos).forEach((repoKey) => {
     const repo = org.repos[repoKey];
 
     if (filter(repo)) {
@@ -175,7 +174,7 @@ function CountReposWithFilter(org: snapshot.Org, filter: RepoFilter): number {
 function CountIssuesWithFilter(org: snapshot.Org, filter: IssueFilter) {
   let matchingIssues = 0;
 
-  Object.keys(org.repos).forEach(repoKey => {
+  Object.keys(org.repos).forEach((repoKey) => {
     const repo = org.repos[repoKey];
 
     if (repo.private) {
@@ -192,7 +191,7 @@ function CountIssuesWithFilter(org: snapshot.Org, filter: IssueFilter) {
           return sum;
         }
       },
-      0
+      0,
     );
   });
 
@@ -222,7 +221,7 @@ function GetTotalOpenPullRequests(snapshot: snapshot.Org) {
 function GetSortedSam(
   org: snapshot.Org,
   sortFn: (x: any, y: any) => number,
-  count?: number
+  count?: number,
 ) {
   let sortedSAM = Object.keys(org.repos)
     .map((repoKey: string) => {
@@ -232,7 +231,7 @@ function GetSortedSam(
       return { name, sam };
     })
     .sort(sortFn)
-    .filter(repo => {
+    .filter((repo) => {
       return repo.sam > 0;
     });
 
@@ -246,7 +245,7 @@ function GetLowestSam(org: snapshot.Org, count?: number) {
     (a, b) => {
       return a.sam - b.sam;
     },
-    count
+    count,
   );
 }
 
@@ -256,7 +255,7 @@ function GetHighestSam(org: snapshot.Org, count?: number) {
     (a, b) => {
       return b.sam - a.sam;
     },
-    count
+    count,
   );
 }
 
@@ -317,7 +316,7 @@ async function FetchClosestSnapshot(org: string, repo: string, date: Date) {
     if (snapshot) {
       return {
         date: offsetDate,
-        snapshot
+        snapshot,
       };
     } else {
       log.warn(`Could not get snapshot for ${repo} on ${date}`);
@@ -326,13 +325,13 @@ async function FetchClosestSnapshot(org: string, repo: string, date: Date) {
 
   return {
     date: date,
-    snapshot: undefined
+    snapshot: undefined,
   };
 }
 
 export async function MakeRepoReport(
   org: string,
-  repo: string
+  repo: string,
 ): Promise<report.Repo> {
   // Get two snapshots
   const now = new Date();
@@ -361,18 +360,18 @@ export async function MakeRepoReport(
   // Simple counting stats
   const open_issues = new report.Diff(
     beforeSnap.open_issues_count,
-    afterSnap.open_issues_count
+    afterSnap.open_issues_count,
   );
   const stars = new report.Diff(
     beforeSnap.stargazers_count,
-    afterSnap.stargazers_count
+    afterSnap.stargazers_count,
   );
   const forks = new report.Diff(beforeSnap.forks_count, afterSnap.forks_count);
 
   // SAM Score
   const sam = new report.Diff(
     ComputeSAMScore(beforeSnap),
-    ComputeSAMScore(afterSnap)
+    ComputeSAMScore(afterSnap),
   );
 
   // Check for difference in issues
@@ -383,13 +382,13 @@ export async function MakeRepoReport(
   // the "after" snap are newly opened.
   const closed_issues: report.ChangedIssue[] = util
     .setDiff(before_ids, after_ids)
-    .map(id => {
+    .map((id) => {
       const issue = beforeSnap.issues[id];
       return toChangedIssue(org, repo, issue);
     });
   const opened_issues: report.ChangedIssue[] = util
     .setDiff(after_ids, before_ids)
-    .map(id => {
+    .map((id) => {
       const issue = afterSnap.issues[id];
       return toChangedIssue(org, repo, issue);
     });
@@ -412,7 +411,7 @@ export async function MakeRepoReport(
     const stats = labelStats[key];
     worst_labels.push({
       name: key,
-      ...stats
+      ...stats,
     });
   }
 
@@ -430,7 +429,7 @@ export async function MakeRepoReport(
     opened_issues,
     closed_issues,
 
-    worst_labels
+    worst_labels,
   };
 }
 
@@ -439,13 +438,13 @@ export async function MakeRepoTimeSeries(
   repo: string,
   field: string,
   points: number,
-  daysBetween: number = 1
+  daysBetween: number = 1,
 ): Promise<report.RepoTimeSeries> {
   const result: report.RepoTimeSeries = {
     org,
     repo,
     field,
-    data: {}
+    data: {},
   };
 
   const now = new Date();
@@ -494,9 +493,9 @@ export async function MakeRepoTimeSeries(
 /**
  * HTTP function for experimenting with a new SAM score.
  */
-export const RepoIssueStatistics = functions
-  .runWith(util.FUNCTION_OPTS)
-  .https.onRequest(async (req, res) => {
+export const RepoIssueStatistics = functions.https.onRequest(
+  util.FUNCTION_OPTS,
+  async (req, res) => {
     const org = (req.query["org"] as string) || "firebase";
     const repo = req.query["repo"] as string;
     if (!repo) {
@@ -506,14 +505,15 @@ export const RepoIssueStatistics = functions
 
     const counts = await stats.getRepoIssueStats(org, repo);
     res.json(counts);
-  });
+  },
+);
 
 /**
  * HTTP Function to get a JSON report on a repo.
  */
-export const GetRepoReport = functions
-  .runWith(util.FUNCTION_OPTS)
-  .https.onRequest(async (req, res) => {
+export const GetRepoReport = functions.https.onRequest(
+  util.FUNCTION_OPTS,
+  async (req, res) => {
     // TODO: Allow passing in the 'start' date to get historical data.
 
     const org = (req.query["org"] as string) || "firebase";
@@ -529,14 +529,15 @@ export const GetRepoReport = functions
     } catch (e) {
       res.status(500).send(e);
     }
-  });
+  },
+);
 
 /**
  * Preview the email for a repo
  */
-export const GetRepoReportHTML = functions
-  .runWith(util.FUNCTION_OPTS)
-  .https.onRequest(async (req, res) => {
+export const GetRepoReportHTML = functions.https.onRequest(
+  util.FUNCTION_OPTS,
+  async (req, res) => {
     const org = (req.query["org"] as string) || "firebase";
     const repo = req.query["repo"] as string;
     if (!repo) {
@@ -550,14 +551,15 @@ export const GetRepoReportHTML = functions
     } catch (e) {
       res.status(500).send(e);
     }
-  });
+  },
+);
 
 /**
  * HTTP Function to get a JSON report on a repo.
  */
-export const GetRepoTimeSeries = functions
-  .runWith(util.FUNCTION_OPTS)
-  .https.onRequest(async (req, res) => {
+export const GetRepoTimeSeries = functions.https.onRequest(
+  util.FUNCTION_OPTS,
+  async (req, res) => {
     // CORS-hack
     res.set("Access-Control-Allow-Origin", "*");
 
@@ -583,21 +585,21 @@ export const GetRepoTimeSeries = functions
         repo.toLowerCase(),
         field.toLowerCase(),
         points,
-        daysBetween
+        daysBetween,
       );
       res.json(report);
     } catch (e) {
       res.status(500).send(e);
     }
-  });
+  },
+);
 
 /**
  * PubSub function that saves the weekly report to RTDB.
  */
-export const SaveWeeklyReport = functions
-  .runWith(util.FUNCTION_OPTS)
-  .pubsub.schedule("every wednesday 09:00")
-  .onRun(async () => {
+export const SaveWeeklyReport = functions.scheduler.onSchedule(
+  "every wednesday 09:00",
+  async () => {
     const now = new Date();
 
     // Save firebase report to the DB
@@ -607,15 +609,15 @@ export const SaveWeeklyReport = functions
       .child("github")
       .child(util.DateSlug(now))
       .set(report);
-  });
+  },
+);
 
 /**
  * PubSub function that sends the GitHub email based on the latest weekly report.
  */
-export const SendWeeklyEmail = functions
-  .runWith(util.FUNCTION_OPTS)
-  .pubsub.schedule("every wednesday 09:30")
-  .onRun(async () => {
+export const SendWeeklyEmail = functions.scheduler.onSchedule(
+  "every wednesday 09:30",
+  async () => {
     const emailText = await GetWeeklyEmail("firebase");
     const now = new Date();
 
@@ -623,20 +625,20 @@ export const SendWeeklyEmail = functions
     const subject = `Firebase GitHub Summary for ${dateString}`;
 
     await email_client.sendEmail(EMAIL_GROUP, subject, emailText);
-  });
+  },
+);
 
 /**
  * PubSub function that sends the GitHub email based on the latest weekly report.
  */
-export const SendWeeklyRepoEmails = functions
-  .runWith(util.FUNCTION_OPTS)
-  .pubsub.schedule("every wednesday 10:00")
-  .onRun(async () => {
+export const SendWeeklyRepoEmails = functions.scheduler.onSchedule(
+  "every wednesday 10:00",
+  async () => {
     const allRepos = bot_config.getAllRepos();
     for (const repo of allRepos) {
       const reportConfig = bot_config.getRepoReportingConfig(
         repo.org,
-        repo.name
+        repo.name,
       );
       if (!reportConfig) {
         log.debug(`No reporting config for ${repo.name}`);
@@ -659,7 +661,8 @@ export const SendWeeklyRepoEmails = functions
         log.error(`Failed to send email for ${repo.name}`, e);
       }
     }
-  });
+  },
+);
 
 export async function GetWeeklyRepoEmail(org: string, repo: string) {
   const report = await MakeRepoReport(org, repo);
@@ -687,7 +690,7 @@ export async function GetWeeklyEmail(org: string) {
     .once("child_added");
   const previousReport = previousReportSnapshot.val();
 
-  Object.keys(report).forEach(key => {
+  Object.keys(report).forEach((key) => {
     if (typeof report[key] !== "number") return;
     const keyDiff = `${key}Diff`;
 
@@ -726,11 +729,11 @@ export async function GetWeeklyEmail(org: string) {
 function toChangedIssue(
   org: string,
   repo: string,
-  issue: snapshot.Issue
+  issue: snapshot.Issue,
 ): report.ChangedIssue {
   return {
     number: issue.number,
     title: issue.title,
-    link: `https://github.com/${org}/${repo}/issues/${issue.number}`
+    link: `https://github.com/${org}/${repo}/issues/${issue.number}`,
   };
 }

@@ -64,7 +64,7 @@ export class TemplateChecker {
   constructor(
     sectionPrefix: string,
     requiredMarker: string,
-    templateText: string
+    templateText: string,
   ) {
     // String prefix for a section (normally ###)
     this.sectionPrefix = sectionPrefix;
@@ -109,9 +109,17 @@ export class TemplateChecker {
    * Returns an array of sections that were present in the template
    * but not in the issue.
    */
-  matchesTemplateSections(data: string): SectionValidationResult {
-    const otherSections = this.extractSections(data);
+  matchesTemplateSections(
+    data: string | null | undefined,
+  ): SectionValidationResult {
     const templateSections = this.extractSections(this.templateText);
+    const all = templateSections.sections.map((x) => x.name);
+
+    if (!data) {
+      const invalid = all;
+      return { all, invalid };
+    }
+    const otherSections = this.extractSections(data);
 
     const missingSections: string[] = [];
     for (const section of templateSections.sections) {
@@ -120,7 +128,6 @@ export class TemplateChecker {
       }
     }
 
-    const all = templateSections.sections.map(x => x.name);
     const invalid = missingSections;
     return { all, invalid };
   }
@@ -128,12 +135,18 @@ export class TemplateChecker {
   /**
    * Get the names of all required sections that were not filled out (unmodified).
    */
-  getRequiredSectionsEmpty(data: string): SectionValidationResult {
+  getRequiredSectionsEmpty(
+    data: string | undefined | null,
+  ): SectionValidationResult {
+    // handle empty body
+    if (!data) {
+      data = "";
+    }
     const otherContent = this.extractSections(data);
     const templateContent = this.extractSections(this.templateText);
     const emptySections: string[] = [];
 
-    const requiredSections = templateContent.sections.filter(x => x.required);
+    const requiredSections = templateContent.sections.filter((x) => x.required);
 
     for (const section of requiredSections) {
       // For a required section, we want to make sure that the user
@@ -152,7 +165,7 @@ export class TemplateChecker {
       }
     }
 
-    const all = requiredSections.map(x => x.name);
+    const all = requiredSections.map((x) => x.name);
     const invalid = emptySections;
     return { all, invalid };
   }
