@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v2";
 import { database } from "./database";
 import * as github from "./github";
 import * as log from "./log";

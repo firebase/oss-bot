@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { readFileSync } from "fs";
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v2";
 import * as path from "path";
 import * as mustache from "mustache";
 

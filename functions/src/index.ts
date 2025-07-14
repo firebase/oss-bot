@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v2";
 
 // Local includes
 import * as github from "./github";
@@ -38,7 +38,7 @@ import {
 
 // This makes console.log() work as it used to in Node 8
 // See: https://firebase.google.com/docs/functions/writing-and-viewing-logs#console-log
-require("firebase-functions/lib/logger/compat");
+import * as flog from "firebase-functions/logger";
 
 export { SaveOrganizationSnapshot, SaveRepoSnapshot } from "./snapshot";
 
