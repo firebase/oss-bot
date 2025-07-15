@@ -12,7 +12,7 @@ import { sendPubSub } from "./pubsub";
 const bot_config = config.BotConfig.getDefault();
 
 const gh_client = new github.GitHubClient(
-  config.getFunctionsConfig("github.token"),
+  config.getGitHubToken(),
 );
 
 function cleanRepoName(name: string): string {

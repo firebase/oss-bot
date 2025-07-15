@@ -71,13 +71,13 @@ const PR_EXPIRY_MS = 15 * 24 * 60 * 60 * 1000;
 
 // GitHub API client
 const gh_client: github.GitHubClient = new github.GitHubClient(
-  config.getFunctionsConfig("github.token"),
+  config.getGitHubToken(),
 );
 
 // Mailgun Email client
 const email_client: email.EmailClient = new email.EmailClient(
-  config.getFunctionsConfig("mailgun.key"),
-  config.getFunctionsConfig("mailgun.domain"),
+  config.getMailgunKey(),
+  config.getMailgunDomain(),
 );
 
 // Handler for GitHub issues
@@ -293,7 +293,7 @@ export const botCleanup = functions.scheduler.onSchedule(
   },
 );
 
-export const botCleanupRepo = functions.pubsub.onMessagePublished(
+export const botCleanupRepo_v2 = functions.pubsub.onMessagePublished(
   "bot-cleanup-repo",
   async (event) => {
     const data = event.data.message.json;
@@ -306,6 +306,10 @@ export const botCleanupRepo = functions.pubsub.onMessagePublished(
     // TODO: Make this less hardcoded
     const isTestBot = process.env.GCLOUD_PROJECT === "ossbot-test";
     const isTestRepo = org === "samtstern" && repo === "bottest";
+    const rolloutRepo = "firebase-ios-sdk";
+    if (repo !== rolloutRepo) {
+      console.log(`V2 function skipping repo that isn't iOS SDK: ${repo}`);
+    }
     if (isTestBot && !isTestRepo) {
       console.log(`Test bot, skipping ${repo}`);
       return;

@@ -15,9 +15,33 @@
  */
 import * as functions from "firebase-functions/v2";
 
+import * as config from "../config/config.json"
 import * as log from "./log";
 import * as encoding from "./shared/encoding";
 import * as types from "./types";
+import * as params from "firebase-functions/params";
+
+const githubToken = params.defineString("GITHUB_TOKEN");
+const mailgunKey = params.defineString("MAILGUN_KEY");
+const mailgunDomain = params.defineString("MAILGUN_DOMAIN");
+const emailDebug = params.defineBoolean("EMAIL_DEBUG");
+const emailGroup = params.defineString("EMAIL_GROUP");
+
+export function getGitHubToken(): string {
+  return githubToken.value()
+}
+export function getMailgunKey(): string {
+  return mailgunKey.value()
+}
+export function getMailgunDomain(): string {
+  return mailgunDomain.value()
+}
+export function getEmailDebug(): boolean {
+  return emailDebug.value()
+}
+export function getEmailGroup(): string {
+  return emailGroup.value()
+}
 
 interface Repo {
   org: string;
@@ -31,30 +55,6 @@ interface RelevantLabelResponse {
   error?: string;
 }
 
-export function getFunctionsConfig(key: string): any {
-  // Allow the environment to overrride anything else
-  const envKey = encoding.toEnvKey(key);
-  const envOverride = process.env[envKey];
-  if (envOverride) {
-    log.debug(`Config override: ${key}=${envKey}=${envOverride}`);
-    return envOverride;
-  }
-
-  const encodedKey = encoding.encodeKey(key);
-  const parts = encodedKey.split(".");
-
-  let val = functions.config();
-  for (const part of parts) {
-    if (val === undefined) {
-      return undefined;
-    }
-
-    val = val[part];
-  }
-
-  return encoding.deepDecodeObject(val);
-}
-
 /**
  * Create a new config handler.
  * @param {object} config JSON config data.
@@ -63,7 +63,7 @@ export class BotConfig {
   config: types.Config;
 
   static getDefault() {
-    return new BotConfig(getFunctionsConfig("runtime.config"));
+    return new BotConfig(config);
   }
 
   constructor(config: types.Config) {

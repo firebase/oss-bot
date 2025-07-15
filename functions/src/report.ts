@@ -11,7 +11,7 @@ import * as snap from "./snapshot";
 import * as util from "./util";
 import * as stats from "./stats";
 import { snapshot, report } from "./types";
-import { BotConfig, getFunctionsConfig } from "./config";
+import * as config from "./config";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -38,15 +38,15 @@ interface RepoFilter {
 }
 
 const email_client = new email.EmailClient(
-  getFunctionsConfig("mailgun.key"),
-  getFunctionsConfig("mailgun.domain"),
+  config.getMailgunKey(),
+  config.getMailgunDomain(),
 );
 
 // Config
-const bot_config = BotConfig.getDefault();
+const bot_config = config.BotConfig.getDefault();
 
-const EMAIL_DEBUG = getFunctionsConfig("email.debug") === "true";
-const EMAIL_GROUP = getFunctionsConfig("email.recipient");
+const EMAIL_DEBUG = config.getEmailDebug();
+const EMAIL_GROUP = config.getEmailGroup();
 
 export async function GetWeeklyReport(org: string) {
   const snapshotsRef = database().ref("snapshots/github");
