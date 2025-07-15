@@ -4,6 +4,8 @@ functions/dist
 functions/config/*
 .firebaserc
 .firebase
+.env
+.env.*
 *.log
 functions/config/config.json
 /**/.runtimeconfig.json
