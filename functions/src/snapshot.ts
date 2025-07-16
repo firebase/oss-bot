@@ -11,9 +11,7 @@ import { sendPubSub } from "./pubsub";
 // Config
 const bot_config = config.BotConfig.getDefault();
 
-const gh_client = new github.GitHubClient(
-  config.getGitHubToken(),
-);
+const gh_client = new github.GitHubClient(config.getGitHubToken());
 
 function cleanRepoName(name: string): string {
   let cleanName = name.toLowerCase();

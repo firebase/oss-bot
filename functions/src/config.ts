@@ -15,32 +15,35 @@
  */
 import * as functions from "firebase-functions/v2";
 
-import * as config from "../config/config.json"
+import * as config from "../config/config.json";
 import * as log from "./log";
 import * as encoding from "./shared/encoding";
 import * as types from "./types";
 import * as params from "firebase-functions/params";
 
+// TODO: these should be moved to cloud secrets
 const githubToken = params.defineString("GITHUB_TOKEN");
 const mailgunKey = params.defineString("MAILGUN_KEY");
+
+// Not secrets
 const mailgunDomain = params.defineString("MAILGUN_DOMAIN");
 const emailDebug = params.defineBoolean("EMAIL_DEBUG");
 const emailGroup = params.defineString("EMAIL_GROUP");
 
 export function getGitHubToken(): string {
-  return githubToken.value()
+  return githubToken.value();
 }
 export function getMailgunKey(): string {
-  return mailgunKey.value()
+  return mailgunKey.value();
 }
 export function getMailgunDomain(): string {
-  return mailgunDomain.value()
+  return mailgunDomain.value();
 }
 export function getEmailDebug(): boolean {
-  return emailDebug.value()
+  return emailDebug.value();
 }
 export function getEmailGroup(): string {
-  return emailGroup.value()
+  return emailGroup.value();
 }
 
 interface Repo {
