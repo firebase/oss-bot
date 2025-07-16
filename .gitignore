@@ -9,3 +9,4 @@ functions/config/*
 *.log
 functions/config/config.json
 /**/.runtimeconfig.json
+.DS_Store

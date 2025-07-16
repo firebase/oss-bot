@@ -127,6 +127,7 @@ export class IssueHandler {
     repo: types.internal.Repository,
     sender: types.github.Sender,
   ): Promise<types.Action[]> {
+    /* eslint-disable no-fallthrough */
     switch (action) {
       case IssueAction.OPENED:
         return this.onNewIssue(repo, issue);
@@ -151,6 +152,7 @@ export class IssueHandler {
         log.debug("Issue: " + issue.title);
         break;
     }
+    /* eslint-enable no-fallthrough */
 
     // Return empty action array if no action to be taken.
     return Promise.resolve([]);
