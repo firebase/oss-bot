@@ -306,10 +306,7 @@ export const botCleanupRepo_v2 = functions.pubsub.onMessagePublished(
     // TODO: Make this less hardcoded
     const isTestBot = process.env.GCLOUD_PROJECT === "ossbot-test";
     const isTestRepo = org === "samtstern" && repo === "bottest";
-    const rolloutRepo = "firebase-ios-sdk";
-    if (repo !== rolloutRepo) {
-      console.log(`V2 function skipping repo that isn't iOS SDK: ${repo}`);
-    }
+
     if (isTestBot && !isTestRepo) {
       console.log(`Test bot, skipping ${repo}`);
       return;
