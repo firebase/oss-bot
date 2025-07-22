@@ -40,21 +40,21 @@ import {
 // See: https://firebase.google.com/docs/functions/writing-and-viewing-logs#console-log
 import * as flog from "firebase-functions/logger";
 
-export { SaveOrganizationSnapshot, SaveRepoSnapshot } from "./snapshot";
+export { SaveOrganizationSnapshot_v2, SaveRepoSnapshot_v2 } from "./snapshot";
 
 export {
-  RepoIssueStatistics,
-  GetRepoReport,
-  GetRepoReportHTML,
-  GetRepoTimeSeries,
+  RepoIssueStatistics_v2,
+  GetRepoReport_v2,
+  GetRepoReportHTML_v2,
+  GetRepoTimeSeries_v2,
   GetWeeklyReport,
-  SaveWeeklyReport,
+  SaveWeeklyReport_v2,
   GetWeeklyEmail,
-  SendWeeklyEmail,
-  SendWeeklyRepoEmails,
+  SendWeeklyEmail_v2,
+  SendWeeklyRepoEmails_v2,
 } from "./report";
 
-export { SamScoreBadge } from "./badge";
+export { SamScoreBadge_v2 } from "./badge";
 
 // Config
 const bot_config = config.BotConfig.getDefault();
@@ -89,7 +89,7 @@ const pr_handler = new pullrequests.PullRequestHandler(bot_config);
 // Handler for Cron jobs
 const cron_handler = new cron.CronHandler(gh_client, bot_config);
 
-export const eventWebhook = functions.https.onRequest(
+export const eventWebhook_v2 = functions.https.onRequest(
   util.FUNCTION_OPTS,
   async (request, response) => {
     const type = request.get("X-GitHub-Event");
@@ -123,7 +123,7 @@ export const eventWebhook = functions.https.onRequest(
 /**
  * Function that responds to GitHub events (HTTP webhook).
  */
-export const githubWebhook = functions.https.onRequest(
+export const githubWebhook_v2 = functions.https.onRequest(
   util.FUNCTION_OPTS,
   async (request, response) => {
     // Get event and action;
@@ -279,7 +279,7 @@ export const githubWebhook = functions.https.onRequest(
 /**
  * Function that responds to pubsub events sent via an AppEngine cronjob.
  */
-export const botCleanup = functions.scheduler.onSchedule(
+export const botCleanup_v2 = functions.scheduler.onSchedule(
   "every day 18:00",
   async () => {
     console.log("The cleanup job is running!");
@@ -447,7 +447,7 @@ async function executeAction(action: types.Action): Promise<any> {
 /**
  * Manually run this function to create tables.
  */
-export const ensureBigquery = functions.pubsub.onMessagePublished(
+export const ensureBigquery_v2 = functions.pubsub.onMessagePublished(
   "ensure-bigquery",
   async () => {
     const repos = bot_config.getAllRepos();

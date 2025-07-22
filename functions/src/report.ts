@@ -493,7 +493,7 @@ export async function MakeRepoTimeSeries(
 /**
  * HTTP function for experimenting with a new SAM score.
  */
-export const RepoIssueStatistics = functions.https.onRequest(
+export const RepoIssueStatistics_v2 = functions.https.onRequest(
   util.FUNCTION_OPTS,
   async (req, res) => {
     const org = (req.query["org"] as string) || "firebase";
@@ -511,7 +511,7 @@ export const RepoIssueStatistics = functions.https.onRequest(
 /**
  * HTTP Function to get a JSON report on a repo.
  */
-export const GetRepoReport = functions.https.onRequest(
+export const GetRepoReport_v2 = functions.https.onRequest(
   util.FUNCTION_OPTS,
   async (req, res) => {
     // TODO: Allow passing in the 'start' date to get historical data.
@@ -535,7 +535,7 @@ export const GetRepoReport = functions.https.onRequest(
 /**
  * Preview the email for a repo
  */
-export const GetRepoReportHTML = functions.https.onRequest(
+export const GetRepoReportHTML_v2 = functions.https.onRequest(
   util.FUNCTION_OPTS,
   async (req, res) => {
     const org = (req.query["org"] as string) || "firebase";
@@ -557,7 +557,7 @@ export const GetRepoReportHTML = functions.https.onRequest(
 /**
  * HTTP Function to get a JSON report on a repo.
  */
-export const GetRepoTimeSeries = functions.https.onRequest(
+export const GetRepoTimeSeries_v2 = functions.https.onRequest(
   util.FUNCTION_OPTS,
   async (req, res) => {
     // CORS-hack
@@ -597,7 +597,7 @@ export const GetRepoTimeSeries = functions.https.onRequest(
 /**
  * PubSub function that saves the weekly report to RTDB.
  */
-export const SaveWeeklyReport = functions.scheduler.onSchedule(
+export const SaveWeeklyReport_v2 = functions.scheduler.onSchedule(
   "every wednesday 09:00",
   async () => {
     const now = new Date();
@@ -615,7 +615,7 @@ export const SaveWeeklyReport = functions.scheduler.onSchedule(
 /**
  * PubSub function that sends the GitHub email based on the latest weekly report.
  */
-export const SendWeeklyEmail = functions.scheduler.onSchedule(
+export const SendWeeklyEmail_v2 = functions.scheduler.onSchedule(
   "every wednesday 09:30",
   async () => {
     const emailText = await GetWeeklyEmail("firebase");
@@ -631,7 +631,7 @@ export const SendWeeklyEmail = functions.scheduler.onSchedule(
 /**
  * PubSub function that sends the GitHub email based on the latest weekly report.
  */
-export const SendWeeklyRepoEmails = functions.scheduler.onSchedule(
+export const SendWeeklyRepoEmails_v2 = functions.scheduler.onSchedule(
   "every wednesday 10:00",
   async () => {
     const allRepos = bot_config.getAllRepos();
