@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions/v2";
+import * as functions from "firebase-functions";
 import { Octokit } from "@octokit/rest";
 import * as util from "./util";
 

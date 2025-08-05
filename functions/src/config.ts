@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as functions from "firebase-functions/v2";
+import * as functions from "firebase-functions";
 
 import * as config from "../config/config.json";
 import * as log from "./log";
