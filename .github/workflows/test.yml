@@ -26,5 +26,8 @@ jobs:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
 
+      - name: Copy mock config
+        run: mkdir functions/config && cp functions/src/test/mock_data/config.json functions/config/config.json
+
       - name: Run tests
         run: make test-functions
