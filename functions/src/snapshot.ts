@@ -11,9 +11,7 @@ import { sendPubSub } from "./pubsub";
 // Config
 const bot_config = config.BotConfig.getDefault();
 
-const gh_client = new github.GitHubClient(
-  config.getFunctionsConfig("github.token"),
-);
+const gh_client = new github.GitHubClient(config.getGitHubToken());
 
 function cleanRepoName(name: string): string {
   let cleanName = name.toLowerCase();
@@ -206,7 +204,7 @@ export async function FetchRepoSnapshot(
   return data;
 }
 
-export const SaveRepoSnapshot = functions.pubsub.onMessagePublished(
+export const SaveRepoSnapshot_v2 = functions.pubsub.onMessagePublished(
   "repo_snapshot",
   async (event) => {
     // Date for ingestion
@@ -303,7 +301,7 @@ export const SaveRepoSnapshot = functions.pubsub.onMessagePublished(
   },
 );
 
-export const SaveOrganizationSnapshot = functions.scheduler.onSchedule(
+export const SaveOrganizationSnapshot_v2 = functions.scheduler.onSchedule(
   "every day 12:00",
   async () => {
     const configRepos = bot_config.getAllRepos();

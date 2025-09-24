@@ -67,6 +67,7 @@ export class PullRequestHandler {
     repo: types.github.Repository,
     sender: types.github.Sender,
   ): Promise<types.Action[]> {
+    /* eslint-disable no-fallthrough */
     switch (action) {
       case PullRequestAction.OPENED:
         return this.onNewPullRequest(repo, pr);
@@ -95,6 +96,7 @@ export class PullRequestHandler {
         log.debug("Pull Request: " + pr.title);
         break;
     }
+    /* eslint-enable no-fallthrough */
 
     // Return empty action array if no action to be taken.
     return Promise.resolve([]);

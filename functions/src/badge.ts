@@ -2,7 +2,7 @@ import * as functions from "firebase-functions";
 import { Octokit } from "@octokit/rest";
 import * as util from "./util";
 
-export const SamScoreBadge = functions.https.onRequest(async (req, res) => {
+export const SamScoreBadge_v2 = functions.https.onRequest(async (req, res) => {
   const org = req.query["org"] as string;
   const repo = req.query["repo"] as string;
 
@@ -35,7 +35,7 @@ export const SamScoreBadge = functions.https.onRequest(async (req, res) => {
   const shieldURL = `https://img.shields.io/static/v1?label=SAM%20Score&message=${samScore}&color=${color}`;
 
   // Fetch the shield
-  const fetch = await import("node-fetch"); // tslint:disable-line
+  const fetch = await import("node-fetch");
   const fetchRes = await fetch.default(shieldURL);
 
   // Set key headers
