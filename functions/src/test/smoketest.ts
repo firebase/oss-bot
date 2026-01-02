@@ -18,7 +18,7 @@ import "mocha";
 import * as fs from "fs";
 import * as path from "path";
 import * as assert from "assert";
-import * as simple from "simple-mock";
+import esmock from "esmock";
 import { fileURLToPath } from "url";
 
 import * as log from "../log.js";
@@ -27,7 +27,6 @@ import * as pullrequests from "../pullrequests.js";
 import { BotConfig } from "../config.js";
 import * as types from "../types.js";
 import * as mocks from "./mocks.js";
-import * as snapshot from "../snapshot.js";
 
 import prod_config from "../../config/config.json" with { type: "json" };
 
@@ -72,12 +71,6 @@ class SimpleRepo extends types.github.Repository {
 // const config_json = require("./mock_data/config.json");
 import config from "./mock_data/config.json" with { type: "json" };
 const bot_config = new BotConfig(config);
-
-// Issue event handler
-const issue_handler = new issues.IssueHandler(
-  new mocks.MockGitHubClient("abc1234"),
-  bot_config,
-);
 
 // Issue event handler
 const pr_handler = new pullrequests.PullRequestHandler(bot_config);
@@ -230,6 +223,8 @@ function actionMatches(action: types.Action, props: any): boolean {
 }
 
 describe("The OSS Robot", () => {
+  let issue_handler: issues.IssueHandler;
+
   before(() => {
     log.setLogLevel(log.Level.WARN);
   });
@@ -238,9 +233,17 @@ describe("The OSS Robot", () => {
     log.setLogLevel(log.Level.ALL);
   });
 
-  beforeEach(() => {
-    // TODO(samstern): Could use the emulators so I don't need this.
-    simple.mock(snapshot, "userIsCollaborator").resolveWith(false);
+  beforeEach(async () => {
+    const issues = await esmock("../issues.js", {
+      "../snapshot.js": {
+        userIsCollaborator: async () => false,
+      },
+    });
+
+    issue_handler = new issues.IssueHandler(
+      new mocks.MockGitHubClient("abc1234"),
+      bot_config,
+    );
   });
 
   afterEach(() => {
@@ -398,8 +401,16 @@ describe("The OSS Robot", () => {
   });
 
   it("should let a collaborator file a totally crap issue", async () => {
-    // Make everyone a collaborator
-    simple.mock(snapshot, "userIsCollaborator").resolveWith(true);
+    const issues = await esmock("../issues.js", {
+      "../snapshot.js": {
+        userIsCollaborator: async () => true,
+      },
+    });
+
+    const issue_handler = new issues.IssueHandler(
+      new mocks.MockGitHubClient("abc1234"),
+      bot_config,
+    );
 
     const actions = await issue_handler.handleIssueEvent(
       issue_opened_bot_test_empty,

@@ -15,11 +15,15 @@
  */
 import * as fs from "fs";
 import * as path from "path";
+import { fileURLToPath } from "url";
 
 import * as log from "../log.js";
 import * as config from "../config.js";
 import * as github from "../github.js";
 import * as email from "../email.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export class MockGitHubClient extends github.GitHubClient {
   auth() {
