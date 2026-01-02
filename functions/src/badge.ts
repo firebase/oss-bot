@@ -1,6 +1,6 @@
 import * as functions from "firebase-functions";
 import { Octokit } from "@octokit/rest";
-import * as util from "./util";
+import * as util from "./util.js";
 
 export const SamScoreBadge_v2 = functions.https.onRequest(async (req, res) => {
   const org = req.query["org"] as string;

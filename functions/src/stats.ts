@@ -1,7 +1,7 @@
-import { snapshot } from "./types";
-import { database } from "./database";
-import * as util from "./util";
-import * as log from "./log";
+import { snapshot } from "./types.js";
+import { database } from "./database.js";
+import * as util from "./util.js";
+import * as log from "./log.js";
 
 const IssueFilters = {
   isOpen: (x: snapshot.Issue) => {

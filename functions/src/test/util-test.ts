@@ -16,8 +16,8 @@
 import "mocha";
 
 import * as assert from "assert";
-import * as log from "../log";
-import * as util from "../util";
+import * as log from "../log.js";
+import * as util from "../util.js";
 
 describe("Configuration", async () => {
   before(() => {

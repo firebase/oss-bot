@@ -1,6 +1,7 @@
 {
   "name": "oss-bot",
   "description": "GitHub monitoring robot.",
+  "type": "module",
   "engines": {
     "node": "20"
   },
@@ -12,11 +13,12 @@
     "@google-cloud/pubsub": "^5.0.0",
     "@octokit/plugin-retry": "^8.0.1",
     "@octokit/rest": "^22.0.0",
+    "@types/mailgun-js": "^0.22.19",
     "chalk": "^5.4.1",
     "date-fns": "^4.1.0",
     "diff": "^8.0.2",
     "firebase-admin": "^13.4.0",
-    "firebase-functions": "^6.3.2",
+    "firebase-functions": "^7.0.2",
     "google-auth-library": "^9.15.1",
     "mailgun-js": "^0.6.7",
     "marked": "^15.0.12",

@@ -16,10 +16,10 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import * as log from "../log";
-import * as config from "../config";
-import * as github from "../github";
-import * as email from "../email";
+import * as log from "../log.js";
+import * as config from "../config.js";
+import * as github from "../github.js";
+import * as email from "../email.js";
 
 export class MockGitHubClient extends github.GitHubClient {
   auth() {

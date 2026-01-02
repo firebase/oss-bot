@@ -1,6 +1,6 @@
 import { BigQuery, TableSchema } from "@google-cloud/bigquery";
-import { snapshot, bigquery } from "./types";
-import * as log from "./log";
+import { snapshot, bigquery } from "./types.js";
+import * as log from "./log.js";
 
 const ISSUES_DATASET = "github_issues";
 

@@ -2,16 +2,16 @@ import { format } from "date-fns";
 import { readFileSync } from "fs";
 import * as functions from "firebase-functions";
 import * as path from "path";
-import * as mustache from "mustache";
+import Mustache from "mustache";
 
-import { database } from "./database";
-import * as email from "./email";
-import * as log from "./log";
-import * as snap from "./snapshot";
-import * as util from "./util";
-import * as stats from "./stats";
-import { snapshot, report } from "./types";
-import * as config from "./config";
+import { database } from "./database.js";
+import * as email from "./email.js";
+import * as log from "./log.js";
+import * as snap from "./snapshot.js";
+import * as util from "./util.js";
+import * as stats from "./stats.js";
+import { snapshot, report } from "./types.js";
+import * as config from "./config.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -668,7 +668,7 @@ export async function GetWeeklyRepoEmail(org: string, repo: string) {
   const report = await MakeRepoReport(org, repo);
 
   const template = readFileSync(path.join(__dirname, "./repo-weekly.mustache"));
-  return mustache.render(template.toString(), report);
+  return Mustache.render(template.toString(), report);
 }
 
 export async function GetWeeklyEmail(org: string) {
@@ -723,7 +723,7 @@ export async function GetWeeklyEmail(org: string) {
   });
 
   const template = readFileSync(path.join(__dirname, "./weekly.mustache"));
-  return mustache.render(template.toString(), report);
+  return Mustache.render(template.toString(), report);
 }
 
 function toChangedIssue(

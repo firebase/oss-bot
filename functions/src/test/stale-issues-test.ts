@@ -18,22 +18,22 @@ import "mocha";
 import * as assert from "assert";
 import * as simple from "simple-mock";
 
-import * as config from "../config";
-import * as cron from "../cron";
-import * as github from "../github";
-import * as log from "../log";
-import * as issues from "../issues";
-import * as types from "../types";
-import * as util from "./test-util";
-import { workingDaysAgo, getDateWorkingDaysBefore } from "../util";
+import * as config from "../config.js";
+import * as cron from "../cron.js";
+import * as github from "../github.js";
+import * as log from "../log.js";
+import * as issues from "../issues.js";
+import * as types from "../types.js";
+import * as util from "./test-util.js";
+import { workingDaysAgo, getDateWorkingDaysBefore } from "../util.js";
 import { get } from "https";
 
 // Stale issue from iOS SDK
-const issue_stale_ios_sdk = require("./mock_data/stale_issue.json");
-const issue_stale_comments = require("./mock_data/stale_issue_comments.json");
+import issue_stale_ios_sdk from "./mock_data/stale_issue.json" with { type: "json" };
+import issue_stale_comments from "./mock_data/stale_issue_comments.json" with { type: "json" };
 
 // Bot configuration
-const config_json = require("./mock_data/config.json");
+import config_json from "./mock_data/config.json" with { type: "json" };
 const bot_config = new config.BotConfig(config_json);
 
 // GitHub client
@@ -143,7 +143,6 @@ describe("Stale issue handler", async () => {
 
   afterEach(() => {
     log.setLogLevel(log.Level.ALL);
-    simple.restore();
   });
 
   it("properly calculates working days", async () => {
