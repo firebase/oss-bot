@@ -60,7 +60,7 @@
     "dev": "tsc --watch",
     "build-ts": "tsc",
     "build-mjml": "mjml templates/weekly.mjml --output dist/weekly.mustache && mjml templates/repo-weekly.mjml --output dist/repo-weekly.mustache",
-    "test-ts": "mocha -r ts-node/register src/test/*test.ts",
+    "test-ts": "mocha -r ts-node/register src/test/*test.ts --exit",
     "watch-ts": "tsc -w",
     "lint": "npx eslint",
     "task:get-organization-snapshot": "npm run-script task:run-promise './dist/snapshot' 'GetOrganizationSnapshot' 'firebase'",
