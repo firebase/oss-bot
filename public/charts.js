@@ -151,18 +151,34 @@ function getQueryUrl(opts) {
 async function fetchQueryData(opts) {
   const url = getQueryUrl(opts);
   const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch data: ${res.status} ${res.statusText}`);
+  }
   return res.json();
 }
 
 async function withLoading(fn) {
   const loading = this.document.querySelector("#chart-loading");
+  const errorDiv = this.document.querySelector("#chart-error");
+  if (errorDiv) {
+    errorDiv.style.display = "none";
+    errorDiv.textContent = "";
+  }
   loading.classList.add("visible");
   lockFields();
 
-  await fn();
-
-  unlockFields();
-  loading.classList.remove("visible");
+  try {
+    await fn();
+  } catch (err) {
+    console.error(err);
+    if (errorDiv) {
+      errorDiv.style.display = "block";
+      errorDiv.textContent = `Error: ${err.message || err}`;
+    }
+  } finally {
+    unlockFields();
+    loading.classList.remove("visible");
+  }
 }
 
 function lockFields() {
@@ -243,6 +259,12 @@ const onDocReady = function (cb) {
 window.resetChart = function () {
   clearChart();
   unlockFields();
+
+  const errorDiv = document.querySelector("#chart-error");
+  if (errorDiv) {
+    errorDiv.style.display = "none";
+    errorDiv.textContent = "";
+  }
 
   resetSeriesState();
   CHART_AXES = [];
