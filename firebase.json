@@ -4,11 +4,11 @@
     "rewrites": [
       {
         "source": "/issuestats",
-        "function": "RepoIssueStatistics"
+        "function": "RepoIssueStatistics_v2"
       },
       {
         "source": "/samscorebadge",
-        "function": "SamScoreBadge"
+        "function": "SamScoreBadge_v2"
       }
     ]
   },
