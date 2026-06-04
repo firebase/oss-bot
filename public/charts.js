@@ -158,8 +158,8 @@ async function fetchQueryData(opts) {
 }
 
 async function withLoading(fn) {
-  const loading = this.document.querySelector("#chart-loading");
-  const errorDiv = this.document.querySelector("#chart-error");
+  const loading = document.querySelector("#chart-loading");
+  const errorDiv = document.querySelector("#chart-error");
   if (errorDiv) {
     errorDiv.style.display = "none";
     errorDiv.textContent = "";
@@ -289,7 +289,7 @@ window.addSeriesFromForm = async function () {
 };
 
 onDocReady(() => {
-  const chartCard = this.document.querySelector("#chart-content");
+  const chartCard = document.querySelector("#chart-content");
   const chart = chartCard.querySelector("canvas");
   chartContext = chart.getContext("2d");
   
