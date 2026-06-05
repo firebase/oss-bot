@@ -10,6 +10,12 @@ body {
   display: unset;
 }
 
+#chart-error {
+  color: red;
+  display: none;
+  margin-bottom: 10px;
+}
+
 td {
   text-align: left !important;
   vertical-align: middle;
