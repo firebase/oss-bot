@@ -145,7 +145,7 @@ function getQueryUrl(opts) {
   if (window.location.hostname === "localhost") {
     base = "http://localhost:5001/ossbot-test/us-central1";
   }
-  return `${base}/GetRepoTimeSeries?org=${org}&repo=${repo}&field=${field}&points=${points}&daysBetween=${daysBetween}`;
+  return `${base}/GetRepoTimeSeries_v2?org=${org}&repo=${repo}&field=${field}&points=${points}&daysBetween=${daysBetween}`;
 }
 
 async function fetchQueryData(opts) {

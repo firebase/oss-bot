@@ -270,7 +270,7 @@ firebase functions:config:set email.recipient="<GROUP_TO_GET_EMAILS>"
 In GitHub add a webhook with the following configuration:
 
   * Payload URL - your cloud functions HTTP URL. Which should be
-    `https://<YOURPROJECT>.cloudfunctions.net/githubWebhook`.
+    `https://us-central1-<YOURPROJECT>.cloudfunctions.net/githubWebhook_v2`.
   * Content type - application/json
   * Secret - N/A
   * Select individual events:
