@@ -37,7 +37,7 @@
     "@types/simple-mock": "^0.8.1",
     "chai": "^5.2.0",
     "eslint": "^9.31.0",
-    "firebase-tools": "^14.6.0",
+    "firebase-tools": "^15.20.0",
     "mjml": "^4.15.3",
     "mocha": "^11.6.0",
     "prettier": "^3.5.3",
