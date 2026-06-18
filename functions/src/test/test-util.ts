@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import * as types from "../types";
+import * as types from "../types.js";
 
 export function actionsEqual(a: types.Action, b: types.Action) {
   const aClone = Object.assign({}, a) as types.Action;

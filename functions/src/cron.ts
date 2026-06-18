@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import { BotConfig } from "./config";
-import * as github from "./github";
-import * as log from "./log";
-import * as util from "./util";
-import * as types from "./types";
+import { BotConfig } from "./config.js";
+import * as github from "./github.js";
+import * as log from "./log.js";
+import * as util from "./util.js";
+import * as types from "./types.js";
 
 // Metadata the bot can leave in comments to mark its actions
 const EVT_MARK_STALE = "event: mark-stale";

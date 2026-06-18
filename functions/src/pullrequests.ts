@@ -15,10 +15,10 @@
  */
 import * as marked from "marked";
 
-import * as config from "./config";
-import * as email from "./email";
-import * as log from "./log";
-import * as types from "./types";
+import * as config from "./config.js";
+import * as email from "./email.js";
+import * as log from "./log.js";
+import * as types from "./types.js";
 
 // Event: pull_request
 // https://developer.github.com/v3/activity/events/types/#pullrequestevent
@@ -72,8 +72,10 @@ export class PullRequestHandler {
       case PullRequestAction.OPENED:
         return this.onNewPullRequest(repo, pr);
       case PullRequestAction.LABELED:
-        if (event.label.name) {
+        if (event.label?.name) {
           return this.onPullRequestLabeled(repo, pr, event.label.name);
+        } else {
+          log.debug("Unexpectedly found empty label: " + event);
         }
       case PullRequestAction.ASSIGNED:
       /* falls through */

@@ -1,9 +1,10 @@
 {
     "compilerOptions": {
-        "module": "nodenext",
-        "target": "esnext",
+        "module": "NodeNext",
+        "target": "ESNext",
         "noImplicitAny": true,
-        "moduleResolution": "nodenext",
+        "moduleResolution": "NodeNext",
+        "esModuleInterop": true,
         "sourceMap": true,
         "outDir": "dist",
         "baseUrl": ".",
@@ -21,7 +22,7 @@
             "node"
         ],
         "lib" : [
-            "es2017"
+            "ES2022"
         ]
     },
     "include": [

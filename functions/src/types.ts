@@ -1,4 +1,4 @@
-import { IssueStats } from "./stats";
+import { IssueStats } from "./stats.js";
 
 export enum ActionService {
   GITHUB = "GITHUB",
@@ -408,7 +408,7 @@ export namespace github {
     languages_url: string;
     merges_url: string;
     milestones_url: string;
-    mirror_url: string;
+    mirror_url?: string | null;
     notifications_url: string;
     pulls_url: string;
     releases_url: string;
@@ -421,7 +421,7 @@ export namespace github {
     tags_url: string;
     teams_url: string;
     trees_url: string;
-    homepage: string;
+    homepage?: string | null;
     language?: any;
     forks_count: number;
     stargazers_count: number;
@@ -437,10 +437,6 @@ export namespace github {
     pushed_at: string;
     created_at: string;
     updated_at: string;
-    permissions: Permissions;
-    allow_rebase_merge: boolean;
-    allow_squash_merge: boolean;
-    allow_merge_commit: boolean;
     subscribers_count: number;
     network_count: number;
   }
@@ -456,18 +452,20 @@ export namespace github {
     number: number;
     state: string;
     title: string;
-    body?: string | null | undefined;
+    body?: string | null;
     user?: User | null;
     labels: (string | Label)[];
     assignee?: User | null;
-    milestone: Milestone;
+    milestone?: Milestone | null;
     locked: boolean;
     comments: number;
-    pull_request: PullRequest;
-    closed_at?: string;
+    pull_request?: PullRequest | null;
+    closed_at?: string | null;
     created_at: string;
     updated_at: string;
-    repository: Repository;
+    // Optional, sometimes GitHub requires you
+    // fetch it from the url.
+    repository?: Repository | null;
     changes?: {
       old_issue?: {
         url: string;
@@ -509,7 +507,7 @@ export namespace github {
     action: string;
     issue: Issue;
     repository: Repository;
-    label: Label;
+    label?: Label | null;
     sender: Sender;
   }
 

@@ -1,5 +1,5 @@
 import { PubSub } from "@google-cloud/pubsub";
-import * as log from "./log";
+import * as log from "./log.js";
 
 // Just #pubsubthings
 const pubsubClient = new PubSub({

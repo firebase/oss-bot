@@ -18,15 +18,17 @@ import "mocha";
 import * as fs from "fs";
 import * as path from "path";
 import * as assert from "assert";
-import * as simple from "simple-mock";
+import esmock from "esmock";
+import { fileURLToPath } from "url";
 
-import * as log from "../log";
-import * as issues from "../issues";
-import * as pullrequests from "../pullrequests";
-import * as config from "../config";
-import * as types from "../types";
-import * as mocks from "./mocks";
-import * as snapshot from "../snapshot";
+import * as log from "../log.js";
+import * as issues from "../issues.js";
+import * as pullrequests from "../pullrequests.js";
+import { BotConfig } from "../config.js";
+import * as types from "../types.js";
+import * as mocks from "./mocks.js";
+
+import prod_config from "../../config/config.json" with { type: "json" };
 
 class SimpleIssue extends types.github.Issue {
   constructor(opts: any) {
@@ -66,14 +68,9 @@ class SimpleRepo extends types.github.Repository {
 }
 
 // Bot configuration
-const config_json = require("./mock_data/config.json");
-const bot_config = new config.BotConfig(config_json);
-
-// Issue event handler
-const issue_handler = new issues.IssueHandler(
-  new mocks.MockGitHubClient("abc1234"),
-  bot_config,
-);
+// const config_json = require("./mock_data/config.json");
+import config from "./mock_data/config.json" with { type: "json" };
+const bot_config = new BotConfig(config);
 
 // Issue event handler
 const pr_handler = new pullrequests.PullRequestHandler(bot_config);
@@ -87,6 +84,8 @@ const test_repo = new SimpleRepo({
 });
 
 // Issue with the template properly filled in
+const file = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(file);
 const good_issue = new SimpleIssue({
   title: "A good issue",
   user: {
@@ -149,25 +148,25 @@ const fr_issue = new SimpleIssue({
 });
 
 // Issue opened on the BotTest repo
-const issue_opened_bot_test_full = require("./mock_data/issue_opened_bot_test_full.json");
+import issue_opened_bot_test_full from "./mock_data/issue_opened_bot_test_full.json" with { type: "json" };
 
 // Issue opened on the BotTest repo, empty body
-const issue_opened_bot_test_empty = require("./mock_data/issue_opened_bot_test_empty.json");
+import issue_opened_bot_test_empty from "./mock_data/issue_opened_bot_test_empty.json" with { type: "json" };
 
 // Issue opened on the BotTest repo, only product filled in
-const issue_opened_bot_test_partial = require("./mock_data/issue_opened_bot_test_partial.json");
+import issue_opened_bot_test_partial from "./mock_data/issue_opened_bot_test_partial.json" with { type: "json" };
 
 // Issue from the JS SDK that was not labeled 'auth' but should have been
-const issue_opened_js_sdk_auth = require("./mock_data/issue_opened_js_sdk_22.json");
+import issue_opened_js_sdk_auth from "./mock_data/issue_opened_js_sdk_22.json" with { type: "json" };
 
 // Issue from the JS SDK that was not labeled 'database' but should have been
-const issue_opened_js_sdk_db = require("./mock_data/issue_opened_js_sdk_35.json");
+import issue_opened_js_sdk_db from "./mock_data/issue_opened_js_sdk_35.json" with { type: "json" };
 
 // Issue from the JS SDK that was not labeled 'messaging' but should have been
-const issue_opened_js_sdk_messaging = require("./mock_data/issue_opened_js_sdk_59.json");
+import issue_opened_js_sdk_messaging from "./mock_data/issue_opened_js_sdk_59.json" with { type: "json" };
 
 // Comment on issue in the BotTest repo
-const comment_created_bot_test = require("./mock_data/comment_created_bot_test.json");
+import comment_created_bot_test from "./mock_data/comment_created_bot_test.json" with { type: "json" };
 
 // Fake WebhookEvent
 const whEvent = new types.github.WebhookEvent();
@@ -224,6 +223,8 @@ function actionMatches(action: types.Action, props: any): boolean {
 }
 
 describe("The OSS Robot", () => {
+  let issue_handler: issues.IssueHandler;
+
   before(() => {
     log.setLogLevel(log.Level.WARN);
   });
@@ -232,9 +233,17 @@ describe("The OSS Robot", () => {
     log.setLogLevel(log.Level.ALL);
   });
 
-  beforeEach(() => {
-    // TODO(samstern): Could use the emulators so I don't need this.
-    simple.mock(snapshot, "userIsCollaborator").resolveWith(false);
+  beforeEach(async () => {
+    const issues = await esmock("../issues.js", {
+      "../snapshot.js": {
+        userIsCollaborator: async () => false,
+      },
+    });
+
+    issue_handler = new issues.IssueHandler(
+      new mocks.MockGitHubClient("abc1234"),
+      bot_config,
+    );
   });
 
   afterEach(() => {
@@ -255,12 +264,12 @@ describe("The OSS Robot", () => {
       "reports",
       "validation",
     ];
-    const prod_config = require("../../config/config.json");
 
     for (const org in prod_config) {
-      for (const repo in prod_config[org]) {
+      const orgObject = prod_config[org as keyof typeof prod_config];
+      for (const repo in orgObject) {
         log.debug(`Config for ${org}/${repo}`);
-        const repo_config = prod_config[org][repo];
+        const repo_config: any = orgObject[repo as keyof typeof orgObject];
 
         // Make sure each key in the repo config is valid
         for (const key in repo_config) {
@@ -392,8 +401,16 @@ describe("The OSS Robot", () => {
   });
 
   it("should let a collaborator file a totally crap issue", async () => {
-    // Make everyone a collaborator
-    simple.mock(snapshot, "userIsCollaborator").resolveWith(true);
+    const issues = await esmock("../issues.js", {
+      "../snapshot.js": {
+        userIsCollaborator: async () => true,
+      },
+    });
+
+    const issue_handler = new issues.IssueHandler(
+      new mocks.MockGitHubClient("abc1234"),
+      bot_config,
+    );
 
     const actions = await issue_handler.handleIssueEvent(
       issue_opened_bot_test_empty,
@@ -411,7 +428,7 @@ describe("The OSS Robot", () => {
   });
 
   it("should label failed validation issues, if specified", async () => {
-    const newConfig = new config.BotConfig({
+    const newConfig = new BotConfig({
       samtstern: {
         bottest: {
           templates: {
@@ -447,7 +464,7 @@ describe("The OSS Robot", () => {
   it("should handle 'relaxed' required section validation", async () => {
     // With a 'relaxed' config the bot should accept the issue because at least one required
     // section was filled out.
-    const relaxedConfig = new config.BotConfig({
+    const relaxedConfig = new BotConfig({
       samtstern: {
         bottest: {
           templates: {
@@ -475,7 +492,7 @@ describe("The OSS Robot", () => {
     assertSameActions(relaxedActions, []);
 
     // With a strict config, the bot should get angry about the exact same issue.
-    const strictConfig = new config.BotConfig({
+    const strictConfig = new BotConfig({
       samtstern: {
         bottest: {
           templates: {

@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import * as encoding from "../shared/encoding";
+import * as encoding from "../shared/encoding.js";
 
 const firebase = require("firebase-tools");
 

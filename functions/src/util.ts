@@ -1,6 +1,6 @@
 import { format } from "date-fns";
-import * as log from "./log";
-import * as types from "./types";
+import * as log from "./log.js";
+import * as types from "./types.js";
 
 export const FUNCTION_OPTS = {
   timeoutSeconds: 540,

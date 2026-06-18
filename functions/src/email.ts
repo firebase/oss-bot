@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as log from "./log";
-import * as types from "./types";
-import * as config from "./config";
-
-const mailgun = require("mailgun-js");
+import * as log from "./log.js";
+import * as types from "./types.js";
+import * as config from "./config.js";
+import Mailgun from "mailgun-js";
 
 /**
  * Get a new email client that uses Mailgun.
@@ -125,7 +124,7 @@ export class EmailClient {
   // Lazy initialize sender
   getSender(): any {
     if (!this.sender) {
-      this.sender = mailgun({
+      this.sender = Mailgun({
         apiKey: this.apiKey,
         domain: this.domain,
       });

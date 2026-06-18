@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as log from "./log";
-import * as util from "./util";
+import * as log from "./log.js";
+import * as util from "./util.js";
 import { Octokit } from "@octokit/rest";
 import { OctokitResponse } from "@octokit/types";
 import { retry } from "@octokit/plugin-retry";

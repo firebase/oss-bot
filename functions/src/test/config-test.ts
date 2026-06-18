@@ -16,8 +16,8 @@
 import "mocha";
 
 import * as assert from "assert";
-import * as log from "../log";
-import * as encoding from "../shared/encoding";
+import * as log from "../log.js";
+import * as encoding from "../shared/encoding.js";
 
 describe("Configuration", async () => {
   before(() => {

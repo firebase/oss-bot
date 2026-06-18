@@ -16,31 +16,34 @@
 import * as functions from "firebase-functions";
 
 // Local includes
-import * as github from "./github";
-import * as email from "./email";
-import * as issues from "./issues";
-import * as pullrequests from "./pullrequests";
-import * as cron from "./cron";
-import * as config from "./config";
-import * as types from "./types";
-import * as util from "./util";
-import * as log from "./log";
-import * as pubsub from "./pubsub";
+import * as github from "./github.js";
+import * as email from "./email.js";
+import * as issues from "./issues.js";
+import * as pullrequests from "./pullrequests.js";
+import * as cron from "./cron.js";
+import * as config from "./config.js";
+import * as types from "./types.js";
+import * as util from "./util.js";
+import * as log from "./log.js";
+import * as pubsub from "./pubsub.js";
 
-import { database } from "./database";
+import { database } from "./database.js";
 import {
   createEventsTable,
   createIssuesTable,
   insertEvent,
   listEventsTables,
   listIssuesTables,
-} from "./bigquery";
+} from "./bigquery.js";
 
 // This makes console.log() work as it used to in Node 8
 // See: https://firebase.google.com/docs/functions/writing-and-viewing-logs#console-log
 import * as flog from "firebase-functions/logger";
 
-export { SaveOrganizationSnapshot_v2, SaveRepoSnapshot_v2 } from "./snapshot";
+export {
+  SaveOrganizationSnapshot_v2,
+  SaveRepoSnapshot_v2,
+} from "./snapshot.js";
 
 export {
   RepoIssueStatistics_v2,
@@ -52,9 +55,9 @@ export {
   GetWeeklyEmail,
   SendWeeklyEmail_v2,
   SendWeeklyRepoEmails_v2,
-} from "./report";
+} from "./report.js";
 
-export { SamScoreBadge_v2 } from "./badge";
+export { SamScoreBadge_v2 } from "./badge.js";
 
 // Config
 const bot_config = config.BotConfig.getDefault();

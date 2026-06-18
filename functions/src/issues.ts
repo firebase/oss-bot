@@ -15,13 +15,13 @@
  */
 import * as marked from "marked";
 
-import * as github from "./github";
-import * as template from "./template";
-import * as config from "./config";
-import * as types from "./types";
-import * as log from "./log";
-import * as email from "./email";
-import * as snapshot from "./snapshot";
+import * as github from "./github.js";
+import * as template from "./template.js";
+import * as config from "./config.js";
+import * as types from "./types.js";
+import * as log from "./log.js";
+import * as email from "./email.js";
+import * as snapshot from "./snapshot.js";
 
 export const MSG_FOLLOW_TEMPLATE =
   "This issue does not seem to follow the issue template. " +
@@ -138,8 +138,10 @@ export class IssueHandler {
       case IssueAction.REOPENED:
         return this.onIssueStatusChanged(repo, issue, IssueStatus.OPEN);
       case IssueAction.LABELED:
-        if (event.label.name) {
+        if (event.label?.name) {
           return this.onIssueLabeled(repo, issue, event.label.name);
+        } else {
+          log.debug("Unexpectedly found empty label: " + event);
         }
       case IssueAction.UNASSIGNED:
       /* falls through */
@@ -277,13 +279,11 @@ export class IssueHandler {
       });
 
     if (isSpam) {
-      // Discard other actions, wipe and lock the issue.
-      // This function used to block the user during a major spam incident
-      // but since then blocking has been removed.
+      // Do nothing. This can be reenabled if spam becomes an issue again.
       const reason = `Issue is believed to be spam: ${issue.title}`;
       return [
-        new types.GitHubSpamAction(org, name, issue.number, reason),
-        new types.GitHubLockAction(org, name, issue.number),
+        // new types.GitHubSpamAction(org, name, issue.number, reason),
+        // new types.GitHubLockAction(org, name, issue.number),
       ];
     }
 

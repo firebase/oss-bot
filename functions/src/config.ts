@@ -15,10 +15,10 @@
  */
 import * as functions from "firebase-functions";
 
-import * as config from "../config/config.json";
-import * as log from "./log";
-import * as encoding from "./shared/encoding";
-import * as types from "./types";
+import config from "../config/config.json" with { type: "json" };
+import * as log from "./log.js";
+import * as encoding from "./shared/encoding.js";
+import * as types from "./types.js";
 import * as params from "firebase-functions/params";
 
 // TODO: these should be moved to cloud secrets

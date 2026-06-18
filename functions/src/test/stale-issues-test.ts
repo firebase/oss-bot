@@ -16,34 +16,23 @@
 import "mocha";
 
 import * as assert from "assert";
-import * as simple from "simple-mock";
 
-import * as config from "../config";
-import * as cron from "../cron";
-import * as github from "../github";
-import * as log from "../log";
-import * as issues from "../issues";
-import * as types from "../types";
-import * as util from "./test-util";
-import { workingDaysAgo, getDateWorkingDaysBefore } from "../util";
-import { get } from "https";
+import * as config from "../config.js";
+import * as cron from "../cron.js";
+import * as github from "../github.js";
+import * as log from "../log.js";
+import * as issues from "../issues.js";
+import * as types from "../types.js";
+import * as util from "./test-util.js";
+import { workingDaysAgo, getDateWorkingDaysBefore } from "../util.js";
 
 // Stale issue from iOS SDK
-const issue_stale_ios_sdk = require("./mock_data/stale_issue.json");
-const issue_stale_comments = require("./mock_data/stale_issue_comments.json");
+import issue_stale_ios_sdk from "./mock_data/stale_issue.json" with { type: "json" };
+import issue_stale_comments from "./mock_data/stale_issue_comments.json" with { type: "json" };
 
 // Bot configuration
-const config_json = require("./mock_data/config.json");
+import config_json from "./mock_data/config.json" with { type: "json" };
 const bot_config = new config.BotConfig(config_json);
-
-// GitHub client
-const gh_client = new github.GitHubClient("fake-token");
-
-// Cron handler
-const cron_handler = new cron.CronHandler(gh_client, bot_config);
-
-// Issue event handler
-const issue_handler = new issues.IssueHandler(gh_client, bot_config);
 
 const NOW_TIME = new Date();
 
@@ -79,20 +68,6 @@ const STALE_ISSUE: types.internal.Issue = {
   body: "Body of my issue",
   user: { login: "some-user" },
   labels: [{ name: "stale" }],
-  created_at: FOURTEEN_WKD_AGO,
-  updated_at: FOURTEEN_WKD_AGO,
-  locked: false,
-};
-
-const READY_TO_CLOSE_ISSUE: types.internal.Issue = {
-  number: 1,
-  state: "open",
-  title: "Issue that is stale",
-  body: "foo bar",
-  user: {
-    login: "some-user",
-  },
-  labels: [{ name: "stale" }, { name: "needs-info" }],
   created_at: FOURTEEN_WKD_AGO,
   updated_at: FOURTEEN_WKD_AGO,
   locked: false,
@@ -143,7 +118,6 @@ describe("Stale issue handler", async () => {
 
   afterEach(() => {
     log.setLogLevel(log.Level.ALL);
-    simple.restore();
   });
 
   it("properly calculates working days", async () => {
@@ -169,7 +143,7 @@ describe("Stale issue handler", async () => {
       locked: false,
     };
 
-    const issueComments: types.internal.Comment[] = [
+    const issueComments = [
       {
         body: "My comment",
         user: { login: "some-user" },
@@ -178,11 +152,15 @@ describe("Stale issue handler", async () => {
       },
     ];
 
-    simple
-      .mock(cron_handler.gh_client, "getCommentsForIssue")
-      .callFn(async () => {
-        return issueComments;
-      });
+    class MockClient extends github.GitHubClient {
+      constructor() {
+        super("fake-token");
+      }
+      getCommentsForIssue(): Promise<any[]> {
+        return Promise.resolve(issueComments);
+      }
+    }
+    const cron_handler = new cron.CronHandler(new MockClient(), bot_config);
 
     const actions = await cron_handler.handleStaleIssue(
       "samtstern",
@@ -208,7 +186,7 @@ describe("Stale issue handler", async () => {
       locked: false,
     };
 
-    const issueComments: types.internal.Comment[] = [
+    const issueComments = [
       {
         body: "My comment",
         user: { login: "some-user" },
@@ -217,11 +195,15 @@ describe("Stale issue handler", async () => {
       },
     ];
 
-    simple
-      .mock(cron_handler.gh_client, "getCommentsForIssue")
-      .callFn(async () => {
-        return issueComments;
-      });
+    class MockClient extends github.GitHubClient {
+      constructor() {
+        super("fake-token");
+      }
+      getCommentsForIssue(): Promise<any[]> {
+        return Promise.resolve(issueComments);
+      }
+    }
+    const cron_handler = new cron.CronHandler(new MockClient(), bot_config);
 
     const actions = await cron_handler.handleStaleIssue(
       "samtstern",
@@ -252,16 +234,32 @@ describe("Stale issue handler", async () => {
     };
     config.label_stale = "no-recent-activity";
 
-    simple
-      .mock(cron_handler.gh_client, "getCommentsForIssue")
-      .callFn(async () => {
-        return issueComments;
-      });
+    class MockClient extends github.GitHubClient {
+      constructor() {
+        super("fake-token");
+      }
+      getCommentsForIssue(): Promise<any[]> {
+        return Promise.resolve(issueComments as any);
+      }
+      closeIssue() {
+        return Promise.resolve(undefined);
+      }
+      addLabel() {
+        return Promise.resolve(undefined);
+      }
+      removeLabel() {
+        return Promise.resolve(undefined);
+      }
+      addComment() {
+        return Promise.resolve(undefined);
+      }
+    }
+    const cron_handler = new cron.CronHandler(new MockClient(), bot_config);
 
     const actions = await cron_handler.handleStaleIssue(
       "firebase",
       "firebase-ios-sdk",
-      issue,
+      issue as types.internal.Issue,
       DEFAULT_CONFIG,
     );
 
@@ -314,6 +312,11 @@ describe("Stale issue handler", async () => {
       locked: false,
     };
 
+    const cron_handler = new cron.CronHandler(
+      new github.GitHubClient("fake-token"),
+      bot_config,
+    );
+
     const actions = await cron_handler.handleStaleIssue(
       "samtstern",
       "bottest",
@@ -326,16 +329,21 @@ describe("Stale issue handler", async () => {
 
   it("should move a stale issue to needs-attention after an author comment", async () => {
     const repo: types.internal.Repository = {
-      owner: { login: "samtstern" },
+      owner: { login: "samtstern" } as types.github.User,
       name: "bottest",
     };
 
     const comment: types.internal.Comment = {
-      user: STALE_ISSUE.user!,
+      user: STALE_ISSUE.user as types.internal.User,
       body: "New comment by the author",
       created_at: SEVEN_WKD_AGO,
       updated_at: SEVEN_WKD_AGO,
     };
+
+    const issue_handler = new issues.IssueHandler(
+      new github.GitHubClient("fake-token"),
+      bot_config,
+    );
 
     const actions = await issue_handler.onCommentCreated(
       repo,
@@ -362,16 +370,21 @@ describe("Stale issue handler", async () => {
   it("should not add needs-attention label if not specified", async () => {
     // This repo does not have a label_needs_attention config
     const repo: types.internal.Repository = {
-      owner: { login: "google" },
+      owner: { login: "google" } as types.github.User,
       name: "exoplayer",
     };
 
     const comment: types.internal.Comment = {
-      user: NEEDS_INFO_ISSUE.user!,
+      user: NEEDS_INFO_ISSUE.user as types.internal.User,
       body: "New comment by the author",
       created_at: JUST_NOW,
       updated_at: JUST_NOW,
     };
+
+    const issue_handler = new issues.IssueHandler(
+      new github.GitHubClient("fake-token"),
+      bot_config,
+    );
 
     const actions = await issue_handler.onCommentCreated(
       repo,
@@ -391,7 +404,7 @@ describe("Stale issue handler", async () => {
 
   it("should move a stale issue to needs-info after a non-author comment", async () => {
     const repo: types.internal.Repository = {
-      owner: { login: "samtstern" },
+      owner: { login: "samtstern" } as types.github.User,
       name: "bottest",
     };
 
@@ -401,6 +414,11 @@ describe("Stale issue handler", async () => {
       created_at: SEVEN_WKD_AGO,
       updated_at: SEVEN_WKD_AGO,
     };
+
+    const issue_handler = new issues.IssueHandler(
+      new github.GitHubClient("fake-token"),
+      bot_config,
+    );
 
     const actions = await issue_handler.onCommentCreated(
       repo,
@@ -426,9 +444,14 @@ describe("Stale issue handler", async () => {
 
   it("should lock a very old closed issue", async () => {
     const repo: types.internal.Repository = {
-      owner: { login: "samtstern" },
+      owner: { login: "samtstern" } as types.github.User,
       name: "bottest",
     };
+
+    const cron_handler = new cron.CronHandler(
+      new github.GitHubClient("fake-token"),
+      bot_config,
+    );
 
     const actions = await cron_handler.handleClosedIssue(
       repo.owner.login,
@@ -448,9 +471,14 @@ describe("Stale issue handler", async () => {
 
   it("should not lock a newly closed issue", async () => {
     const repo: types.internal.Repository = {
-      owner: { login: "samtstern" },
+      owner: { login: "samtstern" } as types.github.User,
       name: "bottest",
     };
+
+    const cron_handler = new cron.CronHandler(
+      new github.GitHubClient("fake-token"),
+      bot_config,
+    );
 
     const actions = await cron_handler.handleClosedIssue(
       repo.owner.login,

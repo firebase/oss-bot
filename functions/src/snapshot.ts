@@ -1,12 +1,12 @@
 import * as functions from "firebase-functions";
-import { database } from "./database";
-import * as github from "./github";
-import * as log from "./log";
-import * as util from "./util";
-import { snapshot } from "./types";
-import * as config from "./config";
-import { insertIssues } from "./bigquery";
-import { sendPubSub } from "./pubsub";
+import { database } from "./database.js";
+import * as github from "./github.js";
+import * as log from "./log.js";
+import * as util from "./util.js";
+import { snapshot } from "./types.js";
+import * as config from "./config.js";
+import { insertIssues } from "./bigquery.js";
+import { sendPubSub } from "./pubsub.js";
 
 // Config
 const bot_config = config.BotConfig.getDefault();
