@@ -1,11 +1,10 @@
 <mjml>
   <mj-body>
-    <mj-container>
       <mj-section>
 
         <mj-column>
-          <mj-image width="300" src="https://ossbot.computer/assets/img/octocat-firebase.png"></mj-image>
-          <mj-text font-size="20" color="#626262" align="center">
+          <mj-image width="300px" src="https://ossbot.computer/assets/img/octocat-firebase.png"></mj-image>
+          <mj-text font-size="20px" color="#626262" align="center">
             Weekly GitHub Report
           </mj-text>
           <mj-divider border-color="#CCC"></mj-divider>
@@ -85,6 +84,5 @@
           </mj-text>
         </mj-column>
       </mj-section>
-    </mj-container>
   </mj-body>
 </mjml>
