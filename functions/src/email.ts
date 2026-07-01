@@ -18,7 +18,7 @@ import * as types from "./types";
 import * as config from "./config";
 
 import Mailgun from "mailgun.js";
-import formData from "form-data";
+import FormData from "form-data";
 
 /**
  * Get a new email client that uses Mailgun.
@@ -56,7 +56,7 @@ export class EmailClient {
         return body;
       })
       .catch((error: any) => {
-        log.debug("Email Error: " + error);
+        log.debug("Email Error: ", error);
         throw error;
       });
   }
@@ -122,7 +122,7 @@ export class EmailClient {
   // Lazy initialize sender
   getSender(): any {
     if (!this.sender) {
-      const mailgun = new Mailgun(formData);
+      const mailgun = new Mailgun(FormData);
       this.sender = mailgun.client({
         username: "api",
         key: this.apiKey,
