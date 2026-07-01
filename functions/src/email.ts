@@ -17,7 +17,8 @@ import * as log from "./log";
 import * as types from "./types";
 import * as config from "./config";
 
-const mailgun = require("mailgun-js");
+import Mailgun from "mailgun.js";
+import formData from "form-data";
 
 /**
  * Get a new email client that uses Mailgun.
@@ -48,20 +49,16 @@ export class EmailClient {
 
     log.debug("Sending email: ", JSON.stringify(data));
 
-    // Return a promise for the email
-    return new Promise((resolve, reject) => {
-      this.getSender()
-        .messages()
-        .send(data, (error: string, body: string) => {
-          if (error) {
-            log.debug("Email Error: " + error);
-            reject(error);
-          } else {
-            log.debug("Send Email Body: " + JSON.stringify(body));
-            resolve(body);
-          }
-        });
-    });
+    return this.getSender()
+      .messages.create(this.domain, data)
+      .then((body: any) => {
+        log.debug("Send Email Body: " + JSON.stringify(body));
+        return body;
+      })
+      .catch((error: any) => {
+        log.debug("Email Error: " + error);
+        throw error;
+      });
   }
 
   /**
@@ -125,9 +122,10 @@ export class EmailClient {
   // Lazy initialize sender
   getSender(): any {
     if (!this.sender) {
-      this.sender = mailgun({
-        apiKey: this.apiKey,
-        domain: this.domain,
+      const mailgun = new Mailgun(formData);
+      this.sender = mailgun.client({
+        username: "api",
+        key: this.apiKey,
       });
     }
 
